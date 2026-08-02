@@ -322,9 +322,8 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
 
-    if (nashville && key && ChordSheetJS.Chord && ChordSheetJS.ChordSheetSerializer) {
-      const serializer = new ChordSheetJS.ChordSheetSerializer();
-      const cloned = serializer.deserialize(serializer.serialize(transposed));
+    if (nashville && key && ChordSheetJS.Chord) {
+      const cloned = transposed.clone();
       convertToNashville(cloned, key as string);
       transposed = cloned;
     }
