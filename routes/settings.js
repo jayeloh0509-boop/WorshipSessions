@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const User = require('../lib/models/user');
 const { requireAuth } = require('../lib/auth');
-const { LIMITS, GEMINI_MODELS, DEFAULT_GEMINI_MODEL } = require('../lib/constants');
+const { LIMITS, GEMINI_MODELS, isValidGeminiModel, resolveGeminiModel } = require('../lib/constants');
 const { validatePreferredLanguages } = require('../lib/validation');
 const { jsonToChordPro } = require('../lib/ocr-convert');
 
@@ -190,14 +190,14 @@ function createSettingsRouter() {
   router.get('/settings/ocr-model', requireAuth, (req, res) => {
     const user = User.getFullById(req.user.id);
     res.json({
-      model: user?.gemini_model || DEFAULT_GEMINI_MODEL,
+      model: resolveGeminiModel(user?.gemini_model),
       models: GEMINI_MODELS,
     });
   });
 
   router.put('/settings/ocr-model', requireAuth, (req, res) => {
     const { model } = req.body;
-    if (!model || !GEMINI_MODELS.some(m => m.id === model)) {
+    if (!model || !isValidGeminiModel(model)) {
       return res.status(400).json({ error: 'Invalid model' });
     }
     User.updateGeminiModel(req.user.id, model);
@@ -222,9 +222,7 @@ function createSettingsRouter() {
     }
 
     // Resolve model: request body > user preference > default
-    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
-      ? requestModel
-      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
+    const geminiModel = resolveGeminiModel(requestModel, user.gemini_model);
 
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);
@@ -323,9 +321,7 @@ function createSettingsRouter() {
     try { apiKey = decryptApiKey(user.gemini_api_key); }
     catch { return res.status(500).json({ error: 'Failed to decrypt API key.' }); }
 
-    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
-      ? requestModel
-      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
+    const geminiModel = resolveGeminiModel(requestModel, user.gemini_model);
 
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);

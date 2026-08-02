@@ -12,7 +12,7 @@ export const MAX_SETLIST_NAME_LENGTH = 200;
 export const MAX_PREFERRED_LANGUAGES = 10;
 export const MAX_OCR_PROMPT = 5000;
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash';
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash';
 
 export const IMPORT_MAX_BATCH = 500;
 export const IMPORT_MAX_BATCH_BYTES = 12_000_000;
