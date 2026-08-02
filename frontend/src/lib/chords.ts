@@ -169,21 +169,28 @@ export function toChordPro(content: string): string {
   } catch { return content; }
 }
 
+// Returns the raw root of the first item that is a real chord (e.g. 'A', 'Am'), or null.
+// Section labels are skipped: ChordProParser turns [Chorus] into a chord, and a naive
+// root match would read the leading 'C' of "Chorus" as the key.
+function firstChordRoot(song: ChordSheetJS.Song): string | null {
+  for (const p of song.paragraphs) {
+    for (const line of p.lines) {
+      for (const item of line.items) {
+        const chords = (item as { chords?: string }).chords?.trim();
+        if (!chords || SECTION_LABEL_RE.test(chords)) continue;
+        const m = chords.match(/^([A-G][b#]?m?)/);
+        if (m) return m[1];
+      }
+    }
+  }
+  return null;
+}
+
 export function ensureKeyDirective(content: string): string {
   if (/\{key:\s*\S/.test(content)) return content;
   try {
-    const song = new ChordSheetJS.ChordProParser().parse(content);
-    for (const p of song.paragraphs) {
-      for (const line of p.lines) {
-        for (const item of line.items) {
-          const chords = (item as { chords?: string }).chords;
-          if (chords && chords.trim()) {
-            const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return `{key: ${m[1]}}\n${content}`;
-          }
-        }
-      }
-    }
+    const root = firstChordRoot(new ChordSheetJS.ChordProParser().parse(content));
+    if (root) return `{key: ${root}}\n${content}`;
   } catch { /* fall through */ }
   return content;
 }
@@ -365,17 +372,8 @@ export function getSongKey(content: string, semitones = 0): string {
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
     if (key) return normalizeKey(key);
     // Fallback: derive key from first chord
-    for (const p of transposed.paragraphs) {
-      for (const line of p.lines) {
-        for (const item of line.items) {
-          const chords = (item as { chords?: string }).chords;
-          if (chords && chords.trim()) {
-            const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return normalizeKey(m[1]);
-          }
-        }
-      }
-    }
+    const root = firstChordRoot(transposed);
+    if (root) return normalizeKey(root);
   } catch { /* fall through */ }
   return '';
 }

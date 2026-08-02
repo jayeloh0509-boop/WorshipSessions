@@ -1,4 +1,4 @@
-import { extractDirective, updateDirective, toChordPro, ensureKeyDirective, detectFormat } from '../chords';
+import { extractDirective, updateDirective, toChordPro, ensureKeyDirective, detectFormat, getSongKey } from '../chords';
 
 // ─── extractDirective ───────────────────────────────────────────────
 
@@ -269,6 +269,44 @@ describe('renderChordPro number notation', () => {
     const html = renderChordPro(content, 0, true);
     expect(html).toContain('>1<');
     expect(html).toContain('>4<');
+  });
+});
+
+describe('getSongKey', () => {
+  it('reads the key directive when present', () => {
+    expect(getSongKey('{key: A}\n[A]Amazing')).toBe('A');
+  });
+
+  it('derives the key from the first real chord when no directive exists', () => {
+    expect(getSongKey('[A]Amazing [D]grace')).toBe('A');
+  });
+
+  it('ignores a leading bracketed section label when deriving the key', () => {
+    expect(getSongKey('[Chorus]\n[A]Amazing [D]grace [E]how')).toBe('A');
+  });
+
+  it('keeps minor quality when deriving from a minor chord', () => {
+    expect(getSongKey('[Am]Amazing [Dm]grace')).toBe('Am');
+  });
+
+  it('returns an empty string when there are no chords at all', () => {
+    expect(getSongKey('just some lyrics')).toBe('');
+  });
+});
+
+describe('ensureKeyDirective', () => {
+  it('leaves content untouched when a key directive already exists', () => {
+    const content = '{key: G}\n[G]Amazing';
+    expect(ensureKeyDirective(content)).toBe(content);
+  });
+
+  it('prepends a key derived from the first real chord', () => {
+    expect(ensureKeyDirective('[A]Amazing [D]grace')).toBe('{key: A}\n[A]Amazing [D]grace');
+  });
+
+  it('ignores a leading bracketed section label when deriving the key', () => {
+    const content = '[Chorus]\n[A]Amazing [D]grace';
+    expect(ensureKeyDirective(content)).toBe(`{key: A}\n${content}`);
   });
 });
 
