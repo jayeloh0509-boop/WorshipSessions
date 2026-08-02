@@ -125,7 +125,8 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const { content, format_detected, visibility } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
     if (content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
-    if (!/\[[A-G][^\]]*\]/.test(content)) return res.status(400).json({ error: 'No chords detected. Add chords (e.g. [C], [G]) before saving.' });
+    const chordError = validateSongInput({ content, requireChord: true });
+    if (chordError) return res.status(400).json({ error: chordError });
     const meta = extractMetadata(content);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {
@@ -185,7 +186,8 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const { content, format_detected, visibility } = req.body;
     const finalContent = content?.trim() || existing.content;
     if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
-    if (content && !/\[[A-G][^\]]*\]/.test(content)) return res.status(400).json({ error: 'No chords detected. Add chords (e.g. [C], [G]) before saving.' });
+    const chordError = validateSongInput({ content, requireChord: true });
+    if (chordError) return res.status(400).json({ error: chordError });
     const meta = extractMetadata(finalContent);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {

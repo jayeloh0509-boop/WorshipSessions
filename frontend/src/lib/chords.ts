@@ -14,6 +14,11 @@ const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
 const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
 
+const SECTION_NAMES = 'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
+// Matches a section label with or without surrounding brackets and a trailing colon,
+// e.g. "Chorus", "Verse 2", "[Bridge]", "Pre-Chorus:".
+const SECTION_LABEL_RE = new RegExp(`^\\[?(?:${SECTION_NAMES})\\s*\\d*:?\\]?$`, 'i');
+
 export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
   const m = content.match(re);
@@ -77,9 +82,8 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   }).join('\n');
 
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
-  const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
   const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
-  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL.test(c));
+  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL_RE.test(c));
 
   // ChordPro directives like {start_of_verse} or {key: C}
   const hasDirectives = /\{[a-z_]+[:}]/.test(content);
@@ -101,7 +105,7 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
           l.items.some((it) => {
             const chords = (it as { chords?: string }).chords;
             if (!chords) return false;
-            if (p.label === 'ChordPro' && SECTION_LABEL.test(chords)) return false;
+            if (p.label === 'ChordPro' && SECTION_LABEL_RE.test(chords)) return false;
             return true;
           })
         )
@@ -165,21 +169,28 @@ export function toChordPro(content: string): string {
   } catch { return content; }
 }
 
+// Returns the raw root of the first item that is a real chord (e.g. 'A', 'Am'), or null.
+// Section labels are skipped: ChordProParser turns [Chorus] into a chord, and a naive
+// root match would read the leading 'C' of "Chorus" as the key.
+function firstChordRoot(song: ChordSheetJS.Song): string | null {
+  for (const p of song.paragraphs) {
+    for (const line of p.lines) {
+      for (const item of line.items) {
+        const chords = (item as { chords?: string }).chords?.trim();
+        if (!chords || SECTION_LABEL_RE.test(chords)) continue;
+        const m = chords.match(/^([A-G][b#]?m?)/);
+        if (m) return m[1];
+      }
+    }
+  }
+  return null;
+}
+
 export function ensureKeyDirective(content: string): string {
   if (/\{key:\s*\S/.test(content)) return content;
   try {
-    const song = new ChordSheetJS.ChordProParser().parse(content);
-    for (const p of song.paragraphs) {
-      for (const line of p.lines) {
-        for (const item of line.items) {
-          const chords = (item as { chords?: string }).chords;
-          if (chords && chords.trim()) {
-            const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return `{key: ${m[1]}}\n${content}`;
-          }
-        }
-      }
-    }
+    const root = firstChordRoot(new ChordSheetJS.ChordProParser().parse(content));
+    if (root) return `{key: ${root}}\n${content}`;
   } catch { /* fall through */ }
   return content;
 }
@@ -190,7 +201,6 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
     
     let content = p.lines.map(l => this.renderLine(l)).join('');
     let detectedType = p.type;
@@ -204,7 +214,7 @@ class ResponsiveHtmlFormatter {
         const chords = (firstItem.chords || '').trim();
         // Check lyrics for label or chords for bracketed label
         const potentialLabel = lyrics || chords;
-        if (!lyrics !== !chords && SECTION_RE.test(potentialLabel)) {
+        if (!lyrics !== !chords && SECTION_LABEL_RE.test(potentialLabel)) {
           detectedType = potentialLabel.replace(/[[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
         }
       }
@@ -228,7 +238,6 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
-    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
@@ -236,7 +245,7 @@ class ResponsiveHtmlFormatter {
                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
-      if (SECTION_RE.test(content.trim())) {
+      if (SECTION_LABEL_RE.test(content.trim())) {
         const cleanLabel = content.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
@@ -250,7 +259,7 @@ class ResponsiveHtmlFormatter {
       const lyrics = (it.lyrics || '').trim();
       const chords = (it.chords || '').trim();
       // Only one of them should be present for a pure label line
-      if (!lyrics !== !chords && SECTION_RE.test(lyrics || chords)) {
+      if (!lyrics !== !chords && SECTION_LABEL_RE.test(lyrics || chords)) {
         const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
@@ -313,9 +322,8 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
 
-    if (nashville && key && ChordSheetJS.Chord && ChordSheetJS.ChordSheetSerializer) {
-      const serializer = new ChordSheetJS.ChordSheetSerializer();
-      const cloned = serializer.deserialize(serializer.serialize(transposed));
+    if (nashville && key && ChordSheetJS.Chord) {
+      const cloned = transposed.clone();
       convertToNashville(cloned, key as string);
       transposed = cloned;
     }
@@ -328,31 +336,23 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
 }
 
 export function fixChordAccidentals(song: ChordSheetJS.Song): void {
-  song.paragraphs.forEach((p) => {
-    p.lines.forEach((line) => {
-      line.items.forEach((item) => {
-        const it = item as { chords?: string };
-        if (it.chords) {
-          it.chords = normalizeChord(it.chords);
-        }
-      });
-    });
+  song.mapChordLyricsPairs((pair) => {
+    const it = pair as unknown as { chords?: string };
+    if (it.chords) it.chords = normalizeChord(it.chords);
+    return pair;
   });
 }
 
 export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordSheetJS.Song {
-  song.paragraphs.forEach((p) => {
-    p.lines.forEach((line) => {
-      line.items.forEach((item) => {
-        const it = item as { chords?: string };
-        if (it.chords) {
-          try {
-            const c = ChordSheetJS.Chord.parse(it.chords);
-            if (c) it.chords = c.toNumeric(key).toString();
-          } catch { /* skip */ }
-        }
-      });
-    });
+  song.mapChordLyricsPairs((pair) => {
+    const it = pair as unknown as { chords?: string };
+    const chords = it.chords?.trim();
+    if (!chords || SECTION_LABEL_RE.test(chords)) return pair;
+    try {
+      const c = ChordSheetJS.Chord.parse(chords);
+      if (c) it.chords = c.toNumeric(key).toString();
+    } catch { /* skip */ }
+    return pair;
   });
   return song;
 }
@@ -366,17 +366,8 @@ export function getSongKey(content: string, semitones = 0): string {
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
     if (key) return normalizeKey(key);
     // Fallback: derive key from first chord
-    for (const p of transposed.paragraphs) {
-      for (const line of p.lines) {
-        for (const item of line.items) {
-          const chords = (item as { chords?: string }).chords;
-          if (chords && chords.trim()) {
-            const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return normalizeKey(m[1]);
-          }
-        }
-      }
-    }
+    const root = firstChordRoot(transposed);
+    if (root) return normalizeKey(root);
   } catch { /* fall through */ }
   return '';
 }
