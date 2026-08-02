@@ -337,15 +337,10 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
 }
 
 export function fixChordAccidentals(song: ChordSheetJS.Song): void {
-  song.paragraphs.forEach((p) => {
-    p.lines.forEach((line) => {
-      line.items.forEach((item) => {
-        const it = item as { chords?: string };
-        if (it.chords) {
-          it.chords = normalizeChord(it.chords);
-        }
-      });
-    });
+  song.mapChordLyricsPairs((pair) => {
+    const it = pair as unknown as { chords?: string };
+    if (it.chords) it.chords = normalizeChord(it.chords);
+    return pair;
   });
 }
 
