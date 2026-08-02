@@ -14,6 +14,11 @@ const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
 const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
 
+const SECTION_NAMES = 'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
+// Matches a section label with or without surrounding brackets and a trailing colon,
+// e.g. "Chorus", "Verse 2", "[Bridge]", "Pre-Chorus:".
+const SECTION_LABEL_RE = new RegExp(`^\\[?(?:${SECTION_NAMES})\\s*\\d*:?\\]?$`, 'i');
+
 export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
   const m = content.match(re);
@@ -77,9 +82,8 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   }).join('\n');
 
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
-  const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
   const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
-  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL.test(c));
+  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL_RE.test(c));
 
   // ChordPro directives like {start_of_verse} or {key: C}
   const hasDirectives = /\{[a-z_]+[:}]/.test(content);
@@ -101,7 +105,7 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
           l.items.some((it) => {
             const chords = (it as { chords?: string }).chords;
             if (!chords) return false;
-            if (p.label === 'ChordPro' && SECTION_LABEL.test(chords)) return false;
+            if (p.label === 'ChordPro' && SECTION_LABEL_RE.test(chords)) return false;
             return true;
           })
         )
@@ -190,7 +194,6 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
     
     let content = p.lines.map(l => this.renderLine(l)).join('');
     let detectedType = p.type;
@@ -204,7 +207,7 @@ class ResponsiveHtmlFormatter {
         const chords = (firstItem.chords || '').trim();
         // Check lyrics for label or chords for bracketed label
         const potentialLabel = lyrics || chords;
-        if (!lyrics !== !chords && SECTION_RE.test(potentialLabel)) {
+        if (!lyrics !== !chords && SECTION_LABEL_RE.test(potentialLabel)) {
           detectedType = potentialLabel.replace(/[[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
         }
       }
@@ -228,7 +231,6 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
-    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
@@ -236,7 +238,7 @@ class ResponsiveHtmlFormatter {
                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
-      if (SECTION_RE.test(content.trim())) {
+      if (SECTION_LABEL_RE.test(content.trim())) {
         const cleanLabel = content.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
@@ -250,7 +252,7 @@ class ResponsiveHtmlFormatter {
       const lyrics = (it.lyrics || '').trim();
       const chords = (it.chords || '').trim();
       // Only one of them should be present for a pure label line
-      if (!lyrics !== !chords && SECTION_RE.test(lyrics || chords)) {
+      if (!lyrics !== !chords && SECTION_LABEL_RE.test(lyrics || chords)) {
         const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
