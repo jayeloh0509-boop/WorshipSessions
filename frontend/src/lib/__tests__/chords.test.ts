@@ -255,3 +255,20 @@ describe('renderChordPro sections', () => {
   });
 });
 
+describe('renderChordPro number notation', () => {
+  it('keeps bracketed section labels intact in number notation', () => {
+    const content = '{key: G}\n[Chorus]\n[G]Amazing [C]grace';
+    const html = renderChordPro(content, 0, true);
+    expect(html).toContain('class="label">Chorus</h3>');
+    expect(html).toContain('class="paragraph chorus"');
+    expect(html).not.toContain('4horus');
+  });
+
+  it('still converts real chords to numbers', () => {
+    const content = '{key: G}\n[G]Amazing [C]grace';
+    const html = renderChordPro(content, 0, true);
+    expect(html).toContain('>1<');
+    expect(html).toContain('>4<');
+  });
+});
+

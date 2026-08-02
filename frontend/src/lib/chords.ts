@@ -343,18 +343,15 @@ export function fixChordAccidentals(song: ChordSheetJS.Song): void {
 }
 
 export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordSheetJS.Song {
-  song.paragraphs.forEach((p) => {
-    p.lines.forEach((line) => {
-      line.items.forEach((item) => {
-        const it = item as { chords?: string };
-        if (it.chords) {
-          try {
-            const c = ChordSheetJS.Chord.parse(it.chords);
-            if (c) it.chords = c.toNumeric(key).toString();
-          } catch { /* skip */ }
-        }
-      });
-    });
+  song.mapChordLyricsPairs((pair) => {
+    const it = pair as unknown as { chords?: string };
+    const chords = it.chords?.trim();
+    if (!chords || SECTION_LABEL_RE.test(chords)) return pair;
+    try {
+      const c = ChordSheetJS.Chord.parse(chords);
+      if (c) it.chords = c.toNumeric(key).toString();
+    } catch { /* skip */ }
+    return pair;
   });
   return song;
 }
