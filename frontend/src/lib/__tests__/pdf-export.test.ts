@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import { resolve } from 'node:path';
-import { exportSongPdf } from '../pdf-export';
+import { exportSongPdf, exportSetlistPdf } from '../pdf-export';
+import { PDFDocument } from 'pdf-lib';
+import type { Setlist, SetlistEntry } from '../../types/setlist';
 
 // vitest root is frontend/; import.meta.url is not a file: URL under Vite
 const FONT = resolve(process.cwd(), 'src/assets/NotoSansTC.ttf');
@@ -106,5 +108,73 @@ describe('exportSongPdf', () => {
 
   it('reports nothing for a plain English song', async () => {
     expect(await exportSongPdf(song('{key: G}\n[G]hello\n'), opts)).toEqual([]);
+  });
+});
+
+const entry = (n: number, over: Partial<SetlistEntry> = {}): SetlistEntry => ({
+  entry_id: n,
+  song_id: n,
+  title: `Song ${n}`,
+  artist: 'A',
+  content: `{title: Song ${n}}\n{key: G}\n[G]la la la\n`,
+  content_override: null,
+  transpose: 0,
+  nashville: 0,
+  font: null,
+  two_col: null,
+  bpm: null,
+  youtube_url: null,
+  language: 'en',
+  ...over,
+});
+
+const setlist = (entries: SetlistEntry[]): Setlist => ({
+  id: 1,
+  name: 'Sunday',
+  visibility: 'private',
+  event_date: null,
+  entries,
+});
+
+// pdf-lib writes compressed object streams, so count pages by reloading it
+const pageCount = async (bytes: Uint8Array) =>
+  (await PDFDocument.load(bytes)).getPageCount();
+
+describe('exportSetlistPdf', () => {
+  it('merges one page per song', async () => {
+    await exportSetlistPdf(setlist([entry(1), entry(2), entry(3)]), { nashville: false, fontSize: 0 });
+    expect(await pageCount(await lastPdf())).toBe(3);
+  });
+
+  it('skips private placeholders', async () => {
+    const entries = [entry(1), entry(2, { is_private_placeholder: true }), entry(3)];
+    await exportSetlistPdf(setlist(entries), { nashville: false, fontSize: 0 });
+    expect(await pageCount(await lastPdf())).toBe(2);
+  });
+
+  it('rejects a setlist with nothing exportable', async () => {
+    await expect(
+      exportSetlistPdf(setlist([entry(1, { is_private_placeholder: true })]), {
+        nashville: false,
+        fontSize: 0,
+      }),
+    ).rejects.toThrow('No exportable songs');
+  });
+
+  it('applies per-entry transpose', async () => {
+    await exportSetlistPdf(setlist([entry(1, { transpose: 2 })]), { nashville: false, fontSize: 0 });
+    expect(textOf(await lastPdf())).toContain('A');
+  });
+
+  it('prefers content_override over the song content', async () => {
+    const over = { content_override: '{title: Song 1}\n{key: C}\n[C]overridden words\n' };
+    await exportSetlistPdf(setlist([entry(1, over)]), { nashville: false, fontSize: 0 });
+    expect(textOf(await lastPdf())).toContain('overridden');
+  });
+
+  it('gathers undrawable characters from every entry', async () => {
+    const entries = [entry(1), entry(2, { content: '{key: G}\n[G]안녕\n' })];
+    const missing = await exportSetlistPdf(setlist(entries), { nashville: false, fontSize: 0 });
+    expect(missing.length).toBeGreaterThan(0);
   });
 });
