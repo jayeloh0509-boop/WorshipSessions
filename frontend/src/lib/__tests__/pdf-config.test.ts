@@ -56,13 +56,19 @@ describe('buildPdfConfig', () => {
     expect(JSON.stringify(cfg.layout?.footer ?? {})).not.toContain('My Music Publishing');
   });
 
-  it('leaves no dangling separators when bpm and time are absent', () => {
+  // Absent metadata leaves the literal text behind, so "Key of G - BPM  - Time"
+  // and a bare "By" show up on songs with no tempo or artist. Conditions do not
+  // suppress an item, so the fixed text has to go.
+  it('leaves no orphaned label when tempo, time or artist are absent', () => {
     const cfg = buildPdfConfig({ fontName: null, fontSize: 0 });
-    const templates = (cfg.layout?.header?.content ?? [])
-      .map((i) => (i as { template?: string }).template ?? '')
-      .join(' ');
-    expect(templates).not.toContain('%{tempo}');
-    expect(templates).not.toContain('%{time}');
+    const templates = (cfg.layout?.header?.content ?? []).map(
+      (i) => (i as { template?: string }).template ?? '',
+    );
+    const joined = templates.join(' ');
+    expect(joined).not.toContain('%{tempo}');
+    expect(joined).not.toContain('%{time}');
+    expect(templates.some((t) => t.startsWith('By '))).toBe(false);
+    expect(joined).toContain('%{artist}');
   });
 
   it('turns chord diagrams off', () => {

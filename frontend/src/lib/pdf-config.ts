@@ -45,11 +45,14 @@ export function buildPdfConfig({
   fontName: string | null;
   fontSize: number;
 }): PdfConfig {
+  // The stock templates assume metadata ChordVault often lacks and leave the
+  // literal text behind when it is absent: "Key of G - BPM  - Time", and a bare
+  // "By". Conditions do not suppress an item, so strip the fixed text instead.
   const header = defaults.layout.header.content.map((item) => {
-    // Default is "Key of %{key} - BPM %{tempo} - Time %{time}"; ChordVault has
-    // no time signature and often no tempo, which leaves dangling separators.
     const template = (item as { template?: string }).template;
-    return template?.startsWith('Key of') ? { ...item, template: 'Key of %{key}' } : item;
+    if (template?.startsWith('Key of')) return { ...item, template: 'Key of %{key}' };
+    if (template?.startsWith('By ')) return { ...item, template: '%{artist}' };
+    return item;
   });
 
   return {

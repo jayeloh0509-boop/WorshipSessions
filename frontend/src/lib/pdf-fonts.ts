@@ -4,13 +4,13 @@ import { EMBEDDED_FONT } from './constants';
 
 // What the jsPDF built-in Latin face can draw: whitespace, ASCII, Latin-1,
 // common punctuation, euro. \s matters — song content is full of newlines.
-const BUILTIN = /[\s -~ -ÿ‐-‧€]/;
+const BUILTIN = /[\s\u0020-\u007E\u00A0-\u00FF\u2010-\u2027\u20AC]/;
 
 // What Noto Sans TC adds: CJK punctuation, kana, strokes, enclosed forms,
 // ideographs, compatibility and fullwidth. Hangul is NOT covered — keep this
 // in step with the font file or unsupportedChars starts lying.
 const EMBEDDED =
-  /[　-〿぀-ヿ㇀-㇯㈀-㋿㐀-䶿一-鿿豈-﫿︰-﹏＀-￯]/;
+  /[\u3000-\u303F\u3040-\u30FF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/;
 
 export function needsEmbeddedFont(text: string): boolean {
   return [...text].some((ch) => !BUILTIN.test(ch));
