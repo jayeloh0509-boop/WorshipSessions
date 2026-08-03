@@ -308,13 +308,13 @@ class ResponsiveHtmlFormatter {
   }
 }
 
-export function renderChordPro(content: string, semitones = 0, nashville = false): string {
+export function prepareSong(content: string, semitones = 0, nashville = false): ChordSheetJS.Song | null {
   try {
     const song = parseSongAuto(content);
-    if (!song) throw new Error('parse failed');
+    if (!song) return null;
 
-    let transposed = semitones !== 0 ? song.transpose(semitones) : song;
-    
+    const transposed = semitones !== 0 ? song.transpose(semitones) : song;
+
     // Fix accidentals after transposition to preserve sharp preference and prevent auto-correction
     fixChordAccidentals(transposed);
 
@@ -324,11 +324,19 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     if (nashville && key && ChordSheetJS.Chord) {
       const cloned = transposed.clone();
       convertToNashville(cloned, key as string);
-      transposed = cloned;
+      return cloned;
     }
+    return transposed;
+  } catch {
+    return null;
+  }
+}
 
-    const html = new ResponsiveHtmlFormatter().format(transposed);
-    return `<div class="chord-sheet">${html}</div>`;
+export function renderChordPro(content: string, semitones = 0, nashville = false): string {
+  try {
+    const song = prepareSong(content, semitones, nashville);
+    if (!song) throw new Error('parse failed');
+    return `<div class="chord-sheet">${new ResponsiveHtmlFormatter().format(song)}</div>`;
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
   }
