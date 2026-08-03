@@ -190,8 +190,18 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     setExportingPdf(true);
     try {
       const { exportSetlistPdf } = await import('../lib/pdf-export');
-      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize: fontScale.fontSize });
-      toast('Setlist PDF exported', 'success');
+      const missing = await exportSetlistPdf(setlist, {
+        nashville: slNashville,
+        fontSize: fontScale.fontSize,
+      });
+      if (missing.length) {
+        toast(
+          `Setlist PDF exported, but these characters may be missing: ${missing.slice(0, 8).join(' ')}`,
+          'error',
+        );
+      } else {
+        toast('Setlist PDF exported', 'success');
+      }
     } catch (e) {
       toast((e as Error).message || 'PDF export failed', 'error');
     } finally {

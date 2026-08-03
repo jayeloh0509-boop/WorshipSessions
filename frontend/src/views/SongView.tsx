@@ -100,11 +100,16 @@ export function SongView({ songId, navigate }: SongViewProps) {
     setExporting(true);
     try {
       const { exportSongPdf } = await import('../lib/pdf-export');
-      await exportSongPdf(song, renderedHtml, {
+      const missing = await exportSongPdf(song, {
         transpose: chord.transpose,
+        nashville: chord.nashville,
         fontSize: fontScale.fontSize,
       });
-      toast('PDF exported', 'success');
+      if (missing.length) {
+        toast(`PDF exported, but these characters may be missing: ${missing.slice(0, 8).join(' ')}`, 'error');
+      } else {
+        toast('PDF exported', 'success');
+      }
     } catch (e) {
       toast((e as Error).message || 'PDF export failed', 'error');
     } finally {
