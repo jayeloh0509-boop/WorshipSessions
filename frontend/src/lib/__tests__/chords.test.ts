@@ -310,3 +310,34 @@ describe('ensureKeyDirective', () => {
   });
 });
 
+
+import { prepareSong } from '../chords';
+
+describe('prepareSong', () => {
+  const chordsOf = (song: NonNullable<ReturnType<typeof prepareSong>>) => {
+    const out: string[] = [];
+    song.mapChordLyricsPairs((p) => {
+      const c = (p as { chords?: string }).chords;
+      if (c) out.push(c);
+      return p;
+    });
+    return out;
+  };
+
+  it('transposes and keeps sharp preference', () => {
+    const song = prepareSong('{key: G}\n[G]a [C]b', 2);
+    expect(song).not.toBeNull();
+    expect(chordsOf(song!)).toEqual(['A', 'D']);
+  });
+
+  it('converts to numbers when nashville is on', () => {
+    const song = prepareSong('{key: G}\n[G]a [C]b', 0, true);
+    expect(chordsOf(song!)).toEqual(['1', '4']);
+  });
+
+  // parseSongAuto falls back to a lyrics-only ChordPro parse when it finds no
+  // chords, so content without chords still yields a song rather than null.
+  it('still returns a song for chordless content', () => {
+    expect(prepareSong('just some words')).not.toBeNull();
+  });
+});
