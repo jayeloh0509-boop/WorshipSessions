@@ -1,58 +1,64 @@
 :root {
-  /* -- Core Palette (Claude Dark) -- */
-  --bg:           #1a1a1a;
-  --surface:      #242424;
-  --surface2:     #303030;
-  --border:       #333333;
-  --text:         #e0e0e0;
-  --muted:        #8b8b93;
-  --accent:       #d49a46;
-  --accent2:      #e8a846;
-  --accent-alt:   #5b5b66;
-  --danger:       #ef4444;
-  --success:      #22c55e;
-  --chord:        #d49a46;
-  
-  /* -- Semantic UI Variables (The "Single Source of Truth") -- */
+  /* -- "Graphite & Brass" (dark) --
+     Near-monochrome interface; the single brass accent is
+     reserved for the music itself (chords, keys, tempo). */
+  --bg:           #101114;
+  --surface:      #16171b;
+  --surface2:     #1c1d22;
+  --border:       rgba(255, 255, 255, 0.07);
+  --text:         #ececea;
+  --muted:        #8b8d94;
+  --accent:       #ececea;   /* interactive = off-white, not a color */
+  --accent2:      #ffffff;
+  --accent-alt:   #5c5e66;
+  --danger:       #e05d5d;
+  --success:      #6fbf8f;
+  --chord:        #c2a878;   /* brass — music only */
+
+  /* -- Semantic UI Variables -- */
   --ui-header-bg:    var(--bg);
-  --ui-card-bg:      var(--surface);
-  --ui-modal-bg:     var(--surface);
-  --ui-overlay:      rgba(0,0,0,0.75);
-  --ui-shadow:       0 4px 20px rgba(0,0,0,0.4);
-  --accent-bg:       rgba(212,154,70,0.12);
-  --accent-rgb:      212, 154, 70;
+  --ui-card-bg:      transparent;
+  --ui-modal-bg:     var(--surface2);
+  --ui-overlay:      rgba(6, 7, 9, 0.72);
+  --ui-shadow:       0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-lg:       var(--ui-shadow);
+  --accent-bg:       rgba(236, 236, 234, 0.07);
+  --accent-rgb:      236, 236, 234;
 
   /* -- Typography System -- */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans TC", sans-serif;
-  --font-serif: 'Crimson Pro', Georgia, "Times New Roman", "PingFang TC", "Microsoft YaHei", serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
+               "Noto Sans TC", sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, "Times New Roman",
+                "PingFang TC", "Microsoft YaHei", serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
 
   /* -- Badge System -- */
-  --badge-radius: 20px;
+  --badge-radius: 7px;
   --radius: 10px;
 }
 
 :root[data-theme="light"] {
-  /* -- Core Palette (Claude Light) -- */
-  --bg:           #f9f8f6;
+  /* -- "Paper & Brass" (light) --
+     Warm gallery white, ink text, same brass for the music. */
+  --bg:           #faf9f7;
   --surface:      #ffffff;
-  --surface2:     #f0eee9;
-  --border:       #e8e6e1;
-  --text:         #2a2a2a;
-  --muted:        #71717a;
-  --accent:       #c77322;
-  --accent2:      #da7823;
-  --accent-alt:   #a1a1aa;
-  --danger:       #dc2626;
-  --success:      #16a34a;
-  --chord:        #c77322;
+  --surface2:     #f1efeb;
+  --border:       rgba(20, 20, 24, 0.09);
+  --text:         #1d1e22;
+  --muted:        #73757c;
+  --accent:       #1d1e22;
+  --accent2:      #000000;
+  --accent-alt:   #a8a9ae;
+  --danger:       #c0392b;
+  --success:      #2e7d54;
+  --chord:        #9a7b45;
 
-  /* -- Semantic UI Variables -- */
   --ui-header-bg:    var(--bg);
-  --ui-card-bg:      var(--surface);
-  --ui-modal-bg:     var(--surface);
-  --ui-overlay:      rgba(0,0,0,0.3);
-  --ui-shadow:       0 4px 20px rgba(0,0,0,0.06);
-  --accent-bg:       rgba(199,115,34,0.08);
-  --accent-rgb:      199, 115, 34;
+  --ui-card-bg:      transparent;
+  --ui-modal-bg:     #ffffff;
+  --ui-overlay:      rgba(29, 30, 34, 0.32);
+  --ui-shadow:       0 12px 36px rgba(60, 55, 45, 0.12);
+  --accent-bg:       rgba(29, 30, 34, 0.05);
+  --accent-rgb:      29, 30, 34;
 }

@@ -100,8 +100,14 @@ function createAdminRouter() {
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
 
-    User.delete(resolved.targetId);
-    res.json({ success: true });
+    try {
+      const result = User.delete(resolved.targetId);
+      if (!result.changes) return res.status(404).json({ error: 'User not found' });
+      res.json({ success: true });
+    } catch (e) {
+      const appErr = handleDbError(e);
+      return res.status(appErr.status).json({ error: appErr.message });
+    }
   });
 
   router.delete('/admin/songs/:id', requireAuth, requireAdmin, (req, res) => {

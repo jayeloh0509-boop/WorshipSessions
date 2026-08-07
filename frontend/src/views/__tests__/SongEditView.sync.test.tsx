@@ -26,7 +26,21 @@ vi.mock('../../components/EditorPreview', () => ({
 
 // Mock OcrModal
 vi.mock('../../components/OcrModal', () => ({
-  OcrModal: () => null,
+  OcrModal: ({ source, onResult, onClose }: { source?: string; onResult: (text: string, language?: string | null) => void; onClose: () => void }) => (
+    <div role="dialog" aria-label={source === 'worship-together' ? 'Import Worship Together chart' : 'Import from image or PDF'}>
+      <button onClick={() => onResult('{title: Downloaded Song}\n{artist: Worship Artist}\n{key: D}\n{x_language: en}\n\n[D]Downloaded [G]chart', 'en')}>Complete chart import</button>
+      <button onClick={onClose}>Close import</button>
+    </div>
+  ),
+}));
+
+vi.mock('../../components/SongSearchModal', () => ({
+  SongSearchModal: ({ onImport, onClose }: { onImport: (content: string) => void; onClose: () => void }) => (
+    <div role="dialog" aria-label="Search song library">
+      <button onClick={() => onImport('{title: Imported Song}\n{artist: Library Artist}\n{key: G}\n{x_language: en}\n\n[G]Imported [C]lyrics')}>Import library song</button>
+      <button onClick={onClose}>Close search</button>
+    </div>
+  ),
 }));
 
 // Mock hooks — stable references to avoid infinite re-renders from effect deps
@@ -161,6 +175,36 @@ describe('SongEditView two-way sync', () => {
     expect(content).toContain('{title: My Song}');
     expect(content).toContain('{artist: Artist Name}');
     expect(content).toContain('{tempo: 90}');
+  });
+
+  it('opens library search and imports the selected song into the editor', async () => {
+    await renderEditor();
+
+    fireEvent.click(screen.getByRole('button', { name: /search song library/i }));
+    expect(screen.getByRole('dialog', { name: /search song library/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /import library song/i }));
+
+    await waitFor(() => {
+      expect(getTitleInput().value).toBe('Imported Song');
+      expect(getArtistInput().value).toBe('Library Artist');
+      expect(getEditor().value).toContain('[G]Imported [C]lyrics');
+    });
+  });
+
+  it('imports an officially downloaded Worship Together chart and defaults it to private', async () => {
+    await renderEditor();
+
+    fireEvent.click(screen.getByRole('button', { name: /worship together/i }));
+    expect(screen.getByRole('dialog', { name: /import worship together chart/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /complete chart import/i }));
+
+    await waitFor(() => {
+      expect(getTitleInput().value).toBe('Downloaded Song');
+      expect(getEditor().value).toContain('{x_source: Worship Together download}');
+      expect(getEditor().value).toContain('[D]Downloaded [G]chart');
+    });
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
   });
 
   // ─── Editor → Field sync ──────────────────────────────────────

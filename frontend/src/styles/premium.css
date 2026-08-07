@@ -1,0 +1,152 @@
+/* ============================================================
+   Premium overrides — "Graphite & Brass"
+   Imported last; layers on upstream CSS. Delete this file and
+   revert variables.css to fully restore the stock look.
+   ============================================================ */
+
+/* -- Global temperament --------------------------------------- */
+body {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.005em;
+}
+
+/* -- Brand: serif wordmark, no color ---------------------------- */
+.nav-brand {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 21px;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.nav-brand .nav-logo svg { opacity: 0.9; }
+
+/* -- Headings: editorial serif ---------------------------------- */
+h1, h2, .hero-title, .about-title,
+.song-view-title, .view-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+
+/* -- Song / setlist cards → hairline rows ----------------------- */
+.song-grid { gap: 0; border-top: 1px solid var(--border); }
+.song-card,
+.setlist-card {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 17px 2px;
+  transition: padding 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.song-card:hover,
+.setlist-card:hover { background: var(--accent-bg); }
+.song-card:active,
+.setlist-card:active { padding-left: 10px; }
+.song-card-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 18.5px;
+}
+
+/* Quiet entrance: rows settle in */
+@media (prefers-reduced-motion: no-preference) {
+  .song-grid .song-card {
+    opacity: 0;
+    transform: translateY(6px);
+    animation: prem-enter 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+  .song-grid .song-card:nth-child(2) { animation-delay: 0.05s; }
+  .song-grid .song-card:nth-child(3) { animation-delay: 0.10s; }
+  .song-grid .song-card:nth-child(4) { animation-delay: 0.15s; }
+  .song-grid .song-card:nth-child(5) { animation-delay: 0.20s; }
+  .song-grid .song-card:nth-child(6) { animation-delay: 0.25s; }
+}
+@keyframes prem-enter {
+  to { opacity: 1; transform: none; }
+}
+
+/* -- Buttons: solid off-white primary, quiet ghosts ------------- */
+.btn {
+  font-weight: 500;
+  border-radius: 10px;
+  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.15s;
+}
+.btn:not(.btn-ghost):not(.btn-danger) {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-weight: 600;
+}
+.btn:active { transform: scale(0.98); opacity: 0.85; }
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+}
+
+/* -- Key pills: brass belongs to the music ---------------------- */
+.key-current,
+.key-pill {
+  font-family: var(--font-mono);
+  color: var(--chord);
+  border: 1px solid var(--border);
+  background: none;
+}
+.key-picker .key-pill.active {
+  background: var(--chord);
+  color: var(--bg);
+  border-color: var(--chord);
+  font-weight: 600;
+}
+
+/* Key picker: quiet unfold, no spring */
+@media (prefers-reduced-motion: no-preference) {
+  .key-picker {
+    animation: prem-unfold 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    transform-origin: top center;
+  }
+}
+@keyframes prem-unfold {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* -- Chord sheet: content leads --------------------------------- */
+.chord-sheet .chord {
+  letter-spacing: 0.02em;
+}
+/* Transpose cross-fade: chords dim, change, settle back */
+@media (prefers-reduced-motion: no-preference) {
+  .chord-sheet-wrap.chord-settle .chord {
+    animation: prem-settle 0.32s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+}
+@keyframes prem-settle {
+  from { opacity: 0.15; }
+  to   { opacity: 1; }
+}
+
+/* -- Toasts: quiet card, no pill -------------------------------- */
+.toast {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 13.5px;
+}
+
+/* -- Badges & tags: hairline, lowercase-quiet ------------------- */
+.badge, .tag {
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+}
+
+/* -- Inputs ----------------------------------------------------- */
+input, select, textarea {
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-alt) !important;
+  box-shadow: none !important;
+}

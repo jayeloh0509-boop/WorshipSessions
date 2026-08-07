@@ -46,6 +46,6 @@
     "*.js": "eslint",
     "lib/**/*.js": "eslint",
     "routes/**/*.js": "eslint",
-    "frontend/src/**/*.{ts,tsx}": "cd frontend && npx eslint"
+    "frontend/src/**/*.{ts,tsx}": "npx --prefix frontend eslint"
   }
 }

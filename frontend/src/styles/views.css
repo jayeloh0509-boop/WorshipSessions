@@ -940,3 +940,756 @@
   font-size: 14px;
   color: var(--muted);
 }
+
+/* -- Tools Page -------------------------- */
+.tools-page { max-width: 980px; margin: 0 auto; }
+.tools-title {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+}
+.tools-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .tools-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Launcher cards on the main Tools page */
+.tool-launch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+@media (min-width: 640px) {
+  .tool-launch-grid { grid-template-columns: 1fr 1fr; }
+}
+.tool-launch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.tool-launch-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+.tool-launch-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tool-launch-title {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.tool-launch-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.tool-launch-cta {
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+.tool-subpage .tool-back { margin-bottom: 20px; }
+.tool-subpage .tool-card { max-width: 640px; margin: 0 auto; }
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.tool-card h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.tool-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.tool-card .tool-textarea {
+  min-height: 130px;
+  width: 100%;
+}
+.tool-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.tool-fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tool-fields .field { flex: 1; min-width: 110px; }
+.tool-fields select { width: 100%; }
+.tool-result {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+.tool-result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.tool-result-key {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--chord);
+}
+.tool-confidence {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--badge-radius);
+  background: var(--accent-bg);
+  color: var(--muted);
+}
+.tool-confidence.high { color: var(--success); }
+.tool-confidence.low { color: var(--danger); }
+.tool-alt {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.tool-chip-section { margin-bottom: 10px; }
+.tool-chip-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tool-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--chord);
+  background: rgba(194, 168, 120, 0.10);
+  border: 1px solid rgba(194, 168, 120, 0.25);
+  border-radius: var(--badge-radius);
+  padding: 2px 8px;
+}
+.tool-chip.outside {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--border);
+}
+.tool-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.tool-empty code {
+  font-family: var(--font-mono);
+  color: var(--chord);
+}
+.tool-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+.capo-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+}
+.capo-row.best { color: var(--text); }
+.capo-row .capo-pos {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--chord);
+  min-width: 74px;
+}
+.capo-row.best .capo-pos { font-size: 15px; }
+.capo-row .capo-shape { flex: 1; }
+.capo-row .capo-shape strong { color: var(--text); }
+.capo-warn {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--badge-radius);
+  padding: 1px 6px;
+}
+
+/* Launcher category groups */
+.tool-group { margin-bottom: 30px; }
+.tool-group-title {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Segmented mode switch */
+.tool-seg {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.tool-seg-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tool-seg-btn + .tool-seg-btn { border-left: 1px solid var(--border); }
+.tool-seg-btn.active {
+  background: var(--accent-bg);
+  color: var(--text);
+}
+
+/* Monospaced result block */
+.tool-output {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Semitone stepper */
+.tool-stepper { display: flex; align-items: center; gap: 6px; }
+.tool-stepper-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  min-width: 54px;
+  text-align: center;
+  color: var(--text);
+}
+
+/* Selectable chips (working key) and degree annotations */
+.tool-chip-btn {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tool-chip-btn.selected {
+  background: var(--chord);
+  color: var(--bg);
+  border-color: var(--chord);
+  font-weight: 600;
+}
+.tool-chip-degree {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.tool-chip-btn.selected .tool-chip-degree { color: var(--bg); }
+
+/* Diatonic degree table */
+.tool-degree-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  gap: 6px;
+}
+.tool-degree-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 4px;
+}
+.tool-degree-roman { font-size: 11px; color: var(--muted); }
+.tool-degree-chord {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--chord);
+}
+.tool-degree-nash { font-size: 10px; color: var(--muted); }
+.tool-degree-notes {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* Related-tools footer */
+.tool-related {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.tool-related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Capo fretboard strip (frets 0-12; the nut is the heavier first rule) */
+.capo-strip {
+  display: flex;
+  gap: 2px;
+  margin: 8px 0 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.capo-fret {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 34px;
+  border-left: 2px solid var(--border);
+  padding: 6px 2px 2px;
+}
+.capo-fret:first-child {
+  border-left-width: 4px;
+  border-left-color: var(--muted);
+}
+.capo-fret-marker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--chord);
+  background: rgba(194, 168, 120, 0.1);
+  border: 1px solid rgba(194, 168, 120, 0.4);
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.capo-fret.selected .capo-fret-marker {
+  background: var(--chord);
+  color: var(--bg);
+  border-color: var(--chord);
+}
+.capo-fret-empty {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+}
+.capo-fret-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Capo option rows */
+.capo-option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 10px;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.capo-option.selected {
+  border-color: var(--chord);
+  background: var(--accent-bg);
+  color: var(--text);
+}
+.capo-option .capo-pos {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--chord);
+  min-width: 74px;
+}
+.capo-option .capo-shape strong { color: var(--text); }
+.capo-tier {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--badge-radius);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.capo-tier-easy, .capo-tier-none { color: var(--success); }
+.capo-tier-high { color: var(--danger); }
+.capo-rationale {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Launcher groups */
+.tool-launch-section { margin-bottom: 28px; }
+.tool-launch-heading {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* Segmented mode switch */
+.tool-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.tool-seg-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tool-seg-btn + .tool-seg-btn { border-left: 1px solid var(--border); }
+.tool-seg-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.tool-seg-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Monospace chart output */
+.tool-output {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Clickable chips (working-key selection) */
+.tool-chip-btn {
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tool-chip-btn:hover { border-color: var(--accent); }
+.tool-chip-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tool-chip-btn.selected {
+  background: var(--chord);
+  color: var(--bg);
+  border-color: var(--chord);
+  font-weight: 600;
+}
+.tool-chip-degree {
+  margin-left: 6px;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+/* Diatonic degree strip (key finder + Nashville legend) */
+.tool-degree-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 6px;
+}
+.tool-degree-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.tool-degree-roman {
+  font-size: 11px;
+  color: var(--muted);
+}
+.tool-degree-chord {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--chord);
+}
+.tool-degree-nash {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Related-tool jumps */
+.tool-related {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.tool-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Capo fretboard strip */
+.capo-strip {
+  display: flex;
+  gap: 2px;
+  margin: 8px 0 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.capo-fret {
+  flex: 1;
+  min-width: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  border-left: 1px solid var(--border);
+}
+.capo-fret:last-child { border-right: 1px solid var(--border); }
+.capo-fret-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+.capo-fret-empty {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.capo-fret-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--chord);
+  background: none;
+  color: var(--chord);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.capo-fret.selected .capo-fret-marker {
+  background: var(--chord);
+  color: var(--bg);
+}
+.capo-fret-marker:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Capo option cards */
+.capo-option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.capo-option:hover { background: var(--accent-bg); }
+.capo-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.capo-option.selected {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.capo-option .capo-pos {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--chord);
+  min-width: 74px;
+}
+.capo-option .capo-shape strong { color: var(--text); }
+.capo-tier {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  border-radius: var(--badge-radius);
+  padding: 1px 6px;
+  color: var(--muted);
+}
+.capo-tier-none, .capo-tier-easy { color: var(--success); border-color: var(--success); }
+.capo-tier-high { color: var(--danger); border-color: var(--danger); }
+.capo-rationale {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Semitone stepper */
+.tool-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tool-stepper-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text);
+  min-width: 52px;
+  text-align: center;
+}
+
+/* Diatonic chord cards */
+.diatonic-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+@media (min-width: 480px) {
+  .diatonic-grid { grid-template-columns: 1fr 1fr; }
+}
+.diatonic-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.diatonic-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.diatonic-symbol {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--chord);
+}
+.diatonic-roman {
+  font-size: 13px;
+  color: var(--muted);
+}
+.diatonic-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.diatonic-nash { font-family: var(--font-mono); }
+
+/* Progression rows */
+.prog-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.prog-row:last-of-type { border-bottom: none; }
+.prog-label {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 110px;
+}
+.prog-row .tool-chips { flex: 1; }
+.prog-copy { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-seg-btn, .tool-chip-btn, .capo-option, .capo-fret-marker { transition: none; }
+}

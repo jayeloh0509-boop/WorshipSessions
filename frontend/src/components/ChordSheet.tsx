@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fontScaleValue } from '../lib/chords';
 
 interface ChordSheetProps {
@@ -14,7 +14,20 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   
   const style: React.CSSProperties = manualScale ? { '--font-scale': String(manualScale) } as React.CSSProperties : {};
 
-  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}`;
+  // Premium: chords briefly settle in when the rendered sheet changes (transpose, notation)
+  const [settle, setSettle] = useState(false);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setSettle(true);
+    const t = setTimeout(() => setSettle(false), 360);
+    return () => clearTimeout(t);
+  }, [html]);
+
+  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${settle ? ' chord-settle' : ''}`;
 
   return (
     <div

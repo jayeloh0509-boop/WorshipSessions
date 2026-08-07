@@ -8,6 +8,7 @@ import { useSongEditor } from '../hooks/useSongEditor';
 import { TagPicker } from '../components/TagPicker';
 import { LanguagePicker } from '../components/LanguagePicker';
 import { OcrModal } from '../components/OcrModal';
+import { SongSearchModal } from '../components/SongSearchModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
@@ -27,6 +28,8 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
   const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrSource, setOcrSource] = useState<'worship-together' | undefined>();
+  const [searchOpen, setSearchOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
@@ -212,7 +215,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </div>
         {user && (
           <div className="ocr-row">
-            <button className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</button>
+            {!songId && <button className="btn btn-sm" onClick={() => setSearchOpen(true)}>&#128269; Search song library</button>}
+            {!songId && <button className="btn btn-sm wt-import-trigger" onClick={() => { setOcrSource('worship-together'); setOcrOpen(true); }}>♫ Import Worship Together download</button>}
+            <button className="btn btn-sm btn-ghost" onClick={() => { setOcrSource(undefined); setOcrOpen(true); }}>&#128247; Import from image or PDF</button>
           </div>
         )}
         <div className="editor-tabs" role="tablist">
@@ -252,12 +257,23 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       {ocrOpen && (
         <OcrModal
           hasGeminiKey={hasGeminiKey}
+          source={ocrSource}
           onResult={(text, lang) => {
             let c = text;
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
+            if (ocrSource === 'worship-together') {
+              c = updateDirective(c, 'x_source', 'Worship Together download');
+              setVisibility('private');
+            }
             setInitialContent(c);
           }}
           onClose={() => setOcrOpen(false)}
+        />
+      )}
+      {searchOpen && (
+        <SongSearchModal
+          onImport={(content) => setInitialContent(content)}
+          onClose={() => setSearchOpen(false)}
         />
       )}
     </>

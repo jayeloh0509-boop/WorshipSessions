@@ -82,7 +82,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
     <>
       {showHero ? (
         <div className="hero">
-          <div className="hero-title">&#9833; ChordVault</div>
+          <div className="hero-title">&#9833; WorshipSessions</div>
           <div className="hero-tagline">{t('hero.tagline')}</div>
           <div className="hero-cta">{t('hero.cta')}</div>
           <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>

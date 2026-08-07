@@ -59,7 +59,8 @@ app.use('/api', createSettingsRouter());
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3100;
-const server = app.listen(PORT, () => console.log(`ChordVault running on port ${PORT}`));
+const HOST = process.env.HOST || '0.0.0.0';
+const server = app.listen(PORT, HOST, () => console.log(`ChordVault running on ${HOST}:${PORT}`));
 
 let shuttingDown = false;
 function gracefulShutdown(signal) {

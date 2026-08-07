@@ -18,6 +18,13 @@ import { SetlistPlayView } from './views/SetlistPlayView';
 import { AdminView } from './views/AdminView';
 import { SettingsView } from './views/SettingsView';
 import { AboutView } from './views/AboutView';
+import { ToolsView } from './views/ToolsView';
+import { KeyFinderView } from './views/KeyFinderView';
+import { CapoCalculatorView } from './views/CapoCalculatorView';
+import { TransposeView } from './views/TransposeView';
+import { NashvilleView } from './views/NashvilleView';
+import { RelativeKeyView } from './views/RelativeKeyView';
+import { DiatonicChordsView } from './views/DiatonicChordsView';
 import { api } from './lib/api';
 import type { AuthConfig, Setlist } from './types';
 
@@ -26,9 +33,30 @@ interface Route {
   params: Record<string, string>;
 }
 
-function parseHash(): Route {
+// Stable hash slug <-> view name for every tool page
+export const TOOL_ROUTES: Record<string, string> = {
+  'key-finder': 'tools-key-finder',
+  'capo': 'tools-capo',
+  'transpose': 'tools-transpose',
+  'nashville': 'tools-nashville',
+  'relative-keys': 'tools-relative',
+  'diatonic': 'tools-diatonic',
+};
+
+const TOOL_HASHES: Record<string, string> = Object.fromEntries(
+  Object.entries(TOOL_ROUTES).map(([slug, view]) => [view, `#tools/${slug}`])
+);
+
+export function parseHash(): Route {
   const hash = location.hash.slice(1); // remove #
   if (!hash) return { view: 'browse', params: {} };
+
+  // #tools and #tools/<slug>; unknown tool slugs fall back to the launcher
+  if (hash === 'tools') return { view: 'tools', params: {} };
+  if (hash.startsWith('tools/')) {
+    const view = TOOL_ROUTES[hash.slice('tools/'.length)];
+    return { view: view || 'tools', params: {} };
+  }
 
   // #song/42
   const songMatch = hash.match(/^song\/(\d+)$/);
@@ -62,7 +90,7 @@ function parseHash(): Route {
 }
 
 export function App() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { setDemoMode } = useDemo();
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [animClass, setAnimClass] = useState('');
@@ -116,6 +144,8 @@ export function App() {
 
     // Update hash for deep-linkable views
     if (view === 'song-view' && params.id) location.hash = `#song/${params.id}`;
+    else if (view === 'tools') location.hash = '#tools';
+    else if (TOOL_HASHES[view]) location.hash = TOOL_HASHES[view];
     else if (view === 'setlist-edit' && params.id) {
       location.hash = `#setlist/${params.id}`;
     }
@@ -181,9 +211,24 @@ export function App() {
       case 'admin':
         return <AdminView navigate={navigate} />;
       case 'settings':
-        return <SettingsView />;
+        if (isAdmin) return <SettingsView />;
+        return user ? <MySongsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
       case 'about':
         return <AboutView navigate={navigate} />;
+      case 'tools':
+        return <ToolsView navigate={navigate} />;
+      case 'tools-key-finder':
+        return <KeyFinderView navigate={navigate} />;
+      case 'tools-capo':
+        return <CapoCalculatorView navigate={navigate} />;
+      case 'tools-transpose':
+        return <TransposeView navigate={navigate} />;
+      case 'tools-nashville':
+        return <NashvilleView navigate={navigate} />;
+      case 'tools-relative':
+        return <RelativeKeyView navigate={navigate} />;
+      case 'tools-diatonic':
+        return <DiatonicChordsView navigate={navigate} />;
       default:
         return <BrowseView navigate={navigate} />;
     }

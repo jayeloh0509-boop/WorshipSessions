@@ -6,7 +6,7 @@ export function AboutView({ navigate }: AboutViewProps) {
   return (
     <div className="about-page">
       <button className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} style={{ marginBottom: 20 }}>&#8592; Back</button>
-      <h1 className="about-title">&#9833; ChordVault</h1>
+      <h1 className="about-title">&#9833; WorshipSessions</h1>
       <p className="about-subtitle">Your chord sheet library</p>
 
       <div className="about-section">

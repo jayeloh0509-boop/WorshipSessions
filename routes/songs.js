@@ -8,6 +8,8 @@ const { DEMO_MODE } = require('../lib/demo');
 const { makeUniqueNamer } = require('../lib/exportFilename');
 const Song = require('../lib/models/song');
 const User = require('../lib/models/user');
+const { searchPublicCatalog, getPopularSongs, getPublicChart } = require('../lib/publicCatalog');
+const { importPdfBuffer } = require('../lib/pdfImport');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -63,6 +65,36 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Song.listPublic({ q, language, userId, page: pageNum, limit: limitNum }));
+  });
+
+  router.get('/songs/public-catalog/search', requireAuth, async (req, res, next) => {
+    try {
+      const q = String(req.query.q || '').trim();
+      if (q.length < 2) return res.status(400).json({ error: 'Search must contain at least 2 characters' });
+      res.json({ songs: await searchPublicCatalog(q) });
+    } catch (error) { next(error); }
+  });
+
+  router.get('/songs/public-catalog/popular', requireAuth, async (_req, res, next) => {
+      try {
+        res.json({ songs: await getPopularSongs() });
+      } catch (error) { next(error); }
+    });
+
+    router.post('/songs/import-pdf', requireAuth, express.raw({ type: ['application/pdf', 'application/octet-stream'], limit: LIMITS.MAX_BODY_JSON }), async (req, res, next) => {
+      try {
+        const body = req.body;
+        if (!body || !body.length) return res.status(400).json({ error: 'PDF file is required' });
+        const filename = req.headers['x-filename'] || 'worship-together.pdf';
+        const parsed = await importPdfBuffer(body, filename);
+        return res.json({ title: parsed.title, artist: parsed.artist, key: parsed.key, content: parsed.content });
+      } catch (error) { next(error); }
+    });
+
+  router.get('/songs/public-catalog/:slug', requireAuth, async (req, res, next) => {
+    try {
+      res.json(await getPublicChart(req.params.slug));
+    } catch (error) { next(error); }
   });
 
   router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {
