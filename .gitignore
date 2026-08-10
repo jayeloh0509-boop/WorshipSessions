@@ -22,3 +22,5 @@ scripts/test-*.mjs
 scripts/test-*.png
 scratch/
 .hermes-*
+scripts/__pycache__/
+public/downloads/worshipsessions-source.zip
