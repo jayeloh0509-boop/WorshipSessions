@@ -3,23 +3,24 @@ import { escHtml } from './util';
 import { normalizeKey, normalizeChord } from './keys';
 import type { SetlistEntry, SetlistPreferences } from '../types';
 
-// preserveWhitespace is only an option on UltimateGuitarParser; the other two take
-// no constructor arguments and accept their options on parse() instead.
-const PARSERS = [
-  { make: () => new ChordSheetJS.ChordProParser(), label: 'ChordPro' },
-  { make: () => new ChordSheetJS.UltimateGuitarParser({ preserveWhitespace: false }), label: 'Ultimate Guitar' },
-  { make: () => new ChordSheetJS.ChordsOverWordsParser(), label: 'Chords over lyrics' },
+const PARSER_NAMES = [
+  { cls: 'ChordProParser', label: 'ChordPro' },
+  { cls: 'UltimateGuitarParser', label: 'Ultimate Guitar' },
+  { cls: 'ChordsOverWordsParser', label: 'Chords over lyrics' },
 ] as const;
-
 
 const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
 const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
 
-const SECTION_NAMES = 'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
+const SECTION_NAMES =
+  'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
 // Matches a section label with or without surrounding brackets and a trailing colon,
 // e.g. "Chorus", "Verse 2", "[Bridge]", "Pre-Chorus:".
-const SECTION_LABEL_RE = new RegExp(`^\\[?(?:${SECTION_NAMES})\\s*\\d*:?\\]?$`, 'i');
+const SECTION_LABEL_RE = new RegExp(
+  `^\\[?(?:(?:${SECTION_NAMES})(?:\\s*\\d+|\\s*\\(\\d+X\\))?|REPEAT\\s+(?:${SECTION_NAMES})(?:\\s*\\d+X|\\s*\\(\\d+X\\))?|FINAL\\s+CHORD)\\s*:?\\]?$`,
+  'i',
+);
 
 export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
@@ -64,28 +65,33 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   // This ensures transpose and Nashville work correctly.
   let content = rawContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
     // 1. Fix spaces around slashes
-    let cleaned = inner.replace(/\s*\/\s*/g, '/');
-    // 2. Normalize the chord to preferred sharps
-    cleaned = normalizeChord(cleaned);
+    const cleaned = inner.replace(/\s*\/\s*/g, '/');
+    // Preserve the source chart's written enharmonic spelling.
     return `[${cleaned}]`;
   });
 
   // Also normalize Chords-over-lyrics format (lines with only chords)
-  content = content.split('\n').map(line => {
-    const isChordLine = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/m.test(line);
-    if (isChordLine) {
-      return line.split(/(\s+)/).map(chunk => {
-        if (chunk.trim() === '') return chunk;
-        const cleaned = chunk.replace(/\s*\/\s*/g, '/');
-        return normalizeChord(cleaned);
-      }).join('');
-    }
-    return line;
-  }).join('\n');
+  content = content
+    .split('\n')
+    .map((line) => {
+      const isChordLine = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/m.test(line);
+      if (isChordLine) {
+        return line
+          .split(/(\s+)/)
+          .map((chunk) => {
+            if (chunk.trim() === '') return chunk;
+            const cleaned = chunk.replace(/\s*\/\s*/g, '/');
+            return cleaned;
+          })
+          .join('');
+      }
+      return line;
+    })
+    .join('\n');
 
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
-  const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
-  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL_RE.test(c));
+  const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map((b) => b.slice(1, -1));
+  const hasBracketChords = bracketContents.some((c) => !SECTION_LABEL_RE.test(c));
 
   // ChordPro directives like {start_of_verse} or {key: C}
   const hasDirectives = /\{[a-z_]+[:}]/.test(content);
@@ -96,9 +102,12 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   const order = isChordPro ? [0, 1, 2] : [1, 2, 0];
 
   for (const idx of order) {
-    const p = PARSERS[idx];
+    const p = PARSER_NAMES[idx];
+    const ParserClass = (ChordSheetJS as Record<string, unknown>)[p.cls] as
+      (new (opts?: { preserveWhitespace?: boolean }) => { parse(s: string): ChordSheetJS.Song }) | undefined;
+    if (!ParserClass) continue;
     try {
-      const song = p.make().parse(content);
+      const song = new ParserClass({ preserveWhitespace: false }).parse(content);
       const hasChords = song.paragraphs.some((par) =>
         par.lines.some((l) =>
           l.items.some((it) => {
@@ -106,17 +115,21 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
             if (!chords) return false;
             if (p.label === 'ChordPro' && SECTION_LABEL_RE.test(chords)) return false;
             return true;
-          })
-        )
+          }),
+        ),
       );
       if (hasChords) return { song, format: p.label };
-    } catch { /* try next parser */ }
+    } catch {
+      /* try next parser */
+    }
   }
 
   // Fallback: parse as ChordPro (lyrics only, no chords detected)
   try {
     return { song: new ChordSheetJS.ChordProParser().parse(content), format: null };
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return null;
 }
 
@@ -153,19 +166,25 @@ export function toChordPro(content: string): string {
     let result = new ChordSheetJS.ChordProFormatter({ normalizeChords: false } as Record<string, unknown>).format(song);
     // Remove any directives the formatter produced that we already have in directiveLines
     if (directiveLines.length > 0) {
-      const existingNames = new Set(directiveLines.map(l => {
-        const m = l.match(DIRECTIVE_RE);
-        return m ? m[1].toLowerCase() : '';
-      }).filter(Boolean));
+      const existingNames = new Set(
+        directiveLines
+          .map((l) => {
+            const m = l.match(DIRECTIVE_RE);
+            return m ? m[1].toLowerCase() : '';
+          })
+          .filter(Boolean),
+      );
       const resultLines = result.split('\n');
-      const filtered = resultLines.filter(l => {
+      const filtered = resultLines.filter((l) => {
         const m = l.match(DIRECTIVE_RE);
         return !(m && existingNames.has(m[1].toLowerCase()));
       });
       result = [...directiveLines, ...filtered].join('\n');
     }
     return result;
-  } catch { return content; }
+  } catch {
+    return content;
+  }
 }
 
 // Returns the raw root of the first item that is a real chord (e.g. 'A', 'Am'), or null.
@@ -190,18 +209,19 @@ export function ensureKeyDirective(content: string): string {
   try {
     const root = firstChordRoot(new ChordSheetJS.ChordProParser().parse(content));
     if (root) return `{key: ${root}}\n${content}`;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return content;
 }
 
 class ResponsiveHtmlFormatter {
   format(song: ChordSheetJS.Song): string {
-    return song.paragraphs.map(p => this.renderParagraph(p)).join('');
+    return song.paragraphs.map((p) => this.renderParagraph(p)).join('');
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    
-    let content = p.lines.map(l => this.renderLine(l)).join('');
+    let content = p.lines.map((l) => this.renderLine(l)).join('');
     let detectedType = p.type;
 
     // Promote paragraph type if the first line is a label (helps CSS match)
@@ -214,7 +234,11 @@ class ResponsiveHtmlFormatter {
         // Check lyrics for label or chords for bracketed label
         const potentialLabel = lyrics || chords;
         if (!lyrics !== !chords && SECTION_LABEL_RE.test(potentialLabel)) {
-          detectedType = potentialLabel.replace(/[[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
+          detectedType = potentialLabel
+            .replace(/[[\]:]/g, '')
+            .split(/\s+/)[0]
+            .toLowerCase()
+            .replace('-', '');
         }
       }
     }
@@ -223,12 +247,16 @@ class ResponsiveHtmlFormatter {
     // 1. Type is known (not none/indeterminate)
     // 2. We haven't already rendered a label badge in this paragraph
     // 3. The paragraph actually has content (prevents empty "Indeterminate" badges for metadata)
-    const hasRenderableContent = p.lines.some(l => 
-      l.items.some(it => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim()))
+    const hasRenderableContent = p.lines.some((l) =>
+      l.items.some((it) => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim())),
     );
 
-    if (detectedType !== 'none' && detectedType !== 'indeterminate' && 
-        !content.includes('class="label"') && hasRenderableContent) {
+    if (
+      detectedType !== 'none' &&
+      detectedType !== 'indeterminate' &&
+      !content.includes('class="label"') &&
+      hasRenderableContent
+    ) {
       const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
       content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
     }
@@ -237,13 +265,15 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
-
     if (l.type === 'comment') {
       const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content : 
-                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
-      
+      const content =
+        (firstItem && 'content' in firstItem
+          ? (firstItem as ChordSheetJS.Comment).content
+          : firstItem && 'lyrics' in firstItem
+            ? (firstItem as ChordSheetJS.ChordLyricsPair).lyrics
+            : '') || '';
+
       if (SECTION_LABEL_RE.test(content.trim())) {
         const cleanLabel = content.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
@@ -264,7 +294,7 @@ class ResponsiveHtmlFormatter {
       }
     }
 
-    const content = l.items.map(it => this.renderItem(it as ChordSheetJS.ChordLyricsPair)).join('');
+    const content = l.items.map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair)).join('');
     return `<div class="row">${content}</div>`;
   }
 
@@ -276,7 +306,7 @@ class ResponsiveHtmlFormatter {
     // collapses the otherwise-blank line. The chord sets the column width, so
     // horizontal spacing between chords is preserved.
     if (!lyrics.trim()) {
-      const chord = it.chords ? normalizeChord(it.chords) : '';
+      const chord = it.chords || '';
       return `<span class="column"><span class="chord">${escHtml(chord)}</span><span class="lyrics"></span></span>`;
     }
 
@@ -285,38 +315,40 @@ class ResponsiveHtmlFormatter {
     const chunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
     let chordPlaced = false;
 
-    return chunks.map((chunk: string) => {
-      const isSpace = /\s+/.test(chunk);
-      
-      // If we've already placed the chord for this item, and this is a space,
-      // output it as raw text. To prevent ugly wrapping between multiple spaces,
-      // we ensure this raw text chunk is an unbreakable unit.
-      if (isSpace && chordPlaced) {
-        return escHtml(chunk);
-      }
+    return chunks
+      .map((chunk: string) => {
+        const isSpace = /\s+/.test(chunk);
 
-      // If we haven't placed the chord yet, or if it's a word, wrap in a column.
-      // The chord is only attached to the VERY FIRST chunk (word or space).
-      const rawChord = chordPlaced ? '' : (it.chords || '');
-      const currentChord = normalizeChord(rawChord);
-      chordPlaced = true;
-      
-      const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
-      const lyricText = escHtml(chunk);
-      return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
-    }).join('');
+        // If we've already placed the chord for this item, and this is a space,
+        // output it as raw text. To prevent ugly wrapping between multiple spaces,
+        // we ensure this raw text chunk is an unbreakable unit.
+        if (isSpace && chordPlaced) {
+          return escHtml(chunk);
+        }
+
+        // If we haven't placed the chord yet, or if it's a word, wrap in a column.
+        // The chord is only attached to the VERY FIRST chunk (word or space).
+        const rawChord = chordPlaced ? '' : it.chords || '';
+        const currentChord = rawChord;
+        chordPlaced = true;
+
+        const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
+        const lyricText = escHtml(chunk);
+        return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
+      })
+      .join('');
   }
 }
 
-export function prepareSong(content: string, semitones = 0, nashville = false): ChordSheetJS.Song | null {
+export function renderChordPro(content: string, semitones = 0, nashville = false): string {
   try {
     const song = parseSongAuto(content);
-    if (!song) return null;
+    if (!song) throw new Error('parse failed');
 
-    const transposed = semitones !== 0 ? song.transpose(semitones) : song;
+    let transposed = semitones !== 0 ? song.transpose(semitones) : song;
 
-    // Fix accidentals after transposition to preserve sharp preference and prevent auto-correction
-    fixChordAccidentals(transposed);
+    // Preserve source spelling at concert pitch; normalize only after transposition.
+    if (semitones !== 0) fixChordAccidentals(transposed);
 
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
@@ -324,19 +356,11 @@ export function prepareSong(content: string, semitones = 0, nashville = false): 
     if (nashville && key && ChordSheetJS.Chord) {
       const cloned = transposed.clone();
       convertToNashville(cloned, key as string);
-      return cloned;
+      transposed = cloned;
     }
-    return transposed;
-  } catch {
-    return null;
-  }
-}
 
-export function renderChordPro(content: string, semitones = 0, nashville = false): string {
-  try {
-    const song = prepareSong(content, semitones, nashville);
-    if (!song) throw new Error('parse failed');
-    return `<div class="chord-sheet">${new ResponsiveHtmlFormatter().format(song)}</div>`;
+    const html = new ResponsiveHtmlFormatter().format(transposed);
+    return `<div class="chord-sheet">${html}</div>`;
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
   }
@@ -358,7 +382,9 @@ export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordS
     try {
       const c = ChordSheetJS.Chord.parse(chords);
       if (c) it.chords = c.toNumeric(key).toString();
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
     return pair;
   });
   return song;
@@ -375,7 +401,9 @@ export function getSongKey(content: string, semitones = 0): string {
     // Fallback: derive key from first chord
     const root = firstChordRoot(transposed);
     if (root) return normalizeKey(root);
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return '';
 }
 
@@ -384,7 +412,9 @@ export function songHasKey(content: string, semitones: number): boolean {
     const song = new ChordSheetJS.ChordProParser().parse(content);
     const transposed = semitones ? song.transpose(semitones) : song;
     return !!(transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null));
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export { escHtml } from './util';
@@ -415,14 +445,13 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
     // Apply settings and measure actual layout
     if (twoCol) wrap.classList.add('two-col');
     else wrap.classList.remove('two-col');
-    
-    const scale = fontScaleValue(offset);
-    if (scale) wrap.style.setProperty('--font-scale', scale);
+
+    if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
     else wrap.style.removeProperty('--font-scale');
 
     // Calculate available height inside the wrap, accounting for padding (24px top + 24px bottom)
     const available = wrap.clientHeight - 48;
-    
+
     // Safety check: if clientHeight is 0 (not rendered yet), fall back to viewport calc
     if (available <= 0) {
       const viewportAvailable = window.innerHeight - wrap.getBoundingClientRect().top - 48 - 24; // padding + margin
@@ -469,16 +498,15 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
   return { fontSize: -3, twoCol: isWide };
 }
 
-
 export function resolveEffectivePreferences(
   entry: SetlistEntry | null | undefined,
-  global: SetlistPreferences
+  global: SetlistPreferences,
 ): SetlistPreferences {
   if (!entry) return global;
   return {
     nashville: entry._num != null ? !!entry._num : global.nashville,
-    twoCol: entry._twoCol != null ? entry._twoCol : (entry.two_col != null ? !!entry.two_col : global.twoCol),
-    fontSize: entry._font != null ? entry._font : (entry.font != null ? entry.font : global.fontSize),
+    twoCol: entry._twoCol != null ? entry._twoCol : entry.two_col != null ? !!entry.two_col : global.twoCol,
+    fontSize: entry._font != null ? entry._font : entry.font != null ? entry.font : global.fontSize,
     hideYt: entry._hideYt != null ? entry._hideYt : global.hideYt,
   };
 }
