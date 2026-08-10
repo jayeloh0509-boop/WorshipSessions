@@ -27,23 +27,34 @@ def normalize_lyric(text):
     )
 
 
+def lyric_tokens(words):
+    tokens = []
+    for word in sorted(words, key=lambda item: item[0]):
+        parts = word[4].split(".")
+        if len(parts) == 1:
+            tokens.append((word[0], word[2], parts[0]))
+            continue
+        span = max(1.0, word[2] - word[0])
+        step = span / len(parts)
+        for index, part in enumerate(parts):
+            if part:
+                tokens.append((word[0] + step * index, word[0] + step * (index + 1), part))
+    return tokens
+
+
 def inline_chords(chord_words, lyric_words):
-    lyric_words = sorted(lyric_words, key=lambda word: word[0])
-    lyric_source = display_text(lyric_words)
-    lyric = normalize_lyric(lyric_source)
-    if not lyric_words or not lyric:
+    tokens = lyric_tokens(lyric_words)
+    lyric = " ".join(token[2] for token in tokens)
+    if not tokens or not lyric:
         return " ".join(f"[{word[4].rstrip('.')}]" for word in chord_words)
 
-    normalized_words = [normalize_lyric(word[4]) for word in lyric_words]
     boundary_positions = []
     text_index = 0
-    for index, word in enumerate(lyric_words):
-        boundary_positions.append((word[0], text_index))
-        text_index += len(normalized_words[index])
-        if index < len(lyric_words) - 1:
+    for index, token in enumerate(tokens):
+        boundary_positions.append((token[0], text_index))
+        text_index += len(token[2])
+        if index < len(tokens) - 1:
             text_index += 1
-    boundary_positions.append((lyric_words[-1][2], len(lyric)))
-
     placements = []
     for word in sorted(chord_words, key=lambda item: item[0]):
         _, index = min(boundary_positions, key=lambda boundary: abs(boundary[0] - word[0]))

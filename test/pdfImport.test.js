@@ -76,11 +76,12 @@ test('importPdfBuffer extracts the real text-PDF fixture through discovered pdft
   assert.match(result.content, /\[G\]/);
 });
 
-test('coordinate-aware extraction snaps inserted chords to word boundaries', async () => {
+test('coordinate-aware extraction places chords before the governed lyric word', async () => {
   const fixture = fs.readFileSync(path.join(__dirname, 'fixtures', 'fall-like-rain-worship-together.pdf'));
   const parsed = await importWorshipTogetherPdf(fixture, 'fall_like_rain_passion_cc.pdf');
+  assert.match(parsed.content, /\[Cm7\]Simple melodies of \[Ab2\]sacrifice/);
+  assert.match(parsed.content, /\[Eb\]Fall like \[Bbsus\/D\]rain/);
   assert.doesNotMatch(parsed.content, /sacrifi\[Ab2\]ce/);
-  assert.match(parsed.content, /sacrifice\[Ab2\]/);
 });
 
 test('imports the real Fall Like Rain Worship Together PDF locally', async () => {
@@ -89,7 +90,7 @@ test('imports the real Fall Like Rain Worship Together PDF locally', async () =>
   assert.equal(parsed.title, 'Fall Like Rain');
   assert.equal(parsed.key, 'Eb');
   assert.match(parsed.content, /\[Bb\/D\]All my life I offer You/);
-  assert.match(parsed.content, /Fall like rain\[Bbsus\/D\]/);
+  assert.match(parsed.content, /Fall like \[Bbsus\/D\]rain/);
   assert.match(parsed.content, /\{tempo: 70\}/);
   assert.doesNotMatch(parsed.content, /God,\.I\.live/);
 });
@@ -101,10 +102,10 @@ test('imports the real two-column Always On Time Worship Together PDF in reading
   assert.equal(parsed.artist, 'Steven Furtick, Jonathan Smith, Leeland Mooring, Pat Barrett');
   assert.equal(parsed.key, 'F');
   assert.match(parsed.content, /\{tempo: 68\}/);
-  assert.match(parsed.content, /\[F\]I remember how You provided\[C\/F\]/);
-  assert.match(parsed.content, /\[C\]\[F\/A\]If I knew then what I know now \[Bb\]/);
+  assert.match(parsed.content, /I \[F\]remember how You \[C\/F\]provided/);
+  assert.match(parsed.content, /If I knew \[C\]then \[F\/A\]what I know \[Bb\]now/);
   assert.match(parsed.content, /^INSTRUMENTAL 1$/m);
   assert.match(parsed.content, /^BRIDGE \(4X\)$/m);
-  assert.match(parsed.content, /\[F\]There's never been a day, never been a minute/);
+  assert.match(parsed.content, /There's never been a \[F\]day, never been a minute/);
   assert.doesNotMatch(parsed.content, /Copyright|All Rights Reserved/);
 });
