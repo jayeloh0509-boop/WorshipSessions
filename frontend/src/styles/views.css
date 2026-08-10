@@ -239,6 +239,42 @@
   margin-top: 8px;
 }
 
+.song-roadmap {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 8px;
+  padding: 4px 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 8px;
+  z-index: 2;
+  scrollbar-width: none;
+}
+
+.song-roadmap::-webkit-scrollbar {
+  display: none;
+}
+
+.song-roadmap-item {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.song-roadmap-item:hover,
+.song-roadmap-item:focus-visible {
+  border-color: var(--accent);
+  color: var(--text);
+  outline: none;
+}
+
 .version-selector-container {
   display: flex;
   align-items: center;

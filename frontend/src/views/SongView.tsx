@@ -15,6 +15,21 @@ import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
 
+const ROADMAP_LABEL_RE =
+  /^(?:INTRO|VERSE(?:\s+\d+)?|PRE[- ]?CHORUS|CHORUS|TAG|INTERLUDE|INSTRUMENTAL|BRIDGE|OUTRO|REPEAT\s+.+|FINAL\s+CHORD)(?:\s*\([^)]*\))?$/i;
+
+function extractRoadmap(content: string): string[] {
+  const seen = new Set<string>();
+  return content.split('\n').reduce<string[]>((sections, rawLine) => {
+    const line = rawLine.trim().replace(/^\[|\]$/g, '');
+    if (line && ROADMAP_LABEL_RE.test(line) && !seen.has(line.toLowerCase())) {
+      seen.add(line.toLowerCase());
+      sections.push(line);
+    }
+    return sections;
+  }, []);
+}
+
 interface SongViewProps {
   songId: number;
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -38,13 +53,18 @@ export function SongView({ songId, navigate }: SongViewProps) {
         setSong(data);
         location.hash = `#song/${songId}`;
       })
-      .catch((e) => { toast(e.message, 'error'); navigate(user ? 'my-songs' : 'browse'); });
+      .catch((e) => {
+        toast(e.message, 'error');
+        navigate(user ? 'my-songs' : 'browse');
+      });
   }, [songId, apiCall, navigate, toast, user]);
 
   useEffect(() => {
     if (!song) return;
     apiCall<SongVersion[]>('GET', `/api/songs/${songId}/versions`)
-      .then((v) => { if (v.length > 1) setVersions(v); })
+      .then((v) => {
+        if (v.length > 1) setVersions(v);
+      })
       .catch(() => {});
     if (user && user.username === song.username) {
       apiCall<Correction[]>('GET', `/api/songs/${songId}/corrections`)
@@ -78,18 +98,42 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const renderedHtml = useMemo(
     () => renderChordPro(content, chord.transpose, chord.nashville),
-    [content, chord.transpose, chord.nashville]
+    [content, chord.transpose, chord.nashville],
   );
 
-  const shortcuts = useMemo(() => ({
-    'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(1); },
-    'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(-1); },
-    '+': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(1); },
-    '-': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(-1); },
-    '0': () => chord.resetTranspose(),
-    'n': () => chord.toggleNashville(!chord.nashville),
-    'N': () => chord.toggleNashville(!chord.nashville),
-  }), [chord]);
+  const roadmap = useMemo(() => extractRoadmap(content), [content]);
+
+  const jumpToSection = (section: string) => {
+    const target = Array.from(document.querySelectorAll('.section-label')).find(
+      (node) => node.textContent?.trim().toLowerCase() === section.toLowerCase(),
+    );
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const shortcuts = useMemo(
+    () => ({
+      ArrowUp: (e: KeyboardEvent) => {
+        e.preventDefault();
+        chord.doTranspose(1);
+      },
+      ArrowDown: (e: KeyboardEvent) => {
+        e.preventDefault();
+        chord.doTranspose(-1);
+      },
+      '+': (e: KeyboardEvent) => {
+        e.preventDefault();
+        chord.doTranspose(1);
+      },
+      '-': (e: KeyboardEvent) => {
+        e.preventDefault();
+        chord.doTranspose(-1);
+      },
+      '0': () => chord.resetTranspose(),
+      n: () => chord.toggleNashville(!chord.nashville),
+      N: () => chord.toggleNashville(!chord.nashville),
+    }),
+    [chord],
+  );
 
   useKeyboardShortcuts(shortcuts, !!song);
 
@@ -117,8 +161,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
     }
   };
 
-
-
   const approveCorrection = async (id: number) => {
     if (!confirm('Apply this correction? The original song content will be updated.')) return;
     try {
@@ -127,7 +169,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
       setSong(null);
       const data = await apiCall<Song>('GET', `/api/songs/${songId}`);
       setSong(data);
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const rejectCorrection = async (id: number) => {
@@ -136,7 +180,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
       await apiCall('DELETE', `/api/corrections/${id}`);
       toast('Correction rejected', 'success');
       setCorrections((prev) => prev.filter((c) => c.id !== id));
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   if (!song) return <Loading />;
@@ -145,7 +191,13 @@ export function SongView({ songId, navigate }: SongViewProps) {
     <div lang={song.language || undefined}>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => { location.hash = ''; navigate(user ? 'my-songs' : 'browse'); }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              location.hash = '';
+              navigate(user ? 'my-songs' : 'browse');
+            }}
+          >
             &#8592; {t('songView.back')}
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -159,7 +211,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                   &#43; Create Version
                 </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => navigate('correction', { id: String(song.id) })}
+                >
                   &#9998; Correction
                 </button>
               </>
@@ -174,7 +229,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
         <div className="song-view-meta">
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
           {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
-          {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
+          {song.language && (
+            <span className="badge badge-lang" title={languageName(song.language)}>
+              {song.language.toUpperCase()}
+            </span>
+          )}
           {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
           {versions.length > 1 && (
             <div className="version-selector-container">
@@ -204,8 +263,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onTwoColToggle={twoColState.toggleTwoCol}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
-        onReset={() => { 
-          fontScale.resetFontSize(); 
+        onReset={() => {
+          fontScale.resetFontSize();
           twoColState.setTwoColTo(false);
         }}
         onPickKey={chord.pickKey}
@@ -215,17 +274,36 @@ export function SongView({ songId, navigate }: SongViewProps) {
         renderKey={songId}
       />
 
-      <ChordSheet 
-        html={renderedHtml} 
-        twoCol={twoColState.twoCol} 
-        fontSize={fontScale.fontSize} 
-        autoFit={autoFitActive} 
+      {roadmap.length > 0 && (
+        <nav className="song-roadmap" aria-label="Song sections">
+          {roadmap.map((section) => (
+            <button key={section} className="song-roadmap-item" type="button" onClick={() => jumpToSection(section)}>
+              {section}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <ChordSheet
+        html={renderedHtml}
+        twoCol={twoColState.twoCol}
+        fontSize={fontScale.fontSize}
+        autoFit={autoFitActive}
       />
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">
-          {song.tags && song.tags.split(',').map((tag) => <span key={tag} className="badge badge-tag">{tag}</span>)}
-          {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
+          {song.tags &&
+            song.tags.split(',').map((tag) => (
+              <span key={tag} className="badge badge-tag">
+                {tag}
+              </span>
+            ))}
+          {song.youtube_url && (
+            <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">
+              &#9654; YouTube
+            </a>
+          )}
         </div>
       )}
 
@@ -236,13 +314,22 @@ export function SongView({ songId, navigate }: SongViewProps) {
           {corrections.map((c) => (
             <div key={c.id} className="correction-card">
               <div className="correction-card-header">
-                <span>@{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}</span>
+                <span>
+                  @{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}
+                </span>
                 <div className="correction-actions">
-                  <button className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</button>
+                  <button className="btn btn-sm" onClick={() => approveCorrection(c.id)}>
+                    Approve
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>
+                    Reject
+                  </button>
                 </div>
               </div>
-              <div className="correction-preview" dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }} />
+              <div
+                className="correction-preview"
+                dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }}
+              />
             </div>
           ))}
         </div>
