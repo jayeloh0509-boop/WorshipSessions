@@ -36,7 +36,8 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [forceRender, setForceRender] = useState(0);
 
   const editor = useSongEditor();
-  const { state, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange, setInitialContent } = editor;
+  const { state, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange, setInitialContent } =
+    editor;
 
   useEffect(() => {
     if (songId) {
@@ -44,7 +45,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         .then((s) => {
           setSong(s);
           setVisibility(s.visibility === 'private' ? 'private' : 'public');
-          
+
           // Inject missing directives from DB columns into content for old songs
           let c = s.content;
           if (s.title && !extractDirective(c, 'title')) c = updateDirective(c, 'title', s.title);
@@ -53,10 +54,13 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           if (s.youtube_url && !extractDirective(c, 'x_youtube')) c = updateDirective(c, 'x_youtube', s.youtube_url);
           if (s.tags && !extractDirective(c, 'x_tags')) c = updateDirective(c, 'x_tags', s.tags);
           if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
-          
+
           setInitialContent(c);
         })
-        .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
+        .catch((e) => {
+          toast(e.message, 'error');
+          navigate('my-songs');
+        });
     }
   }, [songId, apiCall, navigate, toast, setInitialContent]);
 
@@ -73,16 +77,32 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
 
   const save = async () => {
     const { content } = state;
-    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
-    if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
-    if (content.length > 100000) { toast(t('songEdit.contentTooLarge'), 'error'); return; }
+    if (!extractDirective(content, 'title')?.trim()) {
+      toast(t('songEdit.titleRequired'), 'error');
+      return;
+    }
+    if (!content.trim()) {
+      toast(t('songEdit.contentRequired'), 'error');
+      return;
+    }
+    if (content.length > 100000) {
+      toast(t('songEdit.contentTooLarge'), 'error');
+      return;
+    }
     const bpmVal = extractDirective(content, 'tempo');
     if (bpmVal && (isNaN(parseInt(bpmVal, 10)) || parseInt(bpmVal, 10) < 1 || parseInt(bpmVal, 10) > 300)) {
-      toast('BPM must be between 1 and 300', 'error'); return;
+      toast('BPM must be between 1 and 300', 'error');
+      return;
     }
     const fmt = detectFormat(content);
-    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
-    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
+    if (!fmt) {
+      toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error');
+      return;
+    }
+    if (!extractDirective(content, 'x_language')) {
+      toast('Please select a language', 'error');
+      return;
+    }
 
     let finalContent = toChordPro(content);
     finalContent = ensureKeyDirective(finalContent);
@@ -90,18 +110,24 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     try {
       if (song) {
         await apiCall('PUT', `/api/songs/${song.id}`, {
-          content: finalContent, format_detected: fmt, visibility
+          content: finalContent,
+          format_detected: fmt,
+          visibility,
         });
         toast(t('songEdit.saved'), 'success');
         navigate('song-view', { id: String(song.id) });
       } else {
         const result = await apiCall<{ id: number }>('POST', '/api/songs', {
-          content: finalContent, format_detected: fmt, visibility
+          content: finalContent,
+          format_detected: fmt,
+          visibility,
         });
         toast(t('songEdit.created'), 'success');
         navigate('song-view', { id: String(result.id) });
       }
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const deleteSong = async () => {
@@ -110,7 +136,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       await apiCall('DELETE', `/api/songs/${song.id}`);
       toast(t('songEdit.deleted'));
       navigate('my-songs');
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const cancel = () => {
@@ -122,31 +150,47 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
 
   const saveAsVersion = async () => {
     const { content } = state;
-    const targetId = songId || (song?.id);
+    const targetId = songId || song?.id;
     if (!targetId) return;
-    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
-    if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
+    if (!extractDirective(content, 'title')?.trim()) {
+      toast(t('songEdit.titleRequired'), 'error');
+      return;
+    }
+    if (!content.trim()) {
+      toast(t('songEdit.contentRequired'), 'error');
+      return;
+    }
     const fmt = detectFormat(content);
-    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
-    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
+    if (!fmt) {
+      toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error');
+      return;
+    }
+    if (!extractDirective(content, 'x_language')) {
+      toast('Please select a language', 'error');
+      return;
+    }
 
     let finalContent = toChordPro(content);
     finalContent = ensureKeyDirective(finalContent);
 
     try {
       const result = await apiCall<{ id: number }>('POST', `/api/songs/${targetId}/version`, {
-        content: finalContent
+        content: finalContent,
       });
       toast('Version created successfully', 'success');
       navigate('song-view', { id: String(result.id) });
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   return (
     <>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={cancel}>
+            &#8592; {t('songEdit.cancel')}
+          </button>
           <div style={{ display: 'flex', gap: 8 }}>
             {isOwner && (
               <button className="btn btn-sm" onClick={save}>
@@ -154,9 +198,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
               </button>
             )}
             {songId && (
-              <button 
-                className="btn btn-sm" 
-                style={{ background: 'var(--accent)', color: 'black', border: 'none' }} 
+              <button
+                className="btn btn-sm"
+                style={{ background: 'var(--accent)', color: 'black', border: 'none' }}
                 onClick={saveAsVersion}
               >
                 {isOwner ? 'Save as New Version' : 'Save as My Version'}
@@ -171,24 +215,50 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       <div className="edit-cols">
         <div className="field">
           <label>{t('songEdit.titleLabel')}</label>
-          <input type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
+          <input
+            type="text"
+            value={state.title}
+            onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)}
+            placeholder={t('songEdit.titlePlaceholder')}
+          />
         </div>
         <div className="field">
           <label>{t('songEdit.artistLabel')}</label>
-          <input type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
+          <input
+            type="text"
+            value={state.artist}
+            onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)}
+            placeholder={t('songEdit.artistPlaceholder')}
+          />
         </div>
         <div className="field">
           <label>Language</label>
-          <LanguagePicker value={state.language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
+          <LanguagePicker
+            value={state.language}
+            onChange={handleLanguageChange}
+            preferredLanguages={preferredLanguages}
+          />
         </div>
         <div className="field">
           <label>BPM</label>
-          <input type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
+          <input
+            type="number"
+            value={state.bpm}
+            onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)}
+            placeholder="e.g. 120"
+            min="1"
+            max="300"
+          />
         </div>
       </div>
       <div className="field">
         <label>YouTube URL</label>
-        <input type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
+        <input
+          type="url"
+          value={state.youtubeUrl}
+          onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)}
+          placeholder="https://youtube.com/watch?v=..."
+        />
       </div>
       <div className="field">
         <label>Tags</label>
@@ -205,19 +275,51 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             />
             <span className="toggle-slider" />
           </span>
-          Public {visibility === 'private' && <span style={{ fontSize: 12, color: 'var(--muted)' }}>&#128274; Only you can see this song</span>}
+          Public{' '}
+          {visibility === 'private' && (
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>&#128274; Only you can see this song</span>
+          )}
         </label>
       </div>
       <div className="field">
         <div className="chordpro-hint-row">
-          <p className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' }} />
-          {state.formatBadge && <span className={`format-badge ${state.formatBadge.cls}`}>{state.formatBadge.text}</span>}
+          <p
+            className="chordpro-hint"
+            dangerouslySetInnerHTML={{
+              __html:
+                t('songEdit.chordproHint') +
+                ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.',
+            }}
+          />
+          {state.formatBadge && (
+            <span className={`format-badge ${state.formatBadge.cls}`}>{state.formatBadge.text}</span>
+          )}
         </div>
         {user && (
           <div className="ocr-row">
-            {!songId && <button className="btn btn-sm" onClick={() => setSearchOpen(true)}>&#128269; Search song library</button>}
-            {!songId && <button className="btn btn-sm wt-import-trigger" onClick={() => { setOcrSource('worship-together'); setOcrOpen(true); }}>♫ Import Worship Together download</button>}
-            <button className="btn btn-sm btn-ghost" onClick={() => { setOcrSource(undefined); setOcrOpen(true); }}>&#128247; Import from image or PDF</button>
+            {!songId && (
+              <button className="btn btn-sm" onClick={() => setSearchOpen(true)}>
+                &#128269; Search song library
+              </button>
+            )}
+            <button
+              className="btn btn-sm wt-import-trigger"
+              onClick={() => {
+                setOcrSource('worship-together');
+                setOcrOpen(true);
+              }}
+            >
+              {songId ? '♫ Replace from Worship Together PDF' : '♫ Import Worship Together download'}
+            </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                setOcrSource(undefined);
+                setOcrOpen(true);
+              }}
+            >
+              &#128247; Import from image or PDF
+            </button>
           </div>
         )}
         <div className="editor-tabs" role="tablist">
@@ -226,13 +328,20 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             role="tab"
             aria-selected={editorTab === 'edit'}
             onClick={() => setEditorTab('edit')}
-          >Edit</button>
+          >
+            Edit
+          </button>
           <button
             className={`editor-tab${editorTab === 'preview' ? ' active' : ''}`}
             role="tab"
             aria-selected={editorTab === 'preview'}
-            onClick={() => { setEditorTab('preview'); setForceRender((n) => n + 1); }}
-          >Preview</button>
+            onClick={() => {
+              setEditorTab('preview');
+              setForceRender((n) => n + 1);
+            }}
+          >
+            Preview
+          </button>
         </div>
         <div className="editor-split">
           <div className={`cm-editor-wrap${editorTab === 'preview' ? ' editor-hidden' : ''}`} role="tabpanel">
@@ -240,7 +349,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
               value={state.content}
               onChange={handleContentChange}
               darkMode={theme === 'dark'}
-              placeholder={'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'}
+              placeholder={
+                'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'
+              }
             />
           </div>
           <div className={`editor-preview-wrap${editorTab === 'edit' ? ' editor-hidden' : ''}`} role="tabpanel">
@@ -251,7 +362,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       {song && isOwner && (
         <>
           <hr className="divider" />
-          <button className="btn btn-danger btn-sm" onClick={deleteSong}>{t('songEdit.deleteSong')}</button>
+          <button className="btn btn-danger btn-sm" onClick={deleteSong}>
+            {t('songEdit.deleteSong')}
+          </button>
         </>
       )}
       {ocrOpen && (
@@ -260,10 +373,17 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           source={ocrSource}
           onResult={(text, lang) => {
             let c = text;
+            const preservedDirectives = ['title', 'artist', 'key', 'tempo', 'x_language', 'x_youtube', 'x_tags'];
+            for (const directive of preservedDirectives) {
+              const existingValue = extractDirective(state.content, directive);
+              if (existingValue && !extractDirective(c, directive)) {
+                c = updateDirective(c, directive, existingValue);
+              }
+            }
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
             if (ocrSource === 'worship-together') {
               c = updateDirective(c, 'x_source', 'Worship Together download');
-              setVisibility('private');
+              if (!songId) setVisibility('private');
             }
             setInitialContent(c);
           }}
@@ -271,10 +391,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         />
       )}
       {searchOpen && (
-        <SongSearchModal
-          onImport={(content) => setInitialContent(content)}
-          onClose={() => setSearchOpen(false)}
-        />
+        <SongSearchModal onImport={(content) => setInitialContent(content)} onClose={() => setSearchOpen(false)} />
       )}
     </>
   );

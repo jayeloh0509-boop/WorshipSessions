@@ -5,17 +5,16 @@ import { SongEditView } from '../SongEditView';
 
 // Mock CodeMirrorEditor as a textarea that fires onChange
 vi.mock('../../components/CodeMirrorEditor', () => ({
-  CodeMirrorEditor: ({ value, onChange, placeholder }: {
+  CodeMirrorEditor: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
     value: string;
     onChange: (v: string) => void;
     placeholder?: string;
   }) => (
-    <textarea
-      data-testid="editor"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-    />
+    <textarea data-testid="editor" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
   ),
 }));
 
@@ -26,9 +25,29 @@ vi.mock('../../components/EditorPreview', () => ({
 
 // Mock OcrModal
 vi.mock('../../components/OcrModal', () => ({
-  OcrModal: ({ source, onResult, onClose }: { source?: string; onResult: (text: string, language?: string | null) => void; onClose: () => void }) => (
-    <div role="dialog" aria-label={source === 'worship-together' ? 'Import Worship Together chart' : 'Import from image or PDF'}>
-      <button onClick={() => onResult('{title: Downloaded Song}\n{artist: Worship Artist}\n{key: D}\n{x_language: en}\n\n[D]Downloaded [G]chart', 'en')}>Complete chart import</button>
+  OcrModal: ({
+    source,
+    onResult,
+    onClose,
+  }: {
+    source?: string;
+    onResult: (text: string, language?: string | null) => void;
+    onClose: () => void;
+  }) => (
+    <div
+      role="dialog"
+      aria-label={source === 'worship-together' ? 'Import Worship Together chart' : 'Import from image or PDF'}
+    >
+      <button
+        onClick={() =>
+          onResult(
+            '{title: Downloaded Song}\n{artist: Worship Artist}\n{key: D}\n{x_language: en}\n\n[D]Downloaded [G]chart',
+            'en',
+          )
+        }
+      >
+        Complete chart import
+      </button>
       <button onClick={onClose}>Close import</button>
     </div>
   ),
@@ -37,7 +56,15 @@ vi.mock('../../components/OcrModal', () => ({
 vi.mock('../../components/SongSearchModal', () => ({
   SongSearchModal: ({ onImport, onClose }: { onImport: (content: string) => void; onClose: () => void }) => (
     <div role="dialog" aria-label="Search song library">
-      <button onClick={() => onImport('{title: Imported Song}\n{artist: Library Artist}\n{key: G}\n{x_language: en}\n\n[G]Imported [C]lyrics')}>Import library song</button>
+      <button
+        onClick={() =>
+          onImport(
+            '{title: Imported Song}\n{artist: Library Artist}\n{key: G}\n{x_language: en}\n\n[G]Imported [C]lyrics',
+          )
+        }
+      >
+        Import library song
+      </button>
       <button onClick={onClose}>Close search</button>
     </div>
   ),
@@ -207,6 +234,44 @@ describe('SongEditView two-way sync', () => {
     expect(screen.getByRole('checkbox')).not.toBeChecked();
   });
 
+  it('replaces an existing song from Worship Together while preserving privacy and absent metadata', async () => {
+    mockApiCall.mockImplementation((_method: string, path: string) => {
+      if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
+      if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+      if (path === '/api/songs/42') {
+        return Promise.resolve({
+          id: 42,
+          user_id: 1,
+          username: 'testuser',
+          title: 'Existing Song',
+          artist: 'Existing Artist',
+          content:
+            '{title: Existing Song}\n{artist: Existing Artist}\n{x_language: en}\n{x_tags: worship}\n{x_youtube: https://youtube.com/watch?v=abc}\n\n[G]Old chart',
+          visibility: 'public',
+          language: 'en',
+          tags: 'worship',
+          youtube_url: 'https://youtube.com/watch?v=abc',
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    await act(async () => {
+      render(<SongEditView songId={42} navigate={navigate} />);
+    });
+    await waitFor(() => expect(getTitleInput().value).toBe('Existing Song'));
+
+    fireEvent.click(screen.getByRole('button', { name: /replace from worship together pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /complete chart import/i }));
+
+    await waitFor(() => {
+      expect(getEditor().value).toContain('[D]Downloaded [G]chart');
+      expect(getEditor().value).toContain('{x_tags: worship}');
+      expect(getEditor().value).toContain('{x_youtube: https://youtube.com/watch?v=abc}');
+    });
+    expect(screen.getByRole('checkbox')).toBeChecked();
+  });
+
   // ─── Editor → Field sync ──────────────────────────────────────
 
   it('typing {artist:} in editor updates artist field (debounced)', async () => {
@@ -216,9 +281,12 @@ describe('SongEditView two-way sync', () => {
     fireEvent.change(editor, { target: { value: '{artist: John Smith}\n[G]Lyrics' } });
 
     // The sync is debounced at 150ms — wait for it
-    await waitFor(() => {
-      expect(getArtistInput().value).toBe('John Smith');
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(getArtistInput().value).toBe('John Smith');
+      },
+      { timeout: 500 },
+    );
   });
 
   it('typing {tempo:} in editor updates BPM field', async () => {
@@ -227,9 +295,12 @@ describe('SongEditView two-way sync', () => {
 
     fireEvent.change(editor, { target: { value: '{tempo: 140}\n[G]Lyrics' } });
 
-    await waitFor(() => {
-      expect(getBpmInput().value).toBe('140');
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(getBpmInput().value).toBe('140');
+      },
+      { timeout: 500 },
+    );
   });
 
   it('typing {title:} in editor updates title field', async () => {
@@ -238,9 +309,12 @@ describe('SongEditView two-way sync', () => {
 
     fireEvent.change(editor, { target: { value: '{title: From Editor}\n[G]Lyrics' } });
 
-    await waitFor(() => {
-      expect(getTitleInput().value).toBe('From Editor');
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(getTitleInput().value).toBe('From Editor');
+      },
+      { timeout: 500 },
+    );
   });
 
   it('editor content with multiple directives populates all fields', async () => {
@@ -250,11 +324,14 @@ describe('SongEditView two-way sync', () => {
     const content = '{title: Test Song}\n{artist: Test Artist}\n{tempo: 100}\n[G]Lyrics here';
     fireEvent.change(editor, { target: { value: content } });
 
-    await waitFor(() => {
-      expect(getTitleInput().value).toBe('Test Song');
-      expect(getArtistInput().value).toBe('Test Artist');
-      expect(getBpmInput().value).toBe('100');
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(getTitleInput().value).toBe('Test Song');
+        expect(getArtistInput().value).toBe('Test Artist');
+        expect(getBpmInput().value).toBe('100');
+      },
+      { timeout: 500 },
+    );
   });
 
   // ─── Tag sync ─────────────────────────────────────────────────
