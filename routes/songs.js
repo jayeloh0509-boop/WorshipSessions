@@ -422,6 +422,27 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     res.json(versions);
   });
 
+  router.post('/songs/:id/restore-version', requireAuth, (req, res) => {
+    const rootId = parseId(req.params.id);
+    const versionId = parseId(req.body?.version_id);
+    if (!rootId || !versionId) return res.status(400).json({ error: 'Invalid song or version ID' });
+    const root = Song.findById(rootId);
+    const version = Song.findById(versionId);
+    if (!root || !version || root.status !== STATUS.ACTIVE || version.status !== STATUS.ACTIVE) {
+      return res.status(404).json({ error: 'Song or version not found' });
+    }
+    if (root.user_id !== req.user.id || version.user_id !== root.user_id) {
+      return res.status(403).json({ error: 'Only the song owner can restore versions' });
+    }
+    const versionRoot = version.parent_id || version.id;
+    const rootRoot = root.parent_id || root.id;
+    if (versionRoot !== rootRoot || version.id === root.id) {
+      return res.status(400).json({ error: 'Version does not belong to this song' });
+    }
+    Song.restoreVersion(root.id, version, root.visibility, root.format_detected);
+    res.json({ success: true, id: root.id });
+  });
+
   router.post('/songs/:id/correction', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });

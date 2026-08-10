@@ -143,6 +143,19 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const isOwner = user && song && user.username === song.username;
 
+  const restoreVersion = async () => {
+    if (!song || !isOwner || song.id === (song.parent_id || song.id)) return;
+    if (!confirm('Restore this version as the main song chart?')) return;
+    try {
+      const rootId = song.parent_id || song.id;
+      await apiCall('POST', `/api/songs/${rootId}/restore-version`, { version_id: song.id });
+      toast('Version restored', 'success');
+      navigate('song-view', { id: String(rootId) });
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+
   const handleExportPdf = async () => {
     if (!song || exporting) return;
     setExporting(true);
@@ -253,6 +266,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
                   </option>
                 ))}
               </select>
+              {isOwner && song.id !== (song.parent_id || song.id) && (
+                <button className="btn btn-ghost btn-sm" type="button" onClick={restoreVersion}>
+                  Restore this version
+                </button>
+              )}
             </div>
           )}
         </div>

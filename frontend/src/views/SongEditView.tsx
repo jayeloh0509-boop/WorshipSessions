@@ -34,6 +34,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
+  const [replacementPending, setReplacementPending] = useState(false);
 
   const editor = useSongEditor();
   const { state, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange, setInitialContent } =
@@ -109,6 +110,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
 
     try {
       if (song) {
+        if (replacementPending && song.content !== finalContent) {
+          await apiCall('POST', `/api/songs/${song.id}/version`, { content: song.content });
+        }
         await apiCall('PUT', `/api/songs/${song.id}`, {
           content: finalContent,
           format_detected: fmt,
@@ -384,6 +388,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             if (ocrSource === 'worship-together') {
               c = updateDirective(c, 'x_source', 'Worship Together download');
               if (!songId) setVisibility('private');
+              else setReplacementPending(true);
             }
             setInitialContent(c);
           }}
