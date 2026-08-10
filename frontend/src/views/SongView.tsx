@@ -104,10 +104,14 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const roadmap = useMemo(() => extractRoadmap(content), [content]);
 
   const jumpToSection = (section: string) => {
-    const target = Array.from(document.querySelectorAll('.section-label')).find(
-      (node) => node.textContent?.trim().toLowerCase() === section.toLowerCase(),
+    const wanted = section.toLowerCase();
+    const target = Array.from(document.querySelectorAll('.chord-sheet .label, .chord-sheet .section-label')).find(
+      (node) => node.textContent?.trim().replace(/:$/, '').toLowerCase() === wanted,
     );
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target) {
+      const top = target.getBoundingClientRect().top + window.scrollY - 72;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
   };
 
   const shortcuts = useMemo(
