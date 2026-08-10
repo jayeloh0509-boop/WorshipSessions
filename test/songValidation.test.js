@@ -21,3 +21,15 @@ test('section labels alone do not count as chords', () => {
   const err = validateSongInput({ content: 'Chorus\nsome lyrics', requireContent: true, requireChord: true });
   assert.equal(err, 'No chords detected. Add chords (e.g. [C], [G]) before saving.');
 });
+
+test('requireChord rejects section labels such as Chorus and Bridge', () => {
+  const err = validateSongInput({
+    content: `[Chorus]
+Lyrics only
+[Bridge]
+More lyrics`,
+    requireContent: true,
+    requireChord: true,
+  });
+  assert.equal(err, 'No chords detected. Add chords (e.g. [C], [G]) before saving.');
+});

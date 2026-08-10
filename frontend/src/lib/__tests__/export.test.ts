@@ -5,8 +5,8 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('filenameFromDisposition', () => {
   it('parses the filename from a Content-Disposition header', () => {
-    expect(filenameFromDisposition('attachment; filename="chordvault-export-2026-07-14.zip"', 'x.zip'))
-      .toBe('chordvault-export-2026-07-14.zip');
+    expect(filenameFromDisposition('attachment; filename="worshipsessions-export-2026-07-14.zip"', 'x.zip'))
+      .toBe('worshipsessions-export-2026-07-14.zip');
   });
   it('falls back when header is missing', () => {
     expect(filenameFromDisposition(null, 'fallback.zip')).toBe('fallback.zip');

@@ -7,7 +7,7 @@ export function AboutView({ navigate }: AboutViewProps) {
     <div className="about-page">
       <button className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} style={{ marginBottom: 20 }}>&#8592; Back</button>
       <h1 className="about-title">&#9833; WorshipSessions</h1>
-      <p className="about-subtitle">Your chord sheet library</p>
+      <p className="about-subtitle">Songs, setlists, and practical tools for worship teams</p>
 
       <div className="about-section">
         <h3>Browse &amp; Search</h3>
@@ -37,6 +37,12 @@ export function AboutView({ navigate }: AboutViewProps) {
       <div className="about-section">
         <h3>With an Account</h3>
         <p>Sign in to add your own songs, build server-saved setlists, submit corrections to existing songs, and use photo-to-chords OCR.</p>
+      </div>
+
+      <div className="about-section">
+        <h3>Open Source &amp; Attribution</h3>
+        <p>WorshipSessions is an AGPL-licensed derivative of ChordVault by Rudy Samuel. The corresponding source for this deployed version is available below.</p>
+        <p><a href="/downloads/worshipsessions-source.zip" download>Download WorshipSessions source code</a> &middot; <a href="https://github.com/rusahu/chordvault" target="_blank" rel="noreferrer">View the upstream ChordVault project</a></p>
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 32 }}>

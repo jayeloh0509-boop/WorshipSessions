@@ -1,7 +1,7 @@
-# ChordVault — Local Setup (this machine)
+# WorshipSessions — Local Setup (this machine)
 
 Native Windows Node/npm install (no Docker). Part of the Hermes/EmperorClaw machine;
-EmperorClaw owns `127.0.0.1:3000`, so ChordVault runs on **`http://127.0.0.1:3001`**.
+EmperorClaw owns `127.0.0.1:3000`, so WorshipSessions runs on **`http://127.0.0.1:3001`**.
 
 ## Configuration
 
@@ -21,12 +21,11 @@ cd frontend; npm ci; npm run build; cd ..   # builds SPA into public/
 npm start                       # serves app on http://127.0.0.1:3001
 ```
 
-Or double-click / run `start-chordvault.cmd`.
+Or double-click / run `start-worshipsessions.cmd`.
 
 ## First use
 
-No accounts are pre-created. Open `http://127.0.0.1:3001`, click **Register**,
-and create the first account — the first registered user gets the owner (admin) role.
+Use the existing local owner account. Do not expose an unclaimed first-user registration flow to the public internet. Before permanent deployment, verify owner access locally and restrict registration to invites.
 
 ## Tests
 

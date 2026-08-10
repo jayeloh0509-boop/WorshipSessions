@@ -2,7 +2,13 @@ const express = require('express');
 const yazl = require('yazl');
 const { requireAuth, requireAdmin, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSongInput, validateVisibility, validateLanguage, parsePaginationParams } = require('../lib/validation');
+const {
+  parseId,
+  validateSongInput,
+  validateVisibility,
+  validateLanguage,
+  parsePaginationParams,
+} = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { DEMO_MODE } = require('../lib/demo');
 const { makeUniqueNamer } = require('../lib/exportFilename');
@@ -10,6 +16,9 @@ const Song = require('../lib/models/song');
 const User = require('../lib/models/user');
 const { searchPublicCatalog, getPopularSongs, getPublicChart } = require('../lib/publicCatalog');
 const { importPdfBuffer } = require('../lib/pdfImport');
+const { importWorshipTogetherPdf } = require('../lib/worshipTogetherImport');
+const { importFileWithVision, importPdfWithVision } = require('../lib/aiChartImport');
+const { AppError } = require('../lib/errors');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -19,14 +28,20 @@ function extractDirective(content, name) {
 
 function extractMetadata(content) {
   const tags = extractDirective(content, 'x_tags');
-  const cleanedTags = tags ? String(tags).split(',').map(t => t.trim().toLowerCase()).filter(Boolean).join(',') : null;
+  const cleanedTags = tags
+    ? String(tags)
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+        .join(',')
+    : null;
   const bpmStr = extractDirective(content, 'tempo');
   const bpm = bpmStr ? parseInt(bpmStr, 10) : null;
   return {
     title: extractDirective(content, 'title') || '',
     artist: extractDirective(content, 'artist') || '',
     key: extractDirective(content, 'key') || '',
-    bpm: (bpm && bpm >= 1 && bpm <= 300) ? bpm : null,
+    bpm: bpm && bpm >= 1 && bpm <= 300 ? bpm : null,
     youtube_url: extractDirective(content, 'x_youtube') || null,
     tags: cleanedTags,
     language: extractDirective(content, 'x_language') || '',
@@ -35,13 +50,25 @@ function extractMetadata(content) {
 
 function resolveCorrectionWithAuth(req, res) {
   const id = parseId(req.params.id);
-  if (!id) { res.status(400).json({ error: 'Invalid correction ID' }); return null; }
+  if (!id) {
+    res.status(400).json({ error: 'Invalid correction ID' });
+    return null;
+  }
   const correction = Song.findById(id);
-  if (!correction || correction.status !== STATUS.PENDING) { res.status(404).json({ error: 'Pending correction not found' }); return null; }
+  if (!correction || correction.status !== STATUS.PENDING) {
+    res.status(404).json({ error: 'Pending correction not found' });
+    return null;
+  }
   const originalId = correction.parent_id;
-  if (!originalId) { res.status(400).json({ error: 'Correction has no parent song' }); return null; }
+  if (!originalId) {
+    res.status(400).json({ error: 'Correction has no parent song' });
+    return null;
+  }
   const original = Song.findById(originalId);
-  if (!original) { res.status(404).json({ error: 'Original song not found' }); return null; }
+  if (!original) {
+    res.status(404).json({ error: 'Original song not found' });
+    return null;
+  }
   const isOwner = original.user_id === req.user.id;
   if (!isOwner && !isAdminRole(req.user.role)) {
     res.status(403).json({ error: 'Only the song owner or admins can manage corrections' });
@@ -72,29 +99,116 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
       const q = String(req.query.q || '').trim();
       if (q.length < 2) return res.status(400).json({ error: 'Search must contain at least 2 characters' });
       res.json({ songs: await searchPublicCatalog(q) });
-    } catch (error) { next(error); }
+    } catch (error) {
+      next(error);
+    }
   });
 
   router.get('/songs/public-catalog/popular', requireAuth, async (_req, res, next) => {
-      try {
-        res.json({ songs: await getPopularSongs() });
-      } catch (error) { next(error); }
-    });
+    try {
+      res.json({ songs: await getPopularSongs() });
+    } catch (error) {
+      next(error);
+    }
+  });
 
-    router.post('/songs/import-pdf', requireAuth, express.raw({ type: ['application/pdf', 'application/octet-stream'], limit: LIMITS.MAX_BODY_JSON }), async (req, res, next) => {
+  router.post(
+    '/songs/import-pdf',
+    requireAuth,
+    express.raw({ type: ['application/pdf', 'application/octet-stream'], limit: LIMITS.MAX_BODY_JSON }),
+    async (req, res, next) => {
       try {
         const body = req.body;
         if (!body || !body.length) return res.status(400).json({ error: 'PDF file is required' });
         const filename = req.headers['x-filename'] || 'worship-together.pdf';
-        const parsed = await importPdfBuffer(body, filename);
-        return res.json({ title: parsed.title, artist: parsed.artist, key: parsed.key, content: parsed.content });
-      } catch (error) { next(error); }
-    });
+        try {
+          let parsed;
+          let method = 'local';
+          try {
+            parsed = await importWorshipTogetherPdf(body, filename);
+            method = 'worship-together-text';
+          } catch {
+            parsed = await importPdfBuffer(body, filename);
+          }
+          return res.json({
+            title: parsed.title,
+            artist: parsed.artist,
+            key: parsed.key,
+            content: parsed.content,
+            method,
+          });
+        } catch (localError) {
+          let recognized;
+          try {
+            recognized = await importPdfWithVision(body, filename);
+          } catch (visionError) {
+            const timedOut = visionError.code === 'ETIMEDOUT' || /timed out/i.test(visionError.message);
+            throw new AppError(
+              timedOut
+                ? 'Chart recognition timed out. Try a text-based Worship Together PDF or upload fewer pages.'
+                : `Could not import this chart: ${visionError.message}`,
+              timedOut ? 504 : 422,
+              timedOut ? 'CHART_IMPORT_TIMEOUT' : 'CHART_IMPORT_FAILED',
+            );
+          }
+          return res.json({
+            title: extractDirective(recognized.content, 'title') || '',
+            artist: extractDirective(recognized.content, 'artist') || '',
+            key: extractDirective(recognized.content, 'key') || '',
+            content: recognized.content,
+            method: 'vision',
+            provider: recognized.provider,
+            model: recognized.model,
+            localError: localError.message,
+          });
+        }
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  router.post(
+    '/songs/import-vision',
+    requireAuth,
+    express.raw({ type: ['application/pdf', 'application/octet-stream', 'image/*'], limit: LIMITS.MAX_BODY_JSON }),
+    async (req, res, next) => {
+      try {
+        const body = req.body;
+        if (!body || !body.length) return res.status(400).json({ error: 'Chart image or PDF is required' });
+        const filename = req.headers['x-filename'] || 'chart-upload';
+        const mimeType = req.headers['content-type'] || 'application/octet-stream';
+        let recognized;
+        try {
+          recognized = await importFileWithVision(body, filename, mimeType);
+        } catch (visionError) {
+          const timedOut = visionError.code === 'ETIMEDOUT' || /timed out/i.test(visionError.message);
+          throw new AppError(
+            timedOut
+              ? 'Chart recognition timed out. Try a smaller image or a PDF with fewer pages.'
+              : `Could not recognize this chart: ${visionError.message}`,
+            timedOut ? 504 : 422,
+            timedOut ? 'CHART_IMPORT_TIMEOUT' : 'CHART_IMPORT_FAILED',
+          );
+        }
+        return res.json({
+          text: recognized.content,
+          language: extractDirective(recognized.content, 'x_language') || 'en',
+          provider: recognized.provider,
+          model: recognized.model,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   router.get('/songs/public-catalog/:slug', requireAuth, async (req, res, next) => {
     try {
       res.json(await getPublicChart(req.params.slug));
-    } catch (error) { next(error); }
+    } catch (error) {
+      next(error);
+    }
   });
 
   router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {
@@ -102,7 +216,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const date = new Date().toISOString().slice(0, 10);
     const zip = new yazl.ZipFile();
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="chordvault-export-${date}.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="worshipsessions-export-${date}.zip"`);
     zip.outputStream.on('error', (err) => {
       console.error('Export zip error:', err.message);
       res.destroy(err);
@@ -156,11 +270,13 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   router.post('/songs', requireAuth, (req, res) => {
     const { content, format_detected, visibility } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
-    if (content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
+    if (content.length > LIMITS.MAX_CONTENT)
+      return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
     const chordError = validateSongInput({ content, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
     const meta = extractMetadata(content);
-    if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
+    if (!meta.title)
+      return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {
       const langError = validateLanguage(meta.language);
       if (langError) return res.status(400).json({ error: langError });
@@ -180,19 +296,35 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (DEMO_MODE && songs.length > LIMITS.DEMO_MAX_IMPORT) {
       return res.status(400).json({ error: `Demo mode: import limited to ${LIMITS.DEMO_MAX_IMPORT} songs` });
     }
-    if (songs.length > LIMITS.MAX_IMPORT) return res.status(400).json({ error: `Maximum ${LIMITS.MAX_IMPORT} songs per import` });
+    if (songs.length > LIMITS.MAX_IMPORT)
+      return res.status(400).json({ error: `Maximum ${LIMITS.MAX_IMPORT} songs per import` });
 
     const errors = [];
     const valid = [];
 
     songs.forEach((s, i) => {
-      if (!s.content?.trim()) { errors.push({ index: i, error: 'Content is required' }); return; }
-      if (s.content.length > LIMITS.MAX_CONTENT) { errors.push({ index: i, error: `Content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` }); return; }
+      if (!s.content?.trim()) {
+        errors.push({ index: i, error: 'Content is required' });
+        return;
+      }
+      if (s.content.length > LIMITS.MAX_CONTENT) {
+        errors.push({ index: i, error: `Content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
+        return;
+      }
       const meta = extractMetadata(s.content);
-      if (!meta.title) { errors.push({ index: i, error: 'Title is required. Add {title: Song Name} to content.' }); return; }
-      if (meta.language && !LANGUAGE_CODES.has(meta.language)) { errors.push({ index: i, error: `Invalid language code: ${meta.language}` }); return; }
+      if (!meta.title) {
+        errors.push({ index: i, error: 'Title is required. Add {title: Song Name} to content.' });
+        return;
+      }
+      if (meta.language && !LANGUAGE_CODES.has(meta.language)) {
+        errors.push({ index: i, error: `Invalid language code: ${meta.language}` });
+        return;
+      }
       const visError = validateVisibility(s.visibility);
-      if (visError) { errors.push({ index: i, error: visError }); return; }
+      if (visError) {
+        errors.push({ index: i, error: visError });
+        return;
+      }
       valid.push({
         index: i,
         ...meta,
@@ -217,11 +349,13 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (!existing) return res.status(404).json({ error: 'Song not found or not yours' });
     const { content, format_detected, visibility } = req.body;
     const finalContent = content?.trim() || existing.content;
-    if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
+    if (content && content.length > LIMITS.MAX_CONTENT)
+      return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
     const chordError = validateSongInput({ content, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
     const meta = extractMetadata(finalContent);
-    if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
+    if (!meta.title)
+      return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {
       const langError = validateLanguage(meta.language);
       if (langError) return res.status(400).json({ error: langError });
@@ -229,8 +363,13 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const visError = validateVisibility(visibility);
     if (visError) return res.status(400).json({ error: visError });
 
-    const fmt = format_detected !== undefined ? (format_detected?.trim() || null) : existing.format_detected;
-    const finalVisibility = visibility !== undefined ? (visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC) : existing.visibility;
+    const fmt = format_detected !== undefined ? format_detected?.trim() || null : existing.format_detected;
+    const finalVisibility =
+      visibility !== undefined
+        ? visibility === VISIBILITY.PRIVATE
+          ? VISIBILITY.PRIVATE
+          : VISIBILITY.PUBLIC
+        : existing.visibility;
     Song.update(id, meta, finalContent, finalVisibility, fmt);
     res.json({ success: true });
   });
@@ -249,7 +388,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const original = Song.findById(id);
     if (!original || original.status !== STATUS.ACTIVE) return res.status(404).json({ error: 'Song not found' });
-    
+
     const isOwner = original.user_id === req.user.id;
     const isAdmin = isAdminRole(req.user.role);
     const isPublic = original.visibility === VISIBILITY.PUBLIC;
@@ -288,13 +427,15 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const original = Song.findById(id);
     if (!original) return res.status(404).json({ error: 'Song not found' });
-    if (original.status === STATUS.PENDING) return res.status(400).json({ error: 'Cannot correct a pending correction' });
+    if (original.status === STATUS.PENDING)
+      return res.status(400).json({ error: 'Cannot correct a pending correction' });
     if (original.visibility === VISIBILITY.PRIVATE && req.user.id !== original.user_id) {
       return res.status(403).json({ error: 'Cannot submit corrections on private songs' });
     }
     const { content, youtube_url } = req.body;
     const validationError = validateSongInput({ content, youtube_url, requireContent: true, requireChord: true });
-    if (validationError) return res.status(400).json({ error: validationError.replace('before saving', 'before submitting') });
+    if (validationError)
+      return res.status(400).json({ error: validationError.replace('before saving', 'before submitting') });
 
     const parentId = original.parent_id || original.id;
     const meta = extractMetadata(content);

@@ -1,46 +1,25 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="ChordVault" width="80" height="80">
+  <img src="docs/logo.svg" alt="WorshipSessions" width="80" height="80">
 </p>
 
-<h1 align="center">ChordVault</h1>
+<h1 align="center">WorshipSessions</h1>
 
-<p align="center">A self-hosted chord sheet web app for musicians.</p> Store, transpose, and perform your chord sheets from any device on your local network.
+<p align="center">A self-hosted worship song, chord chart, and setlist application.</p> Prepare songs, transpose charts, build setlists, and lead from any device.
 
 ![Node.js](https://img.shields.io/badge/Node.js-20-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
-**[Try the live demo](https://demochordvault.rudysam.com)** — login as `demo` / `demopass123` (resets every 6 hours)
+## About WorshipSessions
 
-## Why ChordVault?
+WorshipSessions is a worship-focused derivative of [ChordVault](https://github.com/rusahu/chordvault), created by Rudy Samuel. It keeps the reliable self-hosted song-library foundation and adds a worship-oriented product experience, music-theory tools, search-assisted chart import, and local PDF ingestion.
 
-**For self-hosters.** Ridiculously lightweight.
-- Your entire library lives in a single SQLite file. No database server, no config, just one file you can back up or move.
-- Chord parsing, transposition, and Nashville numbers all run in the browser via ChordSheetJS. The server just does light reads and writes.
-- Zero background workers, minimal CPU and RAM. Runs happily on a Raspberry Pi, an old laptop, or whatever you have lying around.
-- One Docker command to deploy. Your data stays on your hardware.
+- **For worship leaders:** prepare songs, arrangements, keys, and ordered setlists.
+- **For musicians:** transpose charts, use Nashville numbers, export PDFs, and perform from a phone or tablet.
+- **For private teams:** invite-only accounts, private songs, local storage, and administrator controls.
+- **For authorized imports:** ingest user-downloaded charts and reusable public-domain material into editable ChordPro drafts.
 
-**For worship leaders & admins.** Keep your team organized.
-- Invite-only registration with one-time codes. No open signups, no strangers.
-- Tag songs (worship, praise, hymn, opener, closer, communion...) and track BPM to build balanced setlists fast.
-- Community corrections let anyone fix wrong chords. You review and approve before anything changes.
-- Admin dashboard to manage users, review corrections, and keep the library clean.
-- Role system (owner/admin/user) gives you control without micromanaging.
+This project remains licensed under **AGPL-3.0-or-later**. See [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE) for attribution and licence details.
 
-**For musicians.** Paste chords and start playing.
-- Accepts any format: ChordPro, chords-over-lyrics, Ultimate Guitar. Auto-detected and converted.
-- Transpose on the fly, switch to Nashville numbers, link YouTube videos for reference.
-- Swipe through setlists during rehearsal with one hand. Side taps, swipe gestures, or arrow keys.
-- Adjust font size, hide distractions, go fullscreen. Whatever helps you focus on the music.
-
-![ChordVault — Browse songs](docs/screenshots/browse.png)
-
-<details>
-<summary>More screenshots</summary>
-
-| Song view (dark) | Song view (light) | Mobile |
-|---|---|---|
-| ![Song view dark](docs/screenshots/song-view.png) | ![Song view light](docs/screenshots/song-view-light.png) | ![Mobile](docs/screenshots/mobile-song-view.png) |
-
-</details>
+**Source availability:** when this modified application is offered over a network, users must be given access to the corresponding deployed source under AGPL section 13. The About page provides a downloadable snapshot of the corresponding deployed source.
 
 ## Features
 
@@ -90,9 +69,9 @@
 
 ```yaml
 services:
-  chordvault:
-    image: ghcr.io/rusahu/chordvault:latest
-    container_name: chordvault
+  worshipsessions:
+    build: .
+    container_name: worshipsessions
     ports:
       - "3100:3100"
     volumes:
@@ -122,8 +101,8 @@ docker compose up -d
 ### Build from source (Docker)
 
 ```bash
-git clone https://github.com/rusahu/chordvault.git
-cd chordvault
+git clone <your-worshipsessions-repository-url> worshipsessions
+cd worshipsessions
 cp .env.example .env
 # Edit .env and set a strong JWT_SECRET
 docker compose up -d
@@ -132,8 +111,8 @@ docker compose up -d
 ### Build from source
 
 ```bash
-git clone https://github.com/rusahu/chordvault.git
-cd chordvault
+git clone <your-worshipsessions-repository-url> worshipsessions
+cd worshipsessions
 npm install
 cd frontend && npm install && npm run build && cd ..
 cp .env.example .env
@@ -168,6 +147,8 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 |----------|---------|-------------|
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
+| `HOST` | `0.0.0.0` | Bind address; use `127.0.0.1` behind Cloudflare Tunnel |
+| `DB_PATH` | `./data/chordvault.db` | SQLite database path; existing installs retain this compatibility path |
 | `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key — enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 
@@ -175,9 +156,11 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 
 > **Gemini API key** for Smart OCR is configured per-user in Settings (not an env var). Keys are stored AES-256-GCM encrypted, derived from `JWT_SECRET`. Users can also customize the OCR prompt and default Gemini model from Settings.
 
-## Reverse Proxy
+## Cloudflare Tunnel / reverse proxy
 
-If you're running this behind a reverse proxy (Caddy, Nginx, Traefik), point your subdomain to port 3100. Example Caddy config:
+For a private-origin deployment, bind WorshipSessions to `127.0.0.1` and route a Cloudflare named tunnel to that local port. Keep app authentication enabled; a tunnel URL is transport, not authorization. A permanent public deployment must also provide the corresponding source required by the AGPL.
+
+For another reverse proxy (Caddy, Nginx, Traefik), point your subdomain to port 3100. Example Caddy config:
 
 ```
 chords.example.com {

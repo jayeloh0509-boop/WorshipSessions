@@ -1,7 +1,7 @@
 services:
-  chordvault:
+  worshipsessions:
     build: .
-    container_name: chordvault
+    container_name: worshipsessions
     ports:
       - "3100:3100"
     volumes:

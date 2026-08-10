@@ -4,11 +4,11 @@
   "nav.admin": "Admin",
   "nav.signOut": "Sign out",
 
-  "hero.tagline": "Your chord sheet library",
-  "hero.cta": "Browse songs below, or sign in to create setlists and add your own.",
+  "hero.tagline": "Songs and setlists for worship teams",
+  "hero.cta": "Browse songs below, or sign in to prepare charts and build a setlist.",
 
-  "auth.logo": "♩ ChordVault",
-  "auth.tagline": "Your chord sheet library",
+  "auth.logo": "♩ WorshipSessions",
+  "auth.tagline": "Songs and setlists for worship teams",
   "auth.signIn": "Sign in",
   "auth.register": "Register",
   "auth.username": "Username",

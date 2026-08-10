@@ -18,26 +18,22 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
-      fontSrc: ["'self'", "fonts.gstatic.com"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'self'", "https://challenges.cloudflare.com"],
-    }
-  }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+        fontSrc: ["'self'", 'fonts.gstatic.com'],
+        connectSrc: ["'self'"],
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com'],
+      },
+    },
+  }),
+);
 
-const {
-  apiRateLimiter,
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-  exportLimiter,
-} = require('./lib/rateLimiter');
+const { apiRateLimiter, withSkipGlobal, authLimiter, registerLimiter, exportLimiter } = require('./lib/rateLimiter');
 
 app.set('trust proxy', 1);
 
@@ -46,11 +42,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/', apiRateLimiter);
 
-app.use('/api/auth', createAuthRouter({
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-}));
+app.use(
+  '/api/auth',
+  createAuthRouter({
+    withSkipGlobal,
+    authLimiter,
+    registerLimiter,
+  }),
+);
 app.use('/api', createSongsRouter({ withSkipGlobal, exportLimiter }));
 app.use('/api', createSetlistsRouter());
 app.use('/api', createAdminRouter());
@@ -60,14 +59,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3100;
 const HOST = process.env.HOST || '0.0.0.0';
-const server = app.listen(PORT, HOST, () => console.log(`ChordVault running on ${HOST}:${PORT}`));
+const server = app.listen(PORT, HOST, () => console.log(`WorshipSessions running on ${HOST}:${PORT}`));
 
 let shuttingDown = false;
 function gracefulShutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`${signal} received, shutting down...`);
-  const forceExit = setTimeout(() => { db.close(); process.exit(1); }, 5000);
+  const forceExit = setTimeout(() => {
+    db.close();
+    process.exit(1);
+  }, 5000);
   server.close(() => {
     clearTimeout(forceExit);
     db.close();

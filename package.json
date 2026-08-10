@@ -1,8 +1,8 @@
 {
-  "name": "chordvault",
+  "name": "worshipsessions",
   "version": "1.22.1",
-  "description": "Self-hosted chord sheet manager with transpose",
-  "author": "Rudy Samuel",
+  "description": "Self-hosted worship song, chord chart, and setlist application",
+  "author": "WorshipSessions contributors; based on ChordVault by Rudy Samuel",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",

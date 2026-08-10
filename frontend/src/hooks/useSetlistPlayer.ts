@@ -3,7 +3,7 @@ import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
+import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import type { Setlist, SetlistEntry } from '../types';
 
@@ -58,16 +58,13 @@ export function useSetlistPlayer({
         setSavedTransposes(transposes);
       } else {
         // Fallback: load local setlist from storage and fetch song contents
-        import('../lib/storage').then(({ getLocalSetlists }) => {
-          const sl = getLocalSetlists().find((s) => s.id === setlistId);
-          if (!sl) {
-            toast('Local setlist not found', 'error');
-            navigate('setlists');
-            return;
-          }
+        const sl = getLocalSetlists().find((s) => s.id === setlistId);
+        if (!sl) {
+          toast('Local setlist not found', 'error');
+          navigate('setlists');
+        } else {
           enrichLocalSetlistSongs(sl.entries, apiCall)
             .then((entries) => {
-
               const enriched: Setlist = {
                 id: setlistId,
                 name: sl.name,
@@ -99,7 +96,7 @@ export function useSetlistPlayer({
               toast(err.message, 'error');
               navigate('setlists');
             });
-        });
+        }
       }
       return;
     }

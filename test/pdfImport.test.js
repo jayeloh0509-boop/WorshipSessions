@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { pdfTextToChordPro } = require('../lib/pdfImport');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pdfTextToChordPro, importPdfBuffer } = require('../lib/pdfImport');
+const { importWorshipTogetherPdf } = require('../lib/worshipTogetherImport');
 
 const SAMPLE = `Amazing Grace
 John Newton
@@ -63,4 +66,45 @@ test('pdfTextToChordPro accepts bar-delimited chord lines and extended chords', 
   assert.match(result.content, /\[Bb2\].*\[F\/A\].*\[Gm7\].*\[Ebmaj7\]/);
   const renderedLine = result.content.split('\n').find((line) => line.includes('[Bb2]'));
   assert.equal(renderedLine.replace(/\[[^\]]+\]/g, ''), 'Sing a new song to the Lord');
+});
+
+test('importPdfBuffer extracts the real text-PDF fixture through discovered pdftotext', async () => {
+  const fixture = fs.readFileSync(path.join(__dirname, 'fixtures', 'worship-together-text.pdf'));
+  const result = await importPdfBuffer(fixture, 'worship-together-text.pdf');
+  assert.equal(result.title, 'Living Hope');
+  assert.equal(result.key, 'G');
+  assert.match(result.content, /\[G\]/);
+});
+
+test('coordinate-aware extraction snaps inserted chords to word boundaries', async () => {
+  const fixture = fs.readFileSync(path.join(__dirname, 'fixtures', 'fall-like-rain-worship-together.pdf'));
+  const parsed = await importWorshipTogetherPdf(fixture, 'fall_like_rain_passion_cc.pdf');
+  assert.doesNotMatch(parsed.content, /sacrifi\[Ab2\]ce/);
+  assert.match(parsed.content, /sacrifice\[Ab2\]/);
+});
+
+test('imports the real Fall Like Rain Worship Together PDF locally', async () => {
+  const fixture = fs.readFileSync(path.join(__dirname, 'fixtures', 'fall-like-rain-worship-together.pdf'));
+  const parsed = await importWorshipTogetherPdf(fixture, 'fall_like_rain_passion_cc.pdf');
+  assert.equal(parsed.title, 'Fall Like Rain');
+  assert.equal(parsed.key, 'Eb');
+  assert.match(parsed.content, /\[Bb\/D\]All my life I offer You/);
+  assert.match(parsed.content, /Fall like rain\[Bbsus\/D\]/);
+  assert.match(parsed.content, /\{tempo: 70\}/);
+  assert.doesNotMatch(parsed.content, /God,\.I\.live/);
+});
+
+test('imports the real two-column Always On Time Worship Together PDF in reading order', async () => {
+  const fixture = fs.readFileSync(path.join(__dirname, 'fixtures', 'always-on-time-worship-together.pdf'));
+  const parsed = await importWorshipTogetherPdf(fixture, 'always-on-time-pat-barrett-cc.pdf');
+  assert.equal(parsed.title, 'Always On Time');
+  assert.equal(parsed.artist, 'Steven Furtick, Jonathan Smith, Leeland Mooring, Pat Barrett');
+  assert.equal(parsed.key, 'F');
+  assert.match(parsed.content, /\{tempo: 68\}/);
+  assert.match(parsed.content, /\[F\]I remember how You provided\[C\/F\]/);
+  assert.match(parsed.content, /\[C\]\[F\/A\]If I knew then what I know now \[Bb\]/);
+  assert.match(parsed.content, /^INSTRUMENTAL 1$/m);
+  assert.match(parsed.content, /^BRIDGE \(4X\)$/m);
+  assert.match(parsed.content, /\[F\]There's never been a day, never been a minute/);
+  assert.doesNotMatch(parsed.content, /Copyright|All Rights Reserved/);
 });

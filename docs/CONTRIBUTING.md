@@ -1,4 +1,4 @@
-# Contributing to ChordVault
+# Contributing to WorshipSessions
 
 ## Project Structure
 

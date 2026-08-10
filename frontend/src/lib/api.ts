@@ -59,6 +59,6 @@ export async function exportSongsBlob(token: string): Promise<{ blob: Blob; file
     throw new ApiError(msg, res.status);
   }
   const blob = await res.blob();
-  const filename = filenameFromDisposition(res.headers.get('Content-Disposition'), 'chordvault-export.zip');
+  const filename = filenameFromDisposition(res.headers.get('Content-Disposition'), 'worshipsessions-export.zip');
   return { blob, filename };
 }
