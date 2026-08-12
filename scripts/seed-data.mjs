@@ -1,5 +1,5 @@
 /**
- * seed-data.mjs — Seeds ChordVault with demo data via direct DB access.
+ * seed-data.mjs — Seeds WorshipSessions with demo data via direct DB access.
  *
  * Usage: node scripts/seed-data.mjs
  *

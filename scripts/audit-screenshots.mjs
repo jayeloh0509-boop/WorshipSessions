@@ -1,5 +1,5 @@
 /**
- * audit-screenshots.mjs — Playwright screenshot audit for ChordVault UI.
+ * audit-screenshots.mjs — Playwright screenshot audit for WorshipSessions UI.
  *
  * Usage: node scripts/audit-screenshots.mjs [base_url]
  * Default: http://localhost:3100

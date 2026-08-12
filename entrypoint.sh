@@ -13,7 +13,7 @@ mkdir -p "$DATA_DIR"
 DATA_UID=$(stat -c '%u' "$DATA_DIR")
 DATA_GID=$(stat -c '%g' "$DATA_DIR")
 
-echo "ChordVault: data dir owned by UID=$DATA_UID GID=$DATA_GID"
+echo "WorshipSessions: data dir owned by UID=$DATA_UID GID=$DATA_GID"
 
 # ── Seed demo data (if requested) ───────────────────────────────────────
 if [ "$DEMO_MODE" = "true" ] && [ ! -f "$DATA_DIR/chordvault.db" ]; then
