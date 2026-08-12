@@ -370,7 +370,9 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
           ? VISIBILITY.PRIVATE
           : VISIBILITY.PUBLIC
         : existing.visibility;
-    Song.update(id, meta, finalContent, finalVisibility, fmt);
+    const isAdmin = isAdminRole(req.user.role);
+    const result = Song.update(id, meta, finalContent, finalVisibility, fmt, isAdmin ? null : req.user.id);
+    if (!result.changes) return res.status(404).json({ error: 'Song not found or not yours' });
     res.json({ success: true });
   });
 
