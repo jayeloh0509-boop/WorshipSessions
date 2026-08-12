@@ -22,11 +22,25 @@ function firstChordKey(text: string): string {
   return match?.[1] || '';
 }
 
+function snapEmbeddedChordsToWordStarts(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => {
+      let result = line;
+      const embeddedChord = /([\p{L}\p{N}'’]+)(\[[A-G][^\]\r\n]*\])(?=[\p{L}\p{N}'’])/u;
+      while (embeddedChord.test(result)) result = result.replace(embeddedChord, '$2$1');
+      return result.replace(/([\p{L}\p{N}'’]+)(\[[A-G][^\]\r\n]*\])(?=[?!,.;:])/gu, '$2$1');
+    })
+    .join('\n');
+}
+
 export function textChartToChordPro(filename: string, text: string): string {
-  const normalized = text
-    .replace(/^\uFEFF/, '')
-    .replace(/\r\n?/g, '\n')
-    .trim();
+  const normalized = snapEmbeddedChordsToWordStarts(
+    text
+      .replace(/^\uFEFF/, '')
+      .replace(/\r\n?/g, '\n')
+      .trim(),
+  );
   if (HAS_TITLE.test(normalized)) return normalized;
 
   const { title, artist } = filenameMetadata(filename);

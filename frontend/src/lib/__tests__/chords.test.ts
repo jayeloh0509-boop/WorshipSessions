@@ -210,6 +210,12 @@ describe('ensureKeyDirective', () => {
 import { renderChordPro } from '../chords';
 
 describe('renderChordPro sections', () => {
+  it('marks heading rows separately so badges do not inherit lyric-row spacing', () => {
+    const html = renderChordPro(`Chorus
+[Ab]Who else is worthy?`);
+    expect(html).toContain('class="row section-row"><h3 class="label">Chorus</h3>');
+  });
+
   it('promotes paragraph type from first line label', () => {
     const content = 'Chorus\n[G]Amazing grace';
     const html = renderChordPro(content);

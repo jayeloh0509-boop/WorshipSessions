@@ -258,7 +258,7 @@ class ResponsiveHtmlFormatter {
       hasRenderableContent
     ) {
       const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
-      content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
+      content = `<div class="row section-row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
     }
 
     return `<div class="paragraph ${detectedType}">${content}</div>`;
@@ -276,7 +276,7 @@ class ResponsiveHtmlFormatter {
 
       if (SECTION_LABEL_RE.test(content.trim())) {
         const cleanLabel = content.trim().replace(/[[\]:]/g, '');
-        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
+        return `<div class="row section-row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
       return `<div class="comment">${escHtml(content)}</div>`;
     }
@@ -290,7 +290,7 @@ class ResponsiveHtmlFormatter {
       // Only one of them should be present for a pure label line
       if (!lyrics !== !chords && SECTION_LABEL_RE.test(lyrics || chords)) {
         const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
-        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
+        return `<div class="row section-row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
     }
 

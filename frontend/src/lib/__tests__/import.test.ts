@@ -59,6 +59,22 @@ describe('textChartToChordPro', () => {
     expect(content).toContain('{artist: Gateway Worship}');
     expect(content).toContain('{key: Ab}');
     expect(content).toContain('{x_language: en}');
-    expect(content).toContain('VERSE 1\nI am an [Ab]instrument of exalt[Eb]ation');
+    expect(content).toContain(`VERSE 1
+I am an [Ab]instrument of [Eb]exaltation`);
+  });
+
+  it('snaps accidental in-word chord markers without changing intentional hyphenated changes', () => {
+    const content = textChartToChordPro(
+      'Who Else - Gateway Worship.txt',
+      `Who else is worthy[Ab]?
+There is n[Fm7]o one, only You, J[Db2]esus
+Jesus Christ, be lifted u[Eb]p
+[Absus]Ho-[Ab]ly`,
+    );
+
+    expect(content).toContain('[Ab]worthy?');
+    expect(content).toContain('There is [Fm7]no one, only You, [Db2]Jesus');
+    expect(content).toContain('Jesus Christ, be lifted [Eb]up');
+    expect(content).toContain('[Absus]Ho-[Ab]ly');
   });
 });

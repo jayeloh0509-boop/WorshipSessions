@@ -23,8 +23,8 @@
   flex: 1;
   min-height: 0;
   padding: 24px 32px;
-  display: block; 
-  overflow-y: auto; 
+  display: block;
+  overflow-y: auto;
   margin-top: 0;
   border-radius: 0;
   border-left: none;
@@ -60,6 +60,17 @@
   margin-bottom: 0.8em;
 }
 
+.chord-sheet .row.section-row {
+  line-height: 1;
+  margin-bottom: 0.35em;
+  white-space: normal;
+}
+
+.chord-sheet .row.section-row h3.label {
+  margin: 0 !important;
+  vertical-align: top;
+}
+
 .chord-sheet .column {
   display: inline-flex;
   flex-direction: column;
@@ -68,7 +79,9 @@
   margin-right: 1px;
 }
 
-.chord-sheet-wrap { --font-scale: 1; }
+.chord-sheet-wrap {
+  --font-scale: 1;
+}
 
 .chord-sheet .chord {
   font-family: var(--font-mono);
@@ -113,7 +126,7 @@
   /* Default Styles (Neutral/Subtle) */
   --badge-bg-top: var(--surface2);
   --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
+  --badge-text: var(--muted);
   --badge-border: var(--border);
 
   /* Missing variables defined here */
@@ -128,13 +141,13 @@
   font-weight: var(--badge-font-weight) !important;
   text-transform: uppercase !important;
   letter-spacing: var(--badge-letter-spacing) !important;
-  
+
   color: var(--badge-text) !important;
   background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bot)) !important;
   padding: var(--badge-padding) !important;
   border-radius: var(--badge-radius) !important;
   border: 1px solid var(--badge-border) !important;
-  
+
   display: inline-block !important;
   margin: 6px 0 4px !important;
 }
@@ -144,7 +157,7 @@
 .paragraph.chorus h3.label {
   --badge-bg-top: var(--accent2);
   --badge-bg-bot: var(--accent);
-  --badge-text:   #ffffff;
+  --badge-text: #ffffff;
   --badge-border: var(--accent);
 }
 
@@ -153,7 +166,7 @@
 .paragraph.verse h3.label {
   --badge-bg-top: var(--surface2);
   --badge-bg-bot: var(--surface2);
-  --badge-text:   var(--muted);
+  --badge-text: var(--muted);
   --badge-border: var(--border);
   opacity: 1;
 }
