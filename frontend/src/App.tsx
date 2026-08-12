@@ -162,6 +162,17 @@ export function App() {
 
 
 
+  if (!user) {
+    return (
+      <>
+        <main id="app">
+          <AuthView navigate={navigate} />
+        </main>
+        <Toast />
+      </>
+    );
+  }
+
   const renderView = () => {
     const { view, params } = route;
 

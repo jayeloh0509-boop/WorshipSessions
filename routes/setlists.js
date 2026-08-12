@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
+const { requireAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSetlistInput, validateTranspose, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
@@ -32,13 +32,13 @@ function createSetlistsRouter() {
     res.json({ id: result.lastInsertRowid, name: name.trim() });
   });
 
-  router.get('/setlists/public', (req, res) => {
+  router.get('/setlists/public', requireAuth, (req, res) => {
     const { q, date_from, date_to, page, limit } = req.query;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Setlist.listPublic({ q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
   });
 
-  router.get('/setlists/public/:id', optionalAuth, (req, res) => {
+  router.get('/setlists/public/:id', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid setlist ID' });
     const setlist = Setlist.findPublicById(id);

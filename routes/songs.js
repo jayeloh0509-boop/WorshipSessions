@@ -1,6 +1,6 @@
 const express = require('express');
 const yazl = require('yazl');
-const { requireAuth, requireAdmin, optionalAuth, isAdminRole } = require('../lib/auth');
+const { requireAuth, requireAdmin, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const {
   parseId,
@@ -87,7 +87,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     res.json(Song.listForUser(userId, { q, language, page: pageNum, limit: limitNum }));
   });
 
-  router.get('/songs/public', (req, res) => {
+  router.get('/songs/public', requireAuth, (req, res) => {
     const { q, language, page, limit } = req.query;
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
@@ -232,7 +232,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     zip.end();
   });
 
-  router.get('/users/:username/songs', (req, res) => {
+  router.get('/users/:username/songs', requireAuth, (req, res) => {
     const user = User.findByUsername(req.params.username);
     if (!user) return res.status(404).json({ error: 'User not found' });
     const { page, limit } = req.query;
@@ -241,7 +241,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     res.json(songs);
   });
 
-  router.get('/songs/:id', optionalAuth, (req, res) => {
+  router.get('/songs/:id', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const song = Song.findById(id);
@@ -404,7 +404,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     res.json({ id: result.lastInsertRowid });
   });
 
-  router.get('/songs/:id/versions', optionalAuth, (req, res) => {
+  router.get('/songs/:id/versions', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const song = Song.findById(id);
