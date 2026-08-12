@@ -340,30 +340,34 @@ class ResponsiveHtmlFormatter {
   }
 }
 
-export function renderChordPro(content: string, semitones = 0, nashville = false): string {
+export function prepareSong(content: string, semitones = 0, nashville = false): ChordSheetJS.Song | null {
   try {
     const song = parseSongAuto(content);
-    if (!song) throw new Error('parse failed');
+    if (!song) return null;
 
     let transposed = semitones !== 0 ? song.transpose(semitones) : song;
-
-    // Preserve source spelling at concert pitch; normalize only after transposition.
+    // Preserve source spelling at concert pitch; normalize only after explicit transposition.
     if (semitones !== 0) fixChordAccidentals(transposed);
 
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
-
     if (nashville && key && ChordSheetJS.Chord) {
       const cloned = transposed.clone();
-      convertToNashville(cloned, key as string);
+      convertToNashville(cloned, key);
       transposed = cloned;
     }
-
-    const html = new ResponsiveHtmlFormatter().format(transposed);
-    return `<div class="chord-sheet">${html}</div>`;
+    return transposed;
   } catch {
+    return null;
+  }
+}
+
+export function renderChordPro(content: string, semitones = 0, nashville = false): string {
+  const song = prepareSong(content, semitones, nashville);
+  if (!song) {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
   }
+  return `<div class="chord-sheet">${new ResponsiveHtmlFormatter().format(song)}</div>`;
 }
 
 export function fixChordAccidentals(song: ChordSheetJS.Song): void {
