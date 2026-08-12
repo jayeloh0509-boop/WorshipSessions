@@ -89,7 +89,7 @@ docker compose up -d
 
 Open `http://localhost:3100` and register your first account.
 
-Your database lives in `./data/chordvault.db`. Back up this directory to preserve your library.
+Your database lives in `./data/worshipsessions.db`. Back up this directory to preserve your library.
 
 To update:
 
@@ -148,7 +148,7 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
 | `HOST` | `0.0.0.0` | Bind address; use `127.0.0.1` behind Cloudflare Tunnel |
-| `DB_PATH` | `./data/chordvault.db` | SQLite database path; existing installs retain this compatibility path |
+| `DB_PATH` | `./data/worshipsessions.db` | SQLite database path; legacy chordvault.db files migrate automatically |
 | `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key — enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 

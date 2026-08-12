@@ -2,11 +2,11 @@
   "name": "worshipsessions",
   "version": "1.22.1",
   "description": "Self-hosted worship song, chord chart, and setlist application",
-  "author": "WorshipSessions contributors; based on ChordVault by Rudy Samuel",
+  "author": "WorshipSessions contributors",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rusahu/chordvault.git"
+    "url": "https://github.com/jayeloh0509-boop/WorshipSessions.git"
   },
   "engines": {
     "node": ">=24.0.0"

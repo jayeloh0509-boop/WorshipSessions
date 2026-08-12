@@ -96,7 +96,7 @@ Return ONLY the ChordPro text, no explanations or markdown code fences.`;
 
 /** Derives a 256-bit encryption key from JWT_SECRET using PBKDF2. */
 function deriveEncKey() {
-  return crypto.pbkdf2Sync(JWT_SECRET, 'chordvault-gemini-enc', 100_000, 32, 'sha256');
+  return crypto.pbkdf2Sync(JWT_SECRET, 'worshipsessions-gemini-enc', 100_000, 32, 'sha256');
 }
 
 /**

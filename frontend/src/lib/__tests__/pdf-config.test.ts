@@ -38,7 +38,7 @@ describe('buildPdfConfig', () => {
     for (const item of styled) expect(item.style?.name).toBe(EMBEDDED_FONT);
   });
 
-  it('shifts font sizes by the ChordVault scale', () => {
+  it('shifts font sizes by the WorshipSessions scale', () => {
     const base = buildPdfConfig({ fontName: null, fontSize: 0 });
     const big = buildPdfConfig({ fontName: null, fontSize: 2 });
     const small = buildPdfConfig({ fontName: null, fontSize: -2 });

@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
-const DB_PATH = './data/chordvault.db';
+const DB_PATH = './data/worshipsessions.db';
 
 // Open DB — server.js hasn't started yet, so we init tables ourselves
 const db = new Database(DB_PATH);

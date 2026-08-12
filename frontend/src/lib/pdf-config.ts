@@ -5,7 +5,7 @@ export type PdfConfig = NonNullable<ConstructorParameters<typeof PdfFormatter>[0
 type FontSpec = { name?: string; size?: number };
 type StyledItem = { style?: FontSpec };
 
-// One step on ChordVault's -3..+5 scale is one point.
+// One step on WorshipSessions' -3..+5 scale is one point.
 const MIN_PT = 5;
 
 // The library's own defaults, read once. Overriding narrowly is safe: partial
@@ -45,7 +45,7 @@ export function buildPdfConfig({
   fontName: string | null;
   fontSize: number;
 }): PdfConfig {
-  // The stock templates assume metadata ChordVault often lacks and leave the
+  // The stock templates assume metadata WorshipSessions charts often lack and leave the
   // literal text behind when it is absent: "Key of G - BPM  - Time", and a bare
   // "By". Conditions do not suppress an item, so strip the fixed text instead.
   const header = defaults.layout.header.content.map((item) => {

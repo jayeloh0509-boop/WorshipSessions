@@ -1,5 +1,5 @@
 import pymupdf
-FIX = r"C:/Users/jayel/chordvault/test/fixtures"
+FIX = r"C:/Users/jayel/WorshipSessions/test/fixtures"
 lines = [
     ("Living Hope", 16, 72),
     ("Phil Wickham", 11, 100),

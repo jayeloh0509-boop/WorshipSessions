@@ -10,12 +10,12 @@ EmperorClaw owns `127.0.0.1:3000`, so WorshipSessions runs on **`http://127.0.0.
 - `JWT_SECRET` — random 96-hex-char secret (do not print or commit)
 - `PORT=3001`
 - `HOST=127.0.0.1` — loopback only (`server.js` was patched to honor `HOST`)
-- `DB_PATH=C:/Users/jayel/chordvault/data/chordvault.db` — persistent SQLite DB (WAL mode)
+- `DB_PATH=C:/Users/jayel/WorshipSessions/data/worshipsessions.db` — persistent SQLite DB (WAL mode)
 
 ## Build & run
 
 ```powershell
-cd C:\Users\jayel\chordvault
+cd C:\Users\jayel\WorshipSessions
 npm ci                          # root deps
 cd frontend; npm ci; npm run build; cd ..   # builds SPA into public/
 npm start                       # serves app on http://127.0.0.1:3001
