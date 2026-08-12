@@ -148,7 +148,7 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 | `JWT_SECRET` | *(required)* | Secret key for signing auth tokens. **Must be set.** |
 | `PORT` | `3100` | Port the server listens on |
 | `HOST` | `0.0.0.0` | Bind address; use `127.0.0.1` behind Cloudflare Tunnel |
-| `DB_PATH` | `./data/worshipsessions.db` | SQLite database path; legacy chordvault.db files migrate automatically |
+| `DB_PATH` | `./data/worshipsessions.db` | SQLite database path; former installations migrate automatically |
 | `TURNSTILE_SITE_KEY` | *(optional)* | Cloudflare Turnstile site key — enables bot protection on registration and invite redemption |
 | `TURNSTILE_SECRET_KEY` | *(optional)* | Cloudflare Turnstile secret key (pair with `TURNSTILE_SITE_KEY`) |
 
