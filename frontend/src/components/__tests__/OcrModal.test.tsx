@@ -110,4 +110,30 @@ Chorus
     );
     expect(mockToast).toHaveBeenCalledWith('Chart recognized with TheClawBay', 'success');
   });
+
+  it('loads a text chord chart locally without calling a recognition endpoint', async () => {
+    const onResult = vi.fn();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<OcrModal hasGeminiKey={false} onResult={onResult} onClose={vi.fn()} />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(
+      input,
+      new File(
+        ['Intro\n[|Ab / / / |]\n\nVERSE 1\nI am an [Ab]instrument of exalt[Eb]ation'],
+        'Who Else - Gateway Worship.txt',
+        { type: 'text/plain' },
+      ),
+    );
+
+    const review = await screen.findByLabelText(/review and edit chart/i);
+    const chart = (review as HTMLTextAreaElement).value;
+    expect(chart).toContain('{title: Who Else}');
+    expect(chart).toContain('{artist: Gateway Worship}');
+    expect(chart).toContain('{key: Ab}');
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
+    expect(onResult).toHaveBeenCalledWith(expect.stringContaining('VERSE 1'), 'en');
+  });
 });

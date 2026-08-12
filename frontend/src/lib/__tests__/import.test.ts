@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fileToSong, chunkSongs } from '../import';
+import { fileToSong, chunkSongs, textChartToChordPro } from '../import';
 
 describe('fileToSong', () => {
   it('injects {title:} from filename when absent', () => {
@@ -45,5 +45,20 @@ describe('chunkSongs', () => {
     expect(chunks.length).toBe(2);
     expect(chunks[0].length).toBe(1);
     expect(chunks[1].length).toBe(1);
+  });
+});
+
+describe('textChartToChordPro', () => {
+  it('derives title, artist and key from a named inline-chord text chart', () => {
+    const content = textChartToChordPro(
+      'Who Else - Gateway Worship.txt',
+      'Intro\r\n[|Ab / / / |]\r\n\r\nVERSE 1\r\nI am an [Ab]instrument of exalt[Eb]ation',
+    );
+
+    expect(content).toContain('{title: Who Else}');
+    expect(content).toContain('{artist: Gateway Worship}');
+    expect(content).toContain('{key: Ab}');
+    expect(content).toContain('{x_language: en}');
+    expect(content).toContain('VERSE 1\nI am an [Ab]instrument of exalt[Eb]ation');
   });
 });

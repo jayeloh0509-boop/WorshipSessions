@@ -7,6 +7,39 @@ function basename(filename: string): string {
   return dot > 0 ? filename.slice(0, dot) : filename;
 }
 
+function filenameMetadata(filename: string): { title: string; artist: string } {
+  const name = basename(filename).trim();
+  const separator = name.lastIndexOf(' - ');
+  if (separator < 1) return { title: name, artist: '' };
+  return {
+    title: name.slice(0, separator).trim(),
+    artist: name.slice(separator + 3).trim(),
+  };
+}
+
+function firstChordKey(text: string): string {
+  const match = text.match(/\[\|?\s*([A-G](?:b|#)?(?:m)?)(?=[0-9/\s|\]])/);
+  return match?.[1] || '';
+}
+
+export function textChartToChordPro(filename: string, text: string): string {
+  const normalized = text
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n?/g, '\n')
+    .trim();
+  if (HAS_TITLE.test(normalized)) return normalized;
+
+  const { title, artist } = filenameMetadata(filename);
+  const key = firstChordKey(normalized);
+  const directives = [
+    `{title: ${title || 'Untitled'}}`,
+    ...(artist ? [`{artist: ${artist}}`] : []),
+    ...(key ? [`{key: ${key}}`] : []),
+    '{x_language: en}',
+  ];
+  return `${directives.join('\n')}\n\n${normalized}`;
+}
+
 export function fileToSong(filename: string, text: string): { content: string } {
   if (HAS_TITLE.test(text)) return { content: text };
   return { content: `{title: ${basename(filename)}}\n${text}` };

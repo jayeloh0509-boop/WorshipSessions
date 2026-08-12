@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { textChartToChordPro } from '../lib/import';
 
 interface OcrModalProps {
   hasGeminiKey: boolean;
@@ -54,6 +55,7 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isPdf, setIsPdf] = useState(false);
+  const [isTextImport, setIsTextImport] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [resultText, setResultText] = useState('');
@@ -64,15 +66,27 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
     const file = e.target.files?.[0];
     if (!file) return;
     const pdf = file.type === 'application/pdf';
+    const textFile = file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
     setIsPdf(pdf);
+    setIsTextImport(textFile);
+    setResultText('');
+    setChatHistory([]);
+    if (textFile) {
+      setPreview(file.name);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setResultText(textChartToChordPro(file.name, String(event.target?.result || '')));
+        setDetectedLang('en');
+      };
+      reader.readAsText(file);
+      return;
+    }
     if (pdf) setPreview(file.name);
     else {
       const reader = new FileReader();
       reader.onload = (ev) => setPreview(ev.target?.result as string);
       reader.readAsDataURL(file);
     }
-    setResultText('');
-    setChatHistory([]);
   };
 
   const importWorshipTogetherPdf = async () => {
@@ -160,6 +174,7 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
   };
 
   const isWorshipTogether = source === 'worship-together';
+  const showChartReview = isWorshipTogether || isTextImport;
   const hasCorrections = chatHistory.filter((m) => m.role === 'user').length > 0;
   const canExtract = !!preview;
   const review = chartReview(resultText);
@@ -176,11 +191,11 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
         className="ocr-card"
         role="dialog"
         aria-modal="true"
-        aria-label={isWorshipTogether ? 'Import Worship Together chart' : 'Import from image or PDF'}
+        aria-label={isWorshipTogether ? 'Import Worship Together chart' : 'Import from image, PDF or text'}
       >
         <div className="view-header" style={{ marginBottom: 16 }}>
           <h3 className="view-title">
-            {isWorshipTogether ? 'Import Worship Together chart' : 'Import from image or PDF'}
+            {isWorshipTogether ? 'Import Worship Together chart' : 'Import from image, PDF or text'}
           </h3>
           <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close import">
             ✕
@@ -217,20 +232,20 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
             )}
             <div className="field">
               <label htmlFor="ocr-file-input">
-                {isWorshipTogether ? 'Select downloaded chart' : 'Select image or PDF'}
+                {isWorshipTogether ? 'Select downloaded chart' : 'Select image, PDF or text chart'}
               </label>
               <input
                 id="ocr-file-input"
                 type="file"
                 ref={fileRef}
-                accept={isWorshipTogether ? 'application/pdf' : 'image/*,application/pdf'}
+                accept={isWorshipTogether ? 'application/pdf' : 'image/*,application/pdf,text/plain,.txt'}
                 onChange={handleFile}
                 style={{ fontSize: 14, padding: 8 }}
               />
             </div>
             {preview && (
               <div style={{ marginBottom: 14 }}>
-                {isPdf ? (
+                {isPdf || isTextImport ? (
                   <div className="muted-text" style={{ padding: 12, background: 'var(--surface2)', borderRadius: 8 }}>
                     📄 {preview}
                   </div>
@@ -247,18 +262,20 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
                 Uses fast MiniMax recognition first, with TheClawBay as fallback. No Gemini key is required.
               </div>
             )}
-            <button
-              className="btn"
-              onClick={isWorshipTogether ? importWorshipTogetherPdf : processVisionOcr}
-              disabled={processing || !canExtract}
-              style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}
-            >
-              {processing
-                ? 'Converting…'
-                : isWorshipTogether
-                  ? '✨ Convert PDF to editable chart'
-                  : '✨ Recognize chart'}
-            </button>
+            {!isTextImport && (
+              <button
+                className="btn"
+                onClick={isWorshipTogether ? importWorshipTogetherPdf : processVisionOcr}
+                disabled={processing || !canExtract}
+                style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}
+              >
+                {processing
+                  ? 'Converting…'
+                  : isWorshipTogether
+                    ? '✨ Convert PDF to editable chart'
+                    : '✨ Recognize chart'}
+              </button>
+            )}
             {(processing || progress > 0) && (
               <div style={{ marginTop: 12 }}>
                 {processing && (
@@ -307,7 +324,7 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
                 </span>
               )}
             </label>
-            {isWorshipTogether && (
+            {showChartReview && (
               <div className="wt-review-summary" aria-label="Import summary">
                 <div>
                   <span>Title</span>
@@ -333,11 +350,11 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
             )}
             <textarea
               className="ocr-result"
-              aria-label={isWorshipTogether ? 'Review and edit chart' : 'Extracted text'}
+              aria-label={showChartReview ? 'Review and edit chart' : 'Extracted text'}
               value={resultText}
               onChange={(event) => setResultText(event.target.value)}
             />
-            {isWorshipTogether && (
+            {showChartReview && (
               <p className="muted-text wt-review-help">
                 Check section names and chord placement. Nothing is saved until you continue to the editor and save.
               </p>
@@ -350,7 +367,7 @@ export function OcrModal({ hasGeminiKey: _hasGeminiKey, onResult, onClose, sourc
 
             <div className="flex-row" style={{ marginTop: 12 }}>
               <button className="btn" onClick={useResult}>
-                {isWorshipTogether ? 'Import into editor' : 'Use this'}
+                {showChartReview ? 'Import into editor' : 'Use this'}
               </button>
               <button className="btn btn-ghost" onClick={onClose}>
                 Cancel

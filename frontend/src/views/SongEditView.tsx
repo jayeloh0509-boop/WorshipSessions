@@ -322,7 +322,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
                 setOcrOpen(true);
               }}
             >
-              &#128247; Import from image or PDF
+              &#128247; Import from image, PDF or text
             </button>
           </div>
         )}
