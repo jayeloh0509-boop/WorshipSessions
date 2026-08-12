@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
+import { useLiveMode } from '../hooks/useLiveMode';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
@@ -30,6 +31,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const { t } = useI18n();
   const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const liveMode = useLiveMode(containerRef);
 
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -228,7 +230,11 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   // hideYt resolved in effectivePrefs above
 
   return (
-    <div ref={containerRef} className="setlist-play-container">
+    <div
+      ref={containerRef}
+      data-testid="setlist-play-container"
+      className={`setlist-play-container${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}`}
+    >
       <div className="setlist-play-header">
         <div className="setlist-play-header-left">
           <button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</button>
@@ -257,6 +263,14 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         </div>
 
         <div className="setlist-play-header-right">
+          <button
+            className={`live-mode-button${liveMode.active ? ' active' : ''}`}
+            type="button"
+            onClick={() => void (liveMode.active ? liveMode.stop() : liveMode.start())}
+            aria-label={liveMode.active ? 'Exit Live Mode' : 'Start Live Mode'}
+          >
+            {liveMode.active ? 'EXIT LIVE' : 'LIVE'}
+          </button>
           {entry.bpm && <span className="badge badge-bpm">{entry.bpm} bpm</span>}
           {!hideYt && entry.youtube_url && (
             <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">&#9654; YT</a>
@@ -264,6 +278,33 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         </div>
       </div>
 
+      {liveMode.active && (
+        <div className="live-mode-topbar">
+          <button
+            className="live-mode-reveal"
+            type="button"
+            onClick={liveMode.controlsVisible ? liveMode.hideControls : liveMode.showControls}
+          >
+            {liveMode.controlsVisible ? 'Hide controls' : 'Show controls'}
+          </button>
+          <div className="live-mode-song-info">
+            <strong>{entry.title}</strong>
+            <span>
+              {index + 1} / {total}
+              {keyDisplay ? ` · Key ${keyDisplay}` : ''}
+              {entry.bpm ? ` · ${entry.bpm} bpm` : ''}
+            </span>
+          </div>
+          <span
+            className={`live-mode-awake${liveMode.wakeLockActive ? ' active' : ''}`}
+            title={liveMode.wakeLockActive ? 'Screen wake lock active' : 'Screen wake lock unavailable'}
+          >
+            {liveMode.wakeLockActive ? 'AWAKE' : 'WAKE?'}
+          </span>
+        </div>
+      )}
+
+      <div className="setlist-play-controls">
       <Toolbar
         currentKey={keyDisplay}
         nashville={!!effNum}
@@ -293,8 +334,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
           font: entry._font != null,
         }}
       />
+      </div>
 
-      {slOptionsOpen && (
+      {slOptionsOpen && (!liveMode.active || liveMode.controlsVisible) && (
         <SettingsPanel
           nashville={slNashville}
           onNashvilleChange={setSlNashville}
@@ -339,6 +381,14 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
             />
           )}
         </>
+      )}
+
+      {liveMode.active && (
+        <div className="live-mode-navigation" aria-label="Live song navigation">
+          <button type="button" onClick={prev} disabled={index === 0} aria-label="Previous song">‹</button>
+          <button type="button" className="live-mode-exit" onClick={() => void liveMode.stop()} aria-label="Exit Live Mode">EXIT</button>
+          <button type="button" onClick={next} disabled={index === total - 1} aria-label="Next song">›</button>
+        </div>
       )}
     </div>
   );
