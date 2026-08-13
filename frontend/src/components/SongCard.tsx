@@ -10,37 +10,51 @@ interface SongCardProps {
 
 export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
   return (
-    <div className="song-card" onClick={onClick}>
+    <article className="song-card library-song-row">
       <div className="song-card-info">
-        <div className="song-card-title">{song.title}</div>
-        {song.artist && <div className="song-card-meta">{song.artist}</div>}
+        <button className="song-card-open" type="button" aria-label={`Open ${song.title} chart`} onClick={onClick}>
+          <span className="song-card-title">{song.title}</span>
+          {song.artist && <span className="song-card-meta">{song.artist}</span>}
+        </button>
         {song.tags && (
-          <div className="song-card-tags">
+          <div className="song-card-tags" aria-label="Song tags">
             {song.tags.split(',').map((tag) => (
-              <span key={tag} className="badge badge-tag">{tag}</span>
+              <span key={tag} className="badge badge-tag">
+                {tag.trim()}
+              </span>
             ))}
           </div>
         )}
       </div>
-      <div className="song-card-actions">
-        {song.version_count && song.version_count > 1 && (
-          <span className="badge badge-tag" style={{ background: 'var(--accent-alt)', color: 'white' }}>
-            {song.version_count} Versions
+      <div className="song-card-performance" aria-label="Song performance details">
+        {song.key && <span className="song-card-key">{song.key}</span>}
+        {song.bpm && <span className="song-card-bpm">{song.bpm} BPM</span>}
+        {song.language && (
+          <span className="song-card-language" title={languageName(song.language)}>
+            {song.language.toUpperCase()}
           </span>
         )}
-        {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
-        {song.visibility === 'private' && <span className="badge badge-private" title="Private">&#128274;</span>}
-        {song.key && <span className="badge badge-key">{song.key}</span>}
-        {song.bpm && <span className="badge badge-bpm">{song.bpm}</span>}
+        {song.version_count && song.version_count > 1 && (
+          <span className="song-card-versions">{song.version_count} versions</span>
+        )}
+        {song.visibility === 'private' && (
+          <span className="song-card-private" aria-label="Private">
+            &#128274; Private
+          </span>
+        )}
         {isOwner && onEdit && (
           <button
-            className="btn btn-ghost btn-sm"
-            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="btn btn-ghost btn-sm song-card-edit"
+            aria-label={`Edit ${song.title}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
           >
             Edit
           </button>
         )}
       </div>
-    </div>
+    </article>
   );
 }

@@ -838,3 +838,101 @@ input[type="search"]::-webkit-search-cancel-button {
 
 @media (prefers-reduced-motion:reduce) { .song-search-backdrop,.song-search-modal,.song-search-result,.song-search-skeleton>span,.song-search-skeleton b,.song-search-skeleton i,.song-search-skeleton em,.mini-spinner { animation-duration:.01ms!important; animation-delay:0ms!important; animation-iteration-count:1!important; }.song-search-result,.song-search-box,.song-use-button,.song-search-close,.song-result-art span { transition:none!important; } }
 
+
+/* -- Chart library rows ------------------- */
+.library-song-row {
+  align-items: center;
+  gap: 20px;
+  min-height: 78px;
+  padding: 15px 4px;
+}
+
+.song-card-open {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.song-card-open:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 3px solid rgba(224, 183, 106, 0.3);
+  outline-offset: 5px;
+}
+
+.library-song-row .song-card-title {
+  display: block;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -0.015em;
+}
+
+.library-song-row .song-card-meta {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  opacity: 1;
+}
+
+.song-card-performance {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.song-card-key,
+.song-card-bpm,
+.song-card-language,
+.song-card-versions,
+.song-card-private {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: var(--ghost-bg);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.song-card-key {
+  border-color: rgba(208, 168, 93, 0.3);
+  color: var(--accent-chord);
+  background: rgba(208, 168, 93, 0.08);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.song-card-edit {
+  min-height: 32px;
+}
+
+@media (max-width: 700px) {
+  .library-song-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    padding: 16px 2px;
+  }
+
+  .song-card-performance {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .song-card-edit { margin-left: auto; }
+}
