@@ -255,3 +255,125 @@
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
   }
 }
+
+/* -- Reading polish: calm, musician-first chart typography -------- */
+.chord-sheet-paper {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.chord-sheet-paper::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: radial-gradient(rgba(77, 61, 35, 0.08) 0.6px, transparent 0.6px);
+  background-size: 5px 5px;
+  content: '';
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.chord-sheet-paper #chord-output {
+  position: relative;
+  z-index: 1;
+}
+
+.chord-sheet-paper .chord-sheet .paragraph {
+  margin: 0 0 1.65rem;
+}
+
+.chord-sheet-paper .chord-sheet .paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.chord-sheet-paper .chord-sheet .row {
+  margin-bottom: 0.7rem;
+  line-height: 1.15;
+}
+
+.chord-sheet-paper .chord-sheet .row:last-child {
+  margin-bottom: 0;
+}
+
+.chord-sheet-paper .chord-sheet .chord {
+  min-height: 1.35em;
+  margin-bottom: 0.15rem;
+  color: #936b2e;
+  font-size: calc(0.8em * var(--font-scale));
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  line-height: 1.35;
+  text-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.45);
+}
+
+.chord-sheet-paper .chord-sheet .lyrics {
+  color: #252a27;
+  font-size: calc(1.02em * var(--font-scale));
+  letter-spacing: 0.005em;
+  line-height: 1.55;
+}
+
+.chord-sheet-paper .chord-sheet .section-row {
+  margin: 0 0 0.7rem;
+  padding-top: 0.15rem;
+}
+
+.chord-sheet-paper .chord-sheet .section-row h3.label {
+  position: relative;
+  margin: 0 !important;
+  padding: 0 0 0.55rem !important;
+  border-bottom: 0 !important;
+  color: #756a58 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+}
+
+.chord-sheet-paper .chord-sheet .section-row h3.label::after {
+  display: block;
+  width: 34px;
+  height: 2px;
+  margin-top: 0.5rem;
+  border-radius: 99px;
+  background: #c89b4d;
+  content: '';
+}
+
+.chord-sheet-paper .chord-sheet .paragraph.chorus,
+.chord-sheet-paper .chord-sheet .paragraph.bridge,
+.chord-sheet-paper .chord-sheet .paragraph.prechorus {
+  margin-bottom: 1.65rem;
+}
+
+.chord-sheet-paper .chord-sheet .comment,
+.chord-sheet-paper .chord-sheet .tag {
+  margin: 0.35rem 0 0.7rem;
+  color: #77786f;
+  font-size: calc(0.76em * var(--font-scale));
+  line-height: 1.45;
+}
+
+.chord-sheet-paper.two-col > #chord-output {
+  column-gap: clamp(28px, 5vw, 64px);
+  column-rule: 1px solid rgba(91, 77, 54, 0.16);
+}
+
+.chord-sheet-paper.two-col .paragraph {
+  padding-bottom: 0.1rem;
+}
+
+@media (max-width: 600px) {
+  .chord-sheet-paper .chord-sheet .paragraph {
+    margin-bottom: 1.4rem;
+  }
+
+  .chord-sheet-paper .chord-sheet .lyrics {
+    font-size: calc(1em * var(--font-scale));
+    line-height: 1.52;
+  }
+
+  .chord-sheet-paper .chord-sheet .chord {
+    font-size: calc(0.78em * var(--font-scale));
+  }
+}
