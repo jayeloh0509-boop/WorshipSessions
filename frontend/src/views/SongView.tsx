@@ -241,19 +241,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
             </button>
           </div>
         </div>
-        <div className="song-view-identity">
-          <div className="song-view-heading">
-            <div className="song-view-eyebrow">Chord chart</div>
-            <h1 className="song-view-title">{song.title}</h1>
-            {song.artist && <div className="song-view-artist">{song.artist}</div>}
-          </div>
-          <div className="song-view-key" aria-label={`Current key ${chord.currentKey || 'unknown'}`}>
-            <span className="song-view-key-label">Key</span>
-            <span className="song-view-key-value">{chord.currentKey || '?'}</span>
-          </div>
-        </div>
         <div className="song-view-meta">
-          {song.bpm && <span className="song-view-stat">{song.bpm} BPM</span>}
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
           {song.language && (
             <span className="song-view-stat" title={languageName(song.language)}>
@@ -317,13 +305,40 @@ export function SongView({ songId, navigate }: SongViewProps) {
         </nav>
       )}
 
-      <ChordSheet
-        html={renderedHtml}
-        twoCol={twoColState.twoCol}
-        fontSize={fontScale.fontSize}
-        autoFit={autoFitActive}
-        tone="paper"
-      />
+      <section className="lead-sheet-document" aria-label={`${song.title} chord chart`}>
+        <header className="lead-sheet-masthead">
+          <div className="lead-sheet-heading">
+            <span className="lead-sheet-kicker">WorshipSessions · Lead Sheet</span>
+            <h2>{song.title}</h2>
+            {song.artist && <p>{song.artist}</p>}
+          </div>
+          <div className="lead-sheet-performance" aria-label="Performance details">
+            <div className="lead-sheet-key">
+              <span>Key</span>
+              <strong className="lead-sheet-key-value">{chord.currentKey || '?'}</strong>
+            </div>
+            {song.bpm && (
+              <div className="lead-sheet-tempo">
+                <span>Tempo</span>
+                <strong className="lead-sheet-tempo-value">{song.bpm}</strong>
+                <small>BPM</small>
+              </div>
+            )}
+          </div>
+        </header>
+        <div className="lead-sheet-rule" aria-hidden="true">
+          <span />
+          <b>♩</b>
+          <span />
+        </div>
+        <ChordSheet
+          html={renderedHtml}
+          twoCol={twoColState.twoCol}
+          fontSize={fontScale.fontSize}
+          autoFit={autoFitActive}
+          tone="paper"
+        />
+      </section>
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">

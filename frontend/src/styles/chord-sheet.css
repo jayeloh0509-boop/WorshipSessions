@@ -377,3 +377,196 @@
     font-size: calc(0.78em * var(--font-scale));
   }
 }
+
+/* -- Lead-sheet document composition ----------------------------- */
+.lead-sheet-document {
+  max-width: var(--chart-max-width);
+  margin: 14px auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(82, 64, 37, 0.22);
+  border-radius: 22px;
+  background: #f5f0e4;
+  box-shadow: 0 26px 70px rgba(4, 10, 12, 0.28), 0 2px 0 rgba(255, 255, 255, 0.55) inset;
+}
+
+.lead-sheet-masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 32px;
+  padding: clamp(28px, 5vw, 54px) clamp(22px, 6vw, 68px) 24px;
+  color: #222724;
+  background:
+    linear-gradient(120deg, rgba(202, 157, 77, 0.11), transparent 42%),
+    #f5f0e4;
+}
+
+.lead-sheet-kicker {
+  display: block;
+  margin-bottom: 10px;
+  color: #96703b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.lead-sheet-heading h2 {
+  margin: 0;
+  color: #1f2522;
+  font-family: var(--font-serif);
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.lead-sheet-heading p {
+  margin: 11px 0 0;
+  color: #686b65;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+}
+
+.lead-sheet-performance {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.lead-sheet-key,
+.lead-sheet-tempo {
+  display: grid;
+  min-width: 78px;
+  align-content: center;
+  padding: 10px 13px;
+  border: 1px solid rgba(109, 84, 45, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 252, 243, 0.72);
+  text-align: center;
+}
+
+.lead-sheet-key span,
+.lead-sheet-tempo span {
+  color: #7d7568;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lead-sheet-key strong,
+.lead-sheet-tempo strong {
+  margin-top: 3px;
+  color: #916525;
+  font-family: var(--font-mono);
+  font-size: 25px;
+  line-height: 1;
+}
+
+.lead-sheet-tempo small {
+  margin-top: 3px;
+  color: #8a8378;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.lead-sheet-rule {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 0 clamp(22px, 6vw, 68px);
+  color: #ac8548;
+  background: #f5f0e4;
+}
+
+.lead-sheet-rule span {
+  height: 1px;
+  background: rgba(91, 74, 46, 0.2);
+}
+
+.lead-sheet-rule b {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lead-sheet-document > .chord-sheet-paper {
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.lead-sheet-document .chord-sheet-paper .paragraph {
+  position: relative;
+  padding: 18px 20px 19px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+}
+
+.lead-sheet-document .chord-sheet-paper .paragraph.verse {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lead-sheet-document .chord-sheet-paper .paragraph.chorus {
+  border-color: rgba(191, 143, 62, 0.24);
+  background: linear-gradient(100deg, rgba(205, 161, 82, 0.14), rgba(255, 255, 255, 0.26));
+  box-shadow: 4px 0 0 #c49343 inset;
+}
+
+.lead-sheet-document .chord-sheet-paper .paragraph.bridge {
+  border-color: rgba(88, 108, 91, 0.2);
+  background: rgba(96, 121, 99, 0.07);
+  box-shadow: 4px 0 0 #718b73 inset;
+}
+
+.lead-sheet-document .chord-sheet-paper .paragraph.prechorus {
+  border-color: rgba(119, 111, 92, 0.16);
+  background: rgba(126, 113, 88, 0.05);
+}
+
+.lead-sheet-document .chord-sheet-paper .section-row h3.label::after {
+  width: 42px;
+}
+
+@media (max-width: 700px) {
+  .lead-sheet-document {
+    margin-left: calc(var(--page-pad) * -1);
+    margin-right: calc(var(--page-pad) * -1);
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .lead-sheet-masthead {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 28px 18px 20px;
+  }
+
+  .lead-sheet-heading h2 {
+    font-size: clamp(32px, 11vw, 46px);
+  }
+
+  .lead-sheet-performance {
+    justify-content: flex-start;
+  }
+
+  .lead-sheet-key,
+  .lead-sheet-tempo {
+    min-width: 76px;
+  }
+
+  .lead-sheet-rule {
+    padding-inline: 18px;
+  }
+
+  .lead-sheet-document .chord-sheet-paper .paragraph {
+    margin-bottom: 12px;
+    padding: 14px 12px 16px;
+    border-radius: 11px;
+  }
+}
