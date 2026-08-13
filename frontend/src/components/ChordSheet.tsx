@@ -6,7 +6,7 @@ interface ChordSheetProps {
   twoCol?: boolean;
   fontSize?: number;
   autoFit?: boolean; // Kept for class naming if needed
-  tone?: 'default' | 'paper';
+  tone?: 'default' | 'paper' | 'dark';
 }
 
 export function ChordSheet({ html, twoCol, fontSize, autoFit, tone = 'default' }: ChordSheetProps) {
@@ -30,7 +30,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit, tone = 'default' }
     return () => clearTimeout(t);
   }, [html]);
 
-  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${settle ? ' chord-settle' : ''}${tone === 'paper' ? ' chord-sheet-paper' : ''}`;
+  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${settle ? ' chord-settle' : ''}${tone === 'paper' ? ' chord-sheet-paper' : tone === 'dark' ? ' chord-sheet-dark' : ''}`;
 
   return (
     <div className={cls} style={style}>

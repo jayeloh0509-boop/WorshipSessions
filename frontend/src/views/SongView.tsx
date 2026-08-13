@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { useChordRenderer } from '../hooks/useChordRenderer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
+import { useChartTone } from '../hooks/useChartTone';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
@@ -78,6 +79,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
+  const chartTone = useChartTone();
   const [autoFitActive, setAutoFitActive] = useState(false);
 
   const handleAutoFit = () => {
@@ -306,6 +308,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
           autoFitActive={autoFitActive}
           onExportPdf={handleExportPdf}
           renderKey={songId}
+          compactKey
+          chartTone={chartTone.tone}
+          onChartToneChange={chartTone.toggleTone}
         />
       </div>
 
@@ -325,7 +330,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
           twoCol={twoColState.twoCol}
           fontSize={fontScale.fontSize}
           autoFit={autoFitActive}
-          tone="paper"
+          tone={chartTone.tone}
         />
       </section>
 

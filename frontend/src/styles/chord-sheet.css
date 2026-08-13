@@ -96,7 +96,25 @@
   margin-bottom: 3px;
 }
 
-.chord-sheet .lyrics {
+/* A word's column is normally sized by whichever is wider, the word or
+   its chord — necessary for chord-only rows (intros, instrumental bars),
+   where several bare chords in a row each need their own reserved width.
+   But when a chord is attached to an actual word and is the wider of the
+   two, that reserved width was left as dead space trailing the word. Let
+   the chord overflow into the natural gap after its word instead, so the
+   column is sized by the word alone — standard chord-chart behavior.
+   Skip this when the very next column also carries its own chord (e.g.
+   a hyphenated word with a chord change mid-syllable, "Ho-[Ab]ly"): with
+   nothing to overflow into, the overflowing chord would run straight
+   into the next one and the two would render on top of each other. That
+   case keeps the old reserved-width behavior instead. */
+.chart-reading-surface .chord-sheet .column:has(.lyrics:not(:empty)):not(:has(+ .column .chord:not(:empty))) .chord {
+  width: 0;
+  padding-right: 0;
+  overflow: visible;
+}
+
+.chart-reading-surface .chord-sheet .lyrics {
   font-family: var(--font-sans);
   font-size: calc(1em * var(--font-scale)); /* 18px */
   color: var(--text);
@@ -104,6 +122,12 @@
   line-height: 1.5;
   min-height: 1.5em;
   display: block;
+  /* A word's column is sized to whichever is wider, itself or its chord.
+     When a long chord symbol (e.g. "Bbm7", "Bb/D") sits over a short word,
+     centering the word keeps the leftover width from all piling up after
+     it as one large, odd-looking gap. Chords stay left-anchored so the
+     far more common case — word wider than its chord — is unaffected. */
+  text-align: center;
 }
 
 /* Chord-only rows (intros, instrumental breaks) emit empty lyric lines —
@@ -387,39 +411,19 @@
 .chart-reading-surface > .chord-sheet-paper {
   max-width: none;
   margin: 0;
-  border: 1px solid #d9dee5;
+  border: 1px solid rgba(84, 70, 46, 0.22);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--paper);
   box-shadow: 0 10px 30px rgba(10, 20, 34, 0.08);
-}
-
-.chart-reading-surface .chord-sheet-paper::before {
-  display: none;
-}
-
-.chart-reading-surface .chord-sheet-paper .chord {
-  color: #315f8c;
-  text-shadow: none;
-}
-
-.chart-reading-surface .chord-sheet-paper .lyrics {
-  color: #20262e;
-}
-
-.chart-reading-surface .chord-sheet-paper .section-row h3.label {
-  color: #667085 !important;
 }
 
 .chart-reading-surface .chord-sheet-paper .section-row h3.label::after {
   width: 28px;
   height: 2px;
-  background: #4b78a6;
 }
 
 .chart-reading-surface .chord-sheet-paper .paragraph,
 .chart-reading-surface .chord-sheet-paper .paragraph.verse,
-.chart-reading-surface .chord-sheet-paper .paragraph.chorus,
-.chart-reading-surface .chord-sheet-paper .paragraph.bridge,
 .chart-reading-surface .chord-sheet-paper .paragraph.prechorus {
   margin-bottom: 1.55rem;
   padding: 0;
@@ -429,8 +433,26 @@
   box-shadow: none;
 }
 
-.chart-reading-surface .chord-sheet-paper.two-col > #chord-output {
-  column-rule-color: #e3e7ec;
+/* Chorus/bridge keep a quiet left rule so they're spottable mid-song
+   without reintroducing the dark theme's rounded highlight cards. */
+.chart-reading-surface .chord-sheet-paper .paragraph.chorus,
+.chart-reading-surface .chord-sheet-paper .paragraph.bridge {
+  margin-bottom: 1.55rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chart-reading-surface .chord-sheet-paper .paragraph.chorus {
+  padding: 0 0 0 14px;
+  border-left: 3px solid #c9a35c;
+  margin-left: -17px;
+}
+
+.chart-reading-surface .chord-sheet-paper .paragraph.bridge {
+  padding: 0 0 0 14px;
+  border-left: 2px dashed #a79a86;
+  margin-left: -16px;
 }
 
 @media (max-width: 700px) {
@@ -444,5 +466,168 @@
     border-right: 0;
     border-radius: 0;
     box-shadow: 0 8px 22px rgba(10, 20, 34, 0.07);
+  }
+}
+
+/* Explicit dark tone for SongView. This is intentionally scoped to the
+   chart surface so the application theme and performance surfaces remain
+   independent. */
+.chart-reading-surface > .chord-sheet-dark {
+  --surface: #151b22;
+  --surface2: #1d2630;
+  --border: rgba(231, 237, 242, 0.14);
+  --text: #edf1f4;
+  --muted: #aab4bd;
+  --chord: #d8ae5d;
+  --ui-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.chart-reading-surface > .chord-sheet-dark .chord-sheet .chord {
+  color: var(--chord);
+}
+
+.chart-reading-surface > .chord-sheet-dark .chord-sheet .lyrics {
+  color: var(--text);
+}
+
+/* -- Dark chart-reading surface --------------------------------------
+   The LIGHT/DARK switch on SongView should change color, not the whole
+   feel of the page. Give the dark ("default" tone) card the same card
+   shape, generous reading rhythm and quiet chorus/bridge cue as the
+   paper surface above — it previously fell back to the older, denser
+   spacing shared with Live Mode, which made toggling tone feel like
+   switching to a different, less-finished view. Colors already come
+   from the same tokens (--chord, --muted) the rest of the dark theme
+   uses, so only layout/typography needs restating here. */
+.chart-reading-surface > .chord-sheet-wrap:not(.chord-sheet-paper) {
+  max-width: none;
+  margin: 0;
+  border-radius: 14px;
+  padding: clamp(24px, 5vw, 54px) clamp(18px, 6vw, 68px);
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph {
+  margin: 0 0 1.65rem;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .row {
+  margin-bottom: 0.7rem;
+  line-height: 1.15;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .row:last-child {
+  margin-bottom: 0;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .chord {
+  min-height: 1.35em;
+  margin-bottom: 0.15rem;
+  font-size: calc(0.8em * var(--font-scale));
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  line-height: 1.35;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .lyrics {
+  font-size: calc(1.02em * var(--font-scale));
+  letter-spacing: 0.005em;
+  line-height: 1.55;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .section-row {
+  margin: 0 0 0.7rem;
+  padding-top: 0.15rem;
+}
+
+/* The base badge system gives .chorus its own filled-white/white-text
+   variant (meant for the old rounded-card highlight look). Paper mode
+   already neutralizes every section label back to a plain, muted style
+   before laying its own underline treatment on top — this is the same
+   reset for dark mode, which was missing it: without it, "CHORUS" was
+   rendering as invisible white text on a white pill. */
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .section-label,
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet h3.label {
+  --badge-bg-top: transparent;
+  --badge-bg-bot: transparent;
+  --badge-text: var(--muted);
+  --badge-border: transparent;
+  --badge-padding: 8px 0 5px;
+  --badge-radius: 0;
+  display: block !important;
+  width: 100%;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .section-row h3.label {
+  position: relative;
+  margin: 0 !important;
+  padding: 0 0 0.55rem !important;
+  border-bottom: 0 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .section-row h3.label::after {
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-top: 0.5rem;
+  border-radius: 99px;
+  background: var(--chord);
+  content: '';
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph,
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.verse,
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.prechorus {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.chorus,
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.bridge {
+  margin-bottom: 1.65rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.chorus {
+  padding: 0 0 0 14px;
+  border-left: 3px solid var(--chord);
+  margin-left: -17px;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .paragraph.bridge {
+  padding: 0 0 0 14px;
+  border-left: 2px dashed var(--muted);
+  margin-left: -16px;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .comment,
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .tag {
+  margin: 0.35rem 0 0.7rem;
+  font-size: calc(0.76em * var(--font-scale));
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .chart-reading-surface > .chord-sheet-wrap:not(.chord-sheet-paper) {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
   }
 }

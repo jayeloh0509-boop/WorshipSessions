@@ -439,6 +439,24 @@
   letter-spacing: 0.04em;
 }
 
+.transpose-btn.font-btn.col-toggle {
+  width: auto;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.transpose-btn.font-btn.tone-toggle {
+  width: auto;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .toolbar-divider {
   width: 1px;
   height: 24px;

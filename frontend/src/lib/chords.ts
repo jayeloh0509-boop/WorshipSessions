@@ -59,6 +59,25 @@ export function updateDirective(content: string, name: string, value: string | n
   return lines.join('\n');
 }
 
+// Some imports (e.g. Worship Together downloads) run every section together
+// with no blank lines at all, so the whole chart parses as one unbreakable
+// paragraph — two-column layout has nothing to break on and crams the song
+// into a single narrow column while the other sits empty. Insert a blank
+// line before each section label when one isn't already there, so a
+// paragraph break exists at every section boundary regardless of source
+// formatting.
+function ensureSectionParagraphBreaks(text: string): string {
+  const lines = text.split('\n');
+  const out: string[] = [];
+  for (const line of lines) {
+    if (out.length > 0 && out[out.length - 1].trim() !== '' && SECTION_LABEL_RE.test(line.trim())) {
+      out.push('');
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
 export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJS.Song; format: string | null } | null {
   // Pre-process content: force all chords to preferred enharmonic spellings (Sharps)
   // and fix spacing issues in slash chords (e.g. [A / C#] -> [A/C#]) BEFORE parsing.
@@ -69,6 +88,8 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
     // Preserve the source chart's written enharmonic spelling.
     return `[${cleaned}]`;
   });
+
+  content = ensureSectionParagraphBreaks(content);
 
   // Also normalize Chords-over-lyrics format (lines with only chords)
   content = content

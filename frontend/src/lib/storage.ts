@@ -3,6 +3,7 @@ import type { User, LocalSetlist } from '../types';
 const KEYS = {
   user: 'cv_user',
   theme: 'cv_theme',
+  chartTone: 'cv_chart_tone',
   fontsize: 'cv_fontsize',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
@@ -29,6 +30,14 @@ export function getStoredTheme(): 'dark' | 'light' {
 
 export function setStoredTheme(theme: 'dark' | 'light'): void {
   localStorage.setItem(KEYS.theme, theme);
+}
+
+export function getStoredChartTone(): 'paper' | 'dark' {
+  return localStorage.getItem(KEYS.chartTone) === 'dark' ? 'dark' : 'paper';
+}
+
+export function setStoredChartTone(tone: 'paper' | 'dark'): void {
+  localStorage.setItem(KEYS.chartTone, tone);
 }
 
 export function getStoredFontSize(): number {

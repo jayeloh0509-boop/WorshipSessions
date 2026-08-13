@@ -85,6 +85,34 @@ That [G]saved a [Em]wretch like [D]me
     expect(result!.format).toBeNull(); // but no chord format detected
   });
 
+  it('creates paragraph boundaries for adjacent imported sections', () => {
+    const content = [
+      '{title: Imported Song}',
+      '{key: G}',
+      '{x_source: Worship Together download}',
+      '[Verse 1]',
+      '[G]First verse line',
+      '[Chorus]',
+      '[C]Chorus line',
+      '[Verse 2]',
+      '[D]Second verse line',
+    ].join('\n');
+
+    const result = parseSongAutoWithFormat(content);
+
+    expect(result).not.toBeNull();
+    expect(result!.song.paragraphs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('does not add duplicate paragraph boundaries when sections are already separated', () => {
+    const content = '[Verse 1]\n[G]Verse line\n\n[Chorus]\n[C]Chorus line';
+
+    const result = parseSongAutoWithFormat(content);
+
+    expect(result).not.toBeNull();
+    expect(result!.song.paragraphs).toHaveLength(2);
+  });
+
   it('handles content with only whitespace lines between directives and chords', () => {
     const content = '{title: Song}\n\n\n\n[G]Lyrics [C]here';
     expect(detectFormat(content)).toBe('ChordPro');

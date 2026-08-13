@@ -100,6 +100,20 @@ h1, h2, .hero-title, .about-title,
   font-weight: 600;
 }
 
+/* -- Chart toolbar: same quiet-border, brass-when-engaged language
+   as the key pill above, so every control in the bar reads as a
+   button at rest instead of only appearing on hover (previously
+   transparent until hovered, unlike every other toolbar pill). --- */
+.transpose-btn {
+  border-color: var(--border);
+}
+.transpose-btn.active,
+.number-toggle:has(input:checked) {
+  background: none;
+  color: var(--chord);
+  border-color: var(--chord);
+}
+
 /* Key picker: quiet unfold, no spring */
 @media (prefers-reduced-motion: no-preference) {
   .key-picker {

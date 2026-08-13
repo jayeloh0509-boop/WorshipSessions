@@ -337,9 +337,9 @@ textarea { resize: vertical; min-height: 300px; font-family: var(--font-mono); f
 .btn-full { width: 100%; justify-content: center; }
 /* -- Song Cards --------------------------─ */
 .song-grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
 }
 
 .song-card {

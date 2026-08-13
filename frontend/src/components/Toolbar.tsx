@@ -22,6 +22,15 @@ interface ToolbarProps {
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
   settingsActive?: boolean;
   renderKey?: number | string;
+  /** When the current key is already shown prominently elsewhere (e.g. the
+   * SongView header badge), avoid repeating it here — show a plain "change
+   * key" affordance instead of duplicating the value. */
+  compactKey?: boolean;
+  /** Current chart reading surface. Only rendered when onChartToneChange is
+   * also passed — views that don't offer a light/dark switch (Live Mode,
+   * setlist prep) simply omit both props. */
+  chartTone?: 'paper' | 'dark';
+  onChartToneChange?: () => void;
 }
 
 export function Toolbar({
@@ -45,6 +54,9 @@ export function Toolbar({
   overrides,
   settingsActive,
   renderKey,
+  compactKey,
+  chartTone,
+  onChartToneChange,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
@@ -61,8 +73,15 @@ export function Toolbar({
           className={`key-current${nashville ? ' disabled' : ''}`}
           id="key-display"
           onClick={() => setPickerOpen((v) => !v)}
+          aria-label={`Change key, currently ${currentKey || 'unknown'}`}
         >
-          KEY {currentKey || '?'}
+          {compactKey ? (
+            <>
+              KEY <span aria-hidden="true">&#9662;</span>
+            </>
+          ) : (
+            `KEY ${currentKey || '?'}`
+          )}
         </button>
         <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
           <input
@@ -73,26 +92,22 @@ export function Toolbar({
           />
           <span>123</span>
         </label>
+        <span className="toolbar-divider" />
         <button
-          className={`transpose-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
+          className={`transpose-btn font-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
           onClick={onTwoColToggle}
-          title={twoCol ? 'Single column' : 'Multi-column'}
+          title={twoCol ? 'Switch to single column' : 'Switch to two columns'}
+          aria-label={twoCol ? 'Switch to single column' : 'Switch to two columns'}
+          aria-pressed={twoCol}
         >
-          &#124;&#124;
+          2-COL
         </button>
-        <button
-          className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
-          onClick={() => onFontChange(-1)}
-        >
+        <button className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`} onClick={() => onFontChange(-1)}>
           A&#8722;
         </button>
-        <button
-          className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
-          onClick={() => onFontChange(1)}
-        >
+        <button className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`} onClick={() => onFontChange(1)}>
           A+
         </button>
-        <span className="toolbar-divider" />
         {onAutoFit && (
           <button
             className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
@@ -102,13 +117,21 @@ export function Toolbar({
             FIT
           </button>
         )}
-        <span className="toolbar-spacer" />
-        {onExportPdf && (
+        {onChartToneChange && (
           <button
-            className="transpose-btn font-btn pdf-btn"
-            onClick={onExportPdf}
-            title="Export as PDF"
+            className={`transpose-btn font-btn tone-toggle${chartTone === 'dark' ? ' active' : ''}`}
+            onClick={onChartToneChange}
+            title={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
+            aria-label={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
+            aria-pressed={chartTone === 'dark'}
           >
+            {chartTone === 'dark' ? 'DARK' : 'LIGHT'}
+          </button>
+        )}
+        <span className="toolbar-spacer" />
+        {(onExportPdf || onToggleSettings) && <span className="toolbar-divider" />}
+        {onExportPdf && (
+          <button className="transpose-btn font-btn pdf-btn" onClick={onExportPdf} title="Export as PDF">
             PDF
           </button>
         )}
@@ -135,8 +158,22 @@ export function Toolbar({
         onPickKey={onPickKey}
         visible={pickerOpen}
         isModified={isModified}
-        onSaveOnline={onSaveOnline ? () => { onSaveOnline?.(); setPickerOpen(false); } : undefined}
-        onSaveLocal={onSaveLocal ? () => { onSaveLocal?.(); setPickerOpen(false); } : undefined}
+        onSaveOnline={
+          onSaveOnline
+            ? () => {
+                onSaveOnline?.();
+                setPickerOpen(false);
+              }
+            : undefined
+        }
+        onSaveLocal={
+          onSaveLocal
+            ? () => {
+                onSaveLocal?.();
+                setPickerOpen(false);
+              }
+            : undefined
+        }
       />
     </>
   );
