@@ -2643,3 +2643,95 @@
   .song-reading-controls .transpose-bar::-webkit-scrollbar { display: none; }
   .song-roadmap { top: 112px; }
 }
+
+/* -- Setlist library rows ----------------- */
+.library-setlist-row {
+  align-items: center;
+  gap: 16px;
+  min-height: 78px;
+  padding: 14px 4px;
+}
+
+.setlist-card-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.setlist-card-open:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 3px solid rgba(224, 183, 106, 0.3);
+  outline-offset: 5px;
+}
+
+.setlist-card-index {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(208, 168, 93, 0.28);
+  border-radius: 11px;
+  color: var(--accent-chord);
+  background: rgba(208, 168, 93, 0.08);
+  font-size: 18px;
+}
+
+.library-setlist-row .song-card-info {
+  min-width: 0;
+}
+
+.library-setlist-row .song-card-title,
+.library-setlist-row .song-card-meta {
+  display: block;
+}
+
+.library-setlist-row .song-card-title {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.015em;
+}
+
+.library-setlist-row .song-card-meta {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  opacity: 1;
+}
+
+.setlist-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.setlist-play-button {
+  min-width: 68px;
+}
+
+@media (max-width: 600px) {
+  .library-setlist-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 11px;
+    padding: 16px 2px;
+  }
+
+  .setlist-card-open {
+    width: 100%;
+  }
+
+  .setlist-card-actions {
+    justify-content: flex-end;
+  }
+}

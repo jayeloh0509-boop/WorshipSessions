@@ -211,6 +211,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                   key={sl.id}
                   setlist={sl}
                   onClick={() => navigate('setlist-edit', { id: String(sl.id) })}
+                  onPrepare={() => navigate('setlist-edit', { id: String(sl.id) })}
                   onPlay={() => navigate('setlist-play', { id: String(sl.id) })}
                 />
               ))
@@ -230,6 +231,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                     event_date: null,
                   }}
                   onClick={() => navigate('setlist-edit', { id: sl.id })}
+                  onPrepare={() => navigate('setlist-edit', { id: sl.id })}
                   onPlay={() => navigate('setlist-play', { id: sl.id, local: '1' })}
                 />
               ))
