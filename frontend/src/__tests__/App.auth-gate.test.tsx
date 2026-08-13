@@ -13,6 +13,7 @@ vi.mock('../components/DemoBanner', () => ({ DemoBanner: () => <div data-testid=
 vi.mock('../components/Toast', () => ({ Toast: () => <div data-testid="toast" /> }));
 vi.mock('../views/AuthView', () => ({ AuthView: () => <div>Sign in or register</div> }));
 vi.mock('../views/BrowseView', () => ({ BrowseView: () => <div>Song library</div> }));
+vi.mock('../views/SetlistPlayView', () => ({ SetlistPlayView: () => <div>Setlist player</div> }));
 vi.mock('../lib/api', () => ({ api: vi.fn(() => Promise.resolve({ demoMode: false })) }));
 
 import { App } from '../App';
@@ -40,5 +41,16 @@ describe('App authentication gate', () => {
     expect(screen.getByText('Song library')).toBeInTheDocument();
     expect(screen.getByTestId('navigation')).toBeInTheDocument();
     expect(screen.queryByText('Sign in or register')).not.toBeInTheDocument();
+    expect(document.getElementById('app')).toHaveClass('app-with-nav');
+  });
+
+  it('keeps the setlist player edge-to-edge without the desktop navigation offset', () => {
+    authState.user = { id: 1, username: 'member', role: 'user' };
+    location.hash = '#setlist/42/play';
+    render(<App />);
+
+    expect(screen.getByText('Setlist player')).toBeInTheDocument();
+    expect(screen.queryByTestId('navigation')).not.toBeInTheDocument();
+    expect(document.getElementById('app')).not.toHaveClass('app-with-nav');
   });
 });

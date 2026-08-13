@@ -26,6 +26,22 @@ describe('Nav drawer', () => {
     mockAuth.isAdmin = false;
   });
 
+  it('labels the primary navigation as Library and Tools sections', async () => {
+    mockAuth.user = { id: 1, username: 'member', role: 'user' };
+    render(<Nav view="browse" navigate={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open navigation menu' }));
+
+    expect(screen.getByText('Library')).toBeInTheDocument();
+    expect(screen.getByText('Music tools')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Songs' })).toHaveClass('active');
+  });
+
+  it('keeps Tools collapsed by default away from tool pages', async () => {
+    render(<Nav view="browse" navigate={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open navigation menu' }));
+    expect(screen.getByRole('button', { name: 'Expand Tools submenu' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('renders the drawer and backdrop outside #nav so fixed positioning is not clipped', () => {
     render(<Nav view="browse" navigate={() => {}} />);
     expect(drawer().closest('nav')).toBeNull();

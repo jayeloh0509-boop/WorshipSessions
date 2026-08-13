@@ -23,6 +23,7 @@ export function Nav({ view, navigate }: NavProps) {
   const { user, isAdmin, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [desktop, setDesktop] = useState(false);
   const onToolsPage = TOOL_VIEWS.includes(view);
   const [toolsOpen, setToolsOpen] = useState(onToolsPage);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -30,11 +31,20 @@ export function Nav({ view, navigate }: NavProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(min-width: 960px)');
+    const sync = () => setDesktop(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
   const close = useCallback(() => setOpen(false), []);
 
   // Escape closes; Tab is trapped inside the drawer while it is open
   useEffect(() => {
-    if (!open) return;
+    if (!open || desktop) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpen(false);
@@ -42,7 +52,7 @@ export function Nav({ view, navigate }: NavProps) {
       }
       if (e.key !== 'Tab' || !drawerRef.current) return;
       const focusables = drawerRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       if (!focusables.length) return;
       const first = focusables[0];
@@ -58,11 +68,11 @@ export function Nav({ view, navigate }: NavProps) {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [open, desktop]);
 
   // Body scroll lock while open; move focus into the drawer and back out
   useEffect(() => {
-    if (open) {
+    if (open && !desktop) {
       wasOpen.current = true;
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
@@ -75,13 +85,13 @@ export function Nav({ view, navigate }: NavProps) {
       wasOpen.current = false;
       triggerRef.current?.focus();
     }
-  }, [open]);
+  }, [open, desktop]);
 
   // Keep the Tools submenu discoverable: expand it whenever the drawer opens
   // while a tools page is the current view
   useEffect(() => {
-    if (open && onToolsPage) setToolsOpen(true);
-  }, [open, onToolsPage]);
+    if ((open || desktop) && onToolsPage) setToolsOpen(true);
+  }, [open, desktop, onToolsPage]);
 
   const go = (target: string) => {
     navigate(target);
@@ -112,7 +122,9 @@ export function Nav({ view, navigate }: NavProps) {
           aria-label={toolsOpen ? 'Collapse Tools submenu' : 'Expand Tools submenu'}
           onClick={() => setToolsOpen((o) => !o)}
         >
-          <span className="nav-drawer-chevron" aria-hidden="true">&#9656;</span>
+          <span className="nav-drawer-chevron" aria-hidden="true">
+            &#9656;
+          </span>
         </button>
       </div>
       <div id="nav-tools-submenu" className="nav-drawer-submenu" hidden={!toolsOpen}>
@@ -131,7 +143,9 @@ export function Nav({ view, navigate }: NavProps) {
 
   return (
     <nav id="nav">
-      <div className="nav-brand" onClick={() => navigate('browse')}><span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} /> WorshipSessions</div>
+      <div className="nav-brand" onClick={() => navigate('browse')}>
+        <span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} /> WorshipSessions
+      </div>
       <button
         ref={triggerRef}
         className="nav-btn nav-icon nav-drawer-trigger"
@@ -147,19 +161,15 @@ export function Nav({ view, navigate }: NavProps) {
           block for fixed descendants, which clips the drawer to the nav bar. */}
       {createPortal(
         <>
-          <div
-            className={`nav-drawer-backdrop${open ? ' open' : ''}`}
-            onClick={close}
-            aria-hidden="true"
-          />
+          <div className={`nav-drawer-backdrop${open ? ' open' : ''}`} onClick={close} aria-hidden="true" />
           <div
             ref={drawerRef}
             id="nav-drawer"
-            className={`nav-drawer${open ? ' open' : ''}`}
-            role="dialog"
-            aria-modal="true"
+            className={`nav-drawer${open || desktop ? ' open' : ''}`}
+            role={desktop ? 'navigation' : 'dialog'}
+            aria-modal={desktop ? undefined : 'true'}
             aria-label="Navigation menu"
-            inert={!open}
+            inert={!desktop && !open}
           >
             <div className="nav-drawer-header">
               <span className="nav-drawer-title">Menu</span>
@@ -173,28 +183,77 @@ export function Nav({ view, navigate }: NavProps) {
               </button>
             </div>
             <div className="nav-drawer-items">
-              <button className={`nav-drawer-item${songsActive}`} onClick={() => go('browse')}>Songs</button>
-              {!user ? (
-                <>
-                  <button className={`nav-drawer-item${setlistActive}`} onClick={() => go('public-setlists')}>Setlists</button>
-                  {toolsGroup}
-                  <button className={`nav-drawer-item nav-signin${view === 'auth' ? ' active' : ''}`} onClick={() => go('auth')}>Sign in</button>
-                </>
-              ) : (
-                <>
-                  <button className={`nav-drawer-item${setlistActive}`} onClick={() => go('setlists')}>Setlists</button>
-                  {toolsGroup}
-                  {isAdmin && (
-                    <button className={`nav-drawer-item${view === 'admin' ? ' active' : ''}`} onClick={() => go('admin')}>Admin</button>
-                  )}
-                  <button className={`nav-drawer-item${view === 'my-songs' ? ' active' : ''}`} onClick={() => go('my-songs')}>My Songs</button>
-                  {isAdmin && (
-                    <button className={`nav-drawer-item${view === 'settings' ? ' active' : ''}`} onClick={() => go('settings')}>Settings</button>
-                  )}
-                  <hr className="nav-drawer-divider" />
-                  <button className="nav-drawer-item" onClick={() => { logout(); go('browse'); }}>Sign out</button>
-                </>
-              )}
+              <section className="nav-drawer-section" aria-labelledby="nav-library-label">
+                <div id="nav-library-label" className="nav-drawer-section-label">
+                  Library
+                </div>
+                <button className={`nav-drawer-item${songsActive}`} onClick={() => go('browse')}>
+                  Songs
+                </button>
+                <button
+                  className={`nav-drawer-item${setlistActive}`}
+                  onClick={() => go(user ? 'setlists' : 'public-setlists')}
+                >
+                  Setlists
+                </button>
+                {user && (
+                  <button
+                    className={`nav-drawer-item${view === 'my-songs' ? ' active' : ''}`}
+                    onClick={() => go('my-songs')}
+                  >
+                    My Songs
+                  </button>
+                )}
+              </section>
+
+              <section className="nav-drawer-section" aria-labelledby="nav-tools-label">
+                <div id="nav-tools-label" className="nav-drawer-section-label">
+                  Music tools
+                </div>
+                {toolsGroup}
+              </section>
+
+              <section className="nav-drawer-section nav-drawer-account" aria-labelledby="nav-account-label">
+                <div id="nav-account-label" className="nav-drawer-section-label">
+                  Account
+                </div>
+                {!user ? (
+                  <button
+                    className={`nav-drawer-item nav-signin${view === 'auth' ? ' active' : ''}`}
+                    onClick={() => go('auth')}
+                  >
+                    Sign in
+                  </button>
+                ) : (
+                  <>
+                    {isAdmin && (
+                      <button
+                        className={`nav-drawer-item${view === 'admin' ? ' active' : ''}`}
+                        onClick={() => go('admin')}
+                      >
+                        Admin
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        className={`nav-drawer-item${view === 'settings' ? ' active' : ''}`}
+                        onClick={() => go('settings')}
+                      >
+                        Settings
+                      </button>
+                    )}
+                    <button
+                      className="nav-drawer-item"
+                      onClick={() => {
+                        logout();
+                        go('browse');
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </>
+                )}
+              </section>
             </div>
             <div className="nav-drawer-footer">
               <button className="nav-drawer-item nav-drawer-theme" onClick={toggleTheme} title="Toggle theme">
@@ -203,7 +262,7 @@ export function Nav({ view, navigate }: NavProps) {
             </div>
           </div>
         </>,
-        document.body
+        document.body,
       )}
     </nav>
   );

@@ -249,7 +249,10 @@ export function App() {
     <>
       <DemoBanner />
       {route.view !== 'setlist-play' && <Nav view={route.view} navigate={navigate} />}
-      <main id="app" className={animClass}>
+      <main
+        id="app"
+        className={`${animClass}${route.view !== 'setlist-play' ? ' app-with-nav' : ''}`.trim()}
+      >
         {renderView()}
       </main>
       <Toast />
