@@ -1,7 +1,13 @@
 const express = require('express');
 const { requireAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSetlistInput, validateTranspose, parsePaginationParams } = require('../lib/validation');
+const {
+  parseId,
+  validateSetlistInput,
+  validateTranspose,
+  validatePerformanceKey,
+  parsePaginationParams,
+} = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
 
@@ -20,7 +26,9 @@ function createSetlistsRouter() {
   router.get('/setlists', requireAuth, (req, res) => {
     const { q, date_from, date_to, page, limit } = req.query;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-    res.json(Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
+    res.json(
+      Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }),
+    );
   });
 
   router.post('/setlists', requireAuth, (req, res) => {
@@ -46,13 +54,31 @@ function createSetlistsRouter() {
     const entries = Setlist.getEntries(id);
     const userId = req.user ? req.user.id : 0;
     const safeEntries = entries.map((e) => {
-      if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== userId && !(req.user && isAdminRole(req.user.role))) {
+      if (
+        e.visibility === VISIBILITY.PRIVATE &&
+        e.song_user_id !== userId &&
+        !(req.user && isAdminRole(req.user.role))
+      ) {
         return {
-          entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          transpose: 0, nashville: 0, content_override: null,
-          title: '[Private Song]', artist: '', content: '', key: '',
-          youtube_url: null, bpm: null, tags: null, language: '',
-          username: '', is_private_placeholder: true,
+          entry_id: e.entry_id,
+          song_id: e.song_id,
+          position: e.position,
+          transpose: 0,
+          nashville: 0,
+          content_override: null,
+          performance_key: null,
+          song_notes: '',
+          transition_notes: '',
+          title: '[Private Song]',
+          artist: '',
+          content: '',
+          key: '',
+          youtube_url: null,
+          bpm: null,
+          tags: null,
+          language: '',
+          username: '',
+          is_private_placeholder: true,
         };
       }
       const { song_user_id: _, ...safe } = e;
@@ -70,11 +96,25 @@ function createSetlistsRouter() {
     const safeEntries = entries.map((e) => {
       if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== req.user.id && !isAdminRole(req.user.role)) {
         return {
-          entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          transpose: 0, nashville: 0, content_override: null,
-          title: '[Private Song]', artist: '', content: '', key: '',
-          youtube_url: null, bpm: null, tags: null, language: '',
-          username: '', is_private_placeholder: true,
+          entry_id: e.entry_id,
+          song_id: e.song_id,
+          position: e.position,
+          transpose: 0,
+          nashville: 0,
+          content_override: null,
+          performance_key: null,
+          song_notes: '',
+          transition_notes: '',
+          title: '[Private Song]',
+          artist: '',
+          content: '',
+          key: '',
+          youtube_url: null,
+          bpm: null,
+          tags: null,
+          language: '',
+          username: '',
+          is_private_placeholder: true,
         };
       }
       const { song_user_id: _, ...safe } = e;
@@ -90,7 +130,13 @@ function createSetlistsRouter() {
     const validationError = validateSetlistInput(name, event_date);
     if (validationError) return res.status(400).json({ error: validationError });
     const vis = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
-    const result = Setlist.update(id, req.user.id, name.trim(), vis, event_date !== undefined ? (event_date || null) : null);
+    const result = Setlist.update(
+      id,
+      req.user.id,
+      name.trim(),
+      vis,
+      event_date !== undefined ? event_date || null : null,
+    );
     if (!result.changes) return res.status(404).json({ error: 'Setlist not found' });
     res.json({ success: true });
   });
@@ -118,9 +164,10 @@ function createSetlistsRouter() {
     }
     const song = Song.findById(songIdParsed);
     if (!song) return res.status(404).json({ error: 'Song not found' });
-    if (song.status === STATUS.PENDING) return res.status(400).json({ error: 'Cannot add a pending correction to a setlist' });
+    if (song.status === STATUS.PENDING)
+      return res.status(400).json({ error: 'Cannot add a pending correction to a setlist' });
     if (song.user_id !== req.user.id && song.visibility !== VISIBILITY.PUBLIC) {
-      return res.status(403).json({ error: 'Cannot add a private song you don\'t own' });
+      return res.status(403).json({ error: "Cannot add a private song you don't own" });
     }
     const result = Setlist.addSongEntry(id, songIdParsed, { transpose, nashville });
     res.json({ entry_id: result.entry_id, position: result.position });
@@ -134,7 +181,8 @@ function createSetlistsRouter() {
     if (!resolveSetlist(res, setlistId, req.user.id)) return;
     const entry = Setlist.getEntryById(entryId, setlistId);
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    const { transpose, nashville, font, two_col, content_override } = req.body;
+    const { transpose, nashville, font, two_col, content_override, performance_key, song_notes, transition_notes } =
+      req.body;
     const transposeErr = validateTranspose(transpose);
     if (transposeErr) return res.status(400).json({ error: transposeErr });
     if (nashville !== undefined && typeof nashville !== 'boolean' && nashville !== 0 && nashville !== 1) {
@@ -143,12 +191,34 @@ function createSetlistsRouter() {
     if (content_override !== undefined && content_override !== null && content_override.length > LIMITS.MAX_CONTENT) {
       return res.status(400).json({ error: 'Content override too large (max 100KB)' });
     }
+    if (
+      performance_key !== undefined &&
+      performance_key !== null &&
+      typeof performance_key === 'string' &&
+      performance_key.length > LIMITS.MAX_PERFORMANCE_KEY
+    ) {
+      return res.status(400).json({ error: `Performance key too long (max ${LIMITS.MAX_PERFORMANCE_KEY} characters)` });
+    }
+    const performanceKeyError = validatePerformanceKey(performance_key);
+    if (performanceKeyError) return res.status(400).json({ error: performanceKeyError });
+    if (song_notes !== undefined && (typeof song_notes !== 'string' || song_notes.length > LIMITS.MAX_SETLIST_NOTE)) {
+      return res.status(400).json({ error: `Song notes too long (max ${LIMITS.MAX_SETLIST_NOTE} characters)` });
+    }
+    if (
+      transition_notes !== undefined &&
+      (typeof transition_notes !== 'string' || transition_notes.length > LIMITS.MAX_SETLIST_NOTE)
+    ) {
+      return res.status(400).json({ error: `Transition notes too long (max ${LIMITS.MAX_SETLIST_NOTE} characters)` });
+    }
     Setlist.updateSongEntry(entryId, setlistId, entry, {
       transpose,
       nashville,
       font,
       twoCol: two_col,
-      contentOverride: content_override
+      contentOverride: content_override,
+      performanceKey: performance_key === undefined ? undefined : performance_key?.trim() || null,
+      songNotes: song_notes === undefined ? undefined : song_notes.trim(),
+      transitionNotes: transition_notes === undefined ? undefined : transition_notes.trim(),
     });
     res.json({ success: true });
   });
@@ -171,11 +241,14 @@ function createSetlistsRouter() {
     const { entry_ids } = req.body;
     if (!Array.isArray(entry_ids)) return res.status(400).json({ error: 'entry_ids array is required' });
     if (entry_ids.length > LIMITS.MAX_REORDER) return res.status(400).json({ error: 'Too many entries' });
-    const parsedIds = entry_ids.map(e => parseId(e));
-    if (parsedIds.some(e => e === null)) return res.status(400).json({ error: 'All entry_ids must be valid integers' });
-    if (new Set(parsedIds).size !== parsedIds.length) return res.status(400).json({ error: 'Duplicate entry_ids are not allowed' });
+    const parsedIds = entry_ids.map((e) => parseId(e));
+    if (parsedIds.some((e) => e === null))
+      return res.status(400).json({ error: 'All entry_ids must be valid integers' });
+    if (new Set(parsedIds).size !== parsedIds.length)
+      return res.status(400).json({ error: 'Duplicate entry_ids are not allowed' });
     const entries = Setlist.getEntries(id);
-    if (parsedIds.length !== entries.length) return res.status(400).json({ error: 'entry_ids count must match the number of entries in the setlist' });
+    if (parsedIds.length !== entries.length)
+      return res.status(400).json({ error: 'entry_ids count must match the number of entries in the setlist' });
     Setlist.reorderEntries(id, parsedIds);
     res.json({ success: true });
   });

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
+import { getSongKey } from '../lib/chords';
 import type { Setlist, SetlistEntry } from '../types';
 
 interface UseSetlistPlayerOptions {
@@ -30,7 +31,7 @@ export function useSetlistPlayer({
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
-  
+
   const [savedTransposes, setSavedTransposes] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -156,67 +157,79 @@ export function useSetlistPlayer({
   /**
    * Saves the current transpose settings to the server (only for owners).
    */
-  const saveOnline = useCallback(async (silent = false) => {
-    if (!setlist || !entry || !user || setlist.user_id !== user.id) return;
-    try {
-      await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
-        transpose: entry.transpose,
-      });
-      setSavedTransposes(prev => ({
-        ...prev,
-        [String(entry.entry_id)]: entry.transpose
-      }));
-      if (!silent) toast('Key saved to cloud', 'success');
-    } catch (e) {
-      if (!silent) toast((e as Error).message, 'error');
-    }
-  }, [setlist, entry, apiCall, user, toast]);
+  const saveOnline = useCallback(
+    async (silent = false) => {
+      if (!setlist || !entry || !user || setlist.user_id !== user.id) return;
+      try {
+        await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
+          transpose: entry.transpose,
+          performance_key: entry.performance_key
+            ? getSongKey(entry.content_override || entry.content, entry.transpose)
+            : entry.performance_key,
+        });
+        setSavedTransposes((prev) => ({
+          ...prev,
+          [String(entry.entry_id)]: entry.transpose,
+        }));
+        if (!silent) toast('Key saved to cloud', 'success');
+      } catch (e) {
+        if (!silent) toast((e as Error).message, 'error');
+      }
+    },
+    [setlist, entry, apiCall, user, toast],
+  );
 
   /**
    * Saves the current transpose settings locally in the browser.
    */
-  const saveLocal = useCallback((silent = false) => {
-    if (!setlist || !entry) return;
-    saveSetlistOverride(setlist.id, entry.entry_id, {
-      transpose: entry.transpose,
-    });
-    setSavedTransposes(prev => ({
-      ...prev,
-      [String(entry.entry_id)]: entry.transpose
-    }));
-    if (!silent) toast('Key saved locally', 'success');
-  }, [setlist, entry, toast]);
+  const saveLocal = useCallback(
+    (silent = false) => {
+      if (!setlist || !entry) return;
+      saveSetlistOverride(setlist.id, entry.entry_id, {
+        transpose: entry.transpose,
+      });
+      setSavedTransposes((prev) => ({
+        ...prev,
+        [String(entry.entry_id)]: entry.transpose,
+      }));
+      if (!silent) toast('Key saved locally', 'success');
+    },
+    [setlist, entry, toast],
+  );
 
-  const goTo = useCallback((newIdx: number) => {
-    if (!setlist) return;
+  const goTo = useCallback(
+    (newIdx: number) => {
+      if (!setlist) return;
 
-    if (newIdx < 0 || newIdx >= setlist.entries.length) {
-      // Revert URL to current valid index
+      if (newIdx < 0 || newIdx >= setlist.entries.length) {
+        // Revert URL to current valid index
+        if (!setlist.isLocal) {
+          let h = `#setlist/${setlistId}/play`;
+          if (index > 0) h += `/${index}`;
+          history.replaceState(null, '', location.pathname + location.search + h);
+        }
+        return;
+      }
+
+      setIndex(newIdx);
+      onNavigate?.();
+
       if (!setlist.isLocal) {
         let h = `#setlist/${setlistId}/play`;
-        if (index > 0) h += `/${index}`;
+        if (newIdx > 0) h += `/${newIdx}`;
         history.replaceState(null, '', location.pathname + location.search + h);
       }
-      return;
-    }
 
-    setIndex(newIdx);
-    onNavigate?.();
-
-    if (!setlist.isLocal) {
-      let h = `#setlist/${setlistId}/play`;
-      if (newIdx > 0) h += `/${newIdx}`;
-      history.replaceState(null, '', location.pathname + location.search + h);
-    }
-
-    // Scroll after React re-renders the new song content
-    // We use a small timeout to ensure the DOM has actually updated and stabilized
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      const output = document.querySelector('.chord-sheet-wrap');
-      if (output) output.scrollTo(0, 0);
-    }, 40);
-  }, [setlist, onNavigate, setlistId, index]);
+      // Scroll after React re-renders the new song content
+      // We use a small timeout to ensure the DOM has actually updated and stabilized
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        const output = document.querySelector('.chord-sheet-wrap');
+        if (output) output.scrollTo(0, 0);
+      }, 40);
+    },
+    [setlist, onNavigate, setlistId, index],
+  );
 
   useEffect(() => {
     const onHash = () => {
@@ -235,17 +248,22 @@ export function useSetlistPlayer({
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
 
-  const updateEntry = useCallback((updates: Partial<SetlistEntry>) => {
-    setSetlist((prev) => {
-      if (!prev) return null;
-      const newEntries = [...prev.entries];
-      newEntries[index] = { ...newEntries[index], ...updates };
-      return { ...prev, entries: newEntries };
-    });
-  }, [index]);
+  const updateEntry = useCallback(
+    (updates: Partial<SetlistEntry>) => {
+      setSetlist((prev) => {
+        if (!prev) return null;
+        const newEntries = [...prev.entries];
+        newEntries[index] = { ...newEntries[index], ...updates };
+        return { ...prev, entries: newEntries };
+      });
+    },
+    [index],
+  );
 
   const exit = useCallback(() => {
-    if (setlist) { navigate('setlist-edit', { id: String(setlist.id) }); }
+    if (setlist) {
+      navigate('setlist-edit', { id: String(setlist.id) });
+    }
   }, [setlist, navigate]);
 
   return { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };

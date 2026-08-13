@@ -14,6 +14,9 @@ export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntr
     nashville: e.nashville || 0,
     content: '',
     content_override: null,
+    performance_key: e.performance_key || null,
+    song_notes: e.song_notes || '',
+    transition_notes: e.transition_notes || '',
     font: null,
     two_col: null,
     bpm: null,
@@ -35,6 +38,9 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
     artist: song.artist || '',
     content: song.content,
     content_override: null,
+    performance_key: e.performance_key || null,
+    song_notes: e.song_notes || '',
+    transition_notes: e.transition_notes || '',
     transpose: e.transpose ?? 0,
     nashville: e.nashville ?? 0,
     font: null,
@@ -51,7 +57,7 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
  */
 export async function enrichLocalSetlistSongs(
   entries: LocalSetlistEntry[],
-  apiCall: <T>(method: string, path: string) => Promise<T>
+  apiCall: <T>(method: string, path: string) => Promise<T>,
 ): Promise<SetlistEntry[]> {
   const uniqueSongIds = Array.from(new Set(entries.map((e) => e.song_id)));
   const cache: Record<number, Song | null> = {};
@@ -63,11 +69,9 @@ export async function enrichLocalSetlistSongs(
       })
       .catch(() => {
         cache[id] = null;
-      })
+      }),
   );
   await Promise.all(fetches);
 
-  return entries
-    .map((e, i) => enrichLocalEntry(e, cache[e.song_id], i))
-    .filter(Boolean) as SetlistEntry[];
+  return entries.map((e, i) => enrichLocalEntry(e, cache[e.song_id], i)).filter(Boolean) as SetlistEntry[];
 }

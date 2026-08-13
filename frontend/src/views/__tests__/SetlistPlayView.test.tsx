@@ -143,4 +143,37 @@ describe('SetlistPlayView', () => {
 
     expect(next).toHaveBeenCalledOnce();
   });
+
+  it('shows song and transition notes during playback', () => {
+    (useSetlistPlayer as Mock).mockReturnValue({
+      setlist: { id: 1, title: 'Test Setlist', entries: [] },
+      entry: {
+        entry_id: 1,
+        title: 'Song 1',
+        content: 'C G',
+        transpose: 0,
+        song_notes: 'Start with acoustic guitar.',
+        transition_notes: 'Hold the final chord into prayer.',
+      },
+      index: 0,
+      total: 1,
+      goTo: vi.fn(),
+      prev: vi.fn(),
+      next: vi.fn(),
+      exit: vi.fn(),
+      updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
+    });
+
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+
+    expect(screen.getByRole('complementary', { name: /song preparation notes/i })).toHaveTextContent(
+      'Start with acoustic guitar.',
+    );
+    expect(screen.getByRole('complementary', { name: /song preparation notes/i })).toHaveTextContent(
+      'Hold the final chord into prayer.',
+    );
+  });
 });

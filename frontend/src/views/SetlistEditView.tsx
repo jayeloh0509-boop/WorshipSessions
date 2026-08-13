@@ -12,6 +12,8 @@ import { EmptyState } from '../components/EmptyState';
 import { SetlistEntryCard } from '../components/SetlistEntryCard';
 import type { Setlist, SongListItem } from '../types';
 import { useDragReorder } from '../hooks/useDragReorder';
+import { getSongKey } from '../lib/chords';
+import { getTransposeDelta } from '../lib/keys';
 
 interface SetlistEditViewProps {
   setlistId: number | string;
@@ -32,7 +34,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     updateEntry: lsUpdateEntry,
     reorderEntries: lsReorderEntries,
   } = useLocalSetlists();
-  
+
   const isLocal = typeof setlistId === 'string' && setlistId.startsWith('local_');
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -40,8 +42,11 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const load = useCallback(async () => {
     if (isLocal) {
       const sl = getOne(String(setlistId));
-      if (!sl) { navigate(user ? 'setlists' : 'public-setlists'); return; }
-      
+      if (!sl) {
+        navigate(user ? 'setlists' : 'public-setlists');
+        return;
+      }
+
       const formatted: Setlist = {
         id: sl.id,
         name: sl.name,
@@ -78,42 +83,44 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   }, [apiCall, toast, navigate, setlistId, user, isLocal, getOne]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const {
     items: reorderedEntries,
     dragProps,
     handleProps,
     draggedIdx,
-  } = useDragReorder(
-    setlist?.entries || [],
-    async (newEntries) => {
-      if (!setlist) return;
+  } = useDragReorder(setlist?.entries || [], async (newEntries) => {
+    if (!setlist) return;
 
-      // Update React state first
-      setSetlist((prev) => prev ? { ...prev, entries: newEntries } : null);
+    // Update React state first
+    setSetlist((prev) => (prev ? { ...prev, entries: newEntries } : null));
 
-      if (isLocal) {
-        const localEntries = newEntries.map((e) => ({
-          song_id: e.song_id,
-          title: e.title,
-          artist: e.artist,
-          transpose: e.transpose,
-          nashville: e.nashville,
-        }));
-        lsReorderEntries(String(setlistId), localEntries);
-      } else {
-        try {
-          await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {
-            entry_ids: newEntries.map((e) => e.entry_id),
-          });
-        } catch (e) {
-          toast((e as Error).message, 'error');
-          load();
-        }
+    if (isLocal) {
+      const localEntries = newEntries.map((e) => ({
+        song_id: e.song_id,
+        title: e.title,
+        artist: e.artist,
+        transpose: e.transpose,
+        nashville: e.nashville,
+        performance_key: e.performance_key,
+        song_notes: e.song_notes,
+        transition_notes: e.transition_notes,
+      }));
+      lsReorderEntries(String(setlistId), localEntries);
+    } else {
+      try {
+        await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {
+          entry_ids: newEntries.map((e) => e.entry_id),
+        });
+      } catch (e) {
+        toast((e as Error).message, 'error');
+        load();
       }
     }
-  );
+  });
 
   const saveMeta = async () => {
     if (!setlist) return;
@@ -123,14 +130,16 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     if (isLocal) {
       if (nameInput.length > 200) return;
       rename(String(setlistId), nameInput);
-      setSetlist((prev) => prev ? { ...prev, name: nameInput } : prev);
+      setSetlist((prev) => (prev ? { ...prev, name: nameInput } : prev));
     } else {
       const vis = (document.getElementById('setlist-visibility') as HTMLInputElement)?.checked ? 'public' : 'private';
       const date = (document.getElementById('setlist-date') as HTMLInputElement)?.value || '';
       try {
         await apiCall('PUT', `/api/setlists/${setlistId}`, { name: nameInput, visibility: vis, event_date: date });
-        setSetlist((prev) => prev ? { ...prev, name: nameInput, visibility: vis, event_date: date } : prev);
-      } catch (e) { toast((e as Error).message, 'error'); }
+        setSetlist((prev) => (prev ? { ...prev, name: nameInput, visibility: vis, event_date: date } : prev));
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
     }
   };
 
@@ -148,7 +157,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         toast(t('setlist.deleted'), 'success');
         location.hash = '';
         navigate('setlists');
-      } catch (e) { toast((e as Error).message, 'error'); }
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
     }
   };
 
@@ -157,14 +168,16 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const removeEntry = async (entryId: number | string, idx: number) => {
     if (isLocal) {
       lsRemoveEntry(String(setlistId), idx);
-      setSetlist((prev) => prev ? { ...prev, entries: prev.entries.filter((_, i) => i !== idx) } : prev);
+      setSetlist((prev) => (prev ? { ...prev, entries: prev.entries.filter((_, i) => i !== idx) } : prev));
       toast(t('setlist.songRemoved'), 'success');
     } else {
       try {
         await apiCall('DELETE', `/api/setlists/${setlistId}/entries/${entryId}`);
-        setSetlist((prev) => prev ? { ...prev, entries: prev.entries.filter((e) => e.entry_id !== entryId) } : prev);
+        setSetlist((prev) => (prev ? { ...prev, entries: prev.entries.filter((e) => e.entry_id !== entryId) } : prev));
         toast(t('setlist.songRemoved'), 'success');
-      } catch (e) { toast((e as Error).message, 'error'); }
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
     }
   };
 
@@ -175,7 +188,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         title: song.title,
         artist: song.artist || '',
         transpose: 0,
-        nashville: 0
+        nashville: 0,
       });
       if (added) {
         toast(t('setlist.songAdded'), 'success');
@@ -190,7 +203,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         toast(t('setlist.songAdded'), 'success');
         setPickerOpen(false);
         load();
-      } catch (e) { toast((e as Error).message, 'error'); }
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
     }
   };
 
@@ -198,22 +213,28 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     if (!setlist) return;
     const entry = reorderedEntries[idx];
     const newTranspose = (entry.transpose ?? 0) + delta;
+    const performanceKey = entry.performance_key
+      ? getSongKey(entry.content_override || entry.content, newTranspose)
+      : entry.performance_key;
 
     if (isLocal) {
-      lsUpdateEntry(String(setlistId), idx, { transpose: newTranspose });
+      lsUpdateEntry(String(setlistId), idx, { transpose: newTranspose, performance_key: performanceKey });
       setSetlist((prev) => {
         if (!prev) return null;
         const entries = [...prev.entries];
-        entries[idx] = { ...entries[idx], transpose: newTranspose };
+        entries[idx] = { ...entries[idx], transpose: newTranspose, performance_key: performanceKey };
         return { ...prev, entries };
       });
     } else {
       try {
-        await apiCall('PUT', `/api/setlists/${setlistId}/entries/${entryId}`, { transpose: newTranspose });
+        await apiCall('PUT', `/api/setlists/${setlistId}/entries/${entryId}`, {
+          transpose: newTranspose,
+          performance_key: performanceKey,
+        });
         setSetlist((prev) => {
           if (!prev) return null;
           const entries = [...prev.entries];
-          entries[idx] = { ...entries[idx], transpose: newTranspose };
+          entries[idx] = { ...entries[idx], transpose: newTranspose, performance_key: performanceKey };
           return { ...prev, entries };
         });
       } catch (e) {
@@ -222,27 +243,67 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   };
 
+  const savePreparation = async (
+    entryId: number | string,
+    idx: number,
+    values: { performance_key: string; song_notes: string; transition_notes: string },
+  ) => {
+    if (!setlist) return;
+    const entry = reorderedEntries[idx];
+    const currentKey = getSongKey(entry.content_override || entry.content, entry.transpose);
+    const requestedKey = values.performance_key.trim();
+    let transpose =
+      requestedKey && currentKey ? entry.transpose + getTransposeDelta(currentKey, requestedKey) : entry.transpose;
+    while (transpose > 12) transpose -= 12;
+    while (transpose < -12) transpose += 12;
+    const updates = {
+      performance_key: requestedKey || null,
+      song_notes: values.song_notes.trim(),
+      transition_notes: values.transition_notes.trim(),
+      transpose,
+    };
+
+    if (isLocal) {
+      lsUpdateEntry(String(setlistId), idx, updates);
+    } else {
+      await apiCall('PUT', `/api/setlists/${setlistId}/entries/${entryId}`, updates);
+    }
+
+    setSetlist((prev) => {
+      if (!prev) return null;
+      const entries = [...prev.entries];
+      entries[idx] = { ...entries[idx], ...updates };
+      return { ...prev, entries };
+    });
+    toast('Preparation saved', 'success');
+  };
+
   const playLocal = async (startIndex = 0) => {
     const sl = getOne(String(setlistId));
     if (!sl || sl.entries.length === 0) return;
     try {
       const entries = await enrichLocalSetlistSongs(sl.entries, apiCall);
-      if (entries.length === 0) { toast('No songs could be loaded', 'error'); return; }
+      if (entries.length === 0) {
+        toast('No songs could be loaded', 'error');
+        return;
+      }
       const enrichedSetlist: Setlist = {
         id: String(setlistId),
         name: sl.name,
         entries,
         isLocal: true,
         visibility: 'private',
-        event_date: null
+        event_date: null,
       };
       navigate('setlist-play', {
         id: String(setlistId),
         local: '1',
         index: String(startIndex),
-        _setlist: JSON.stringify(enrichedSetlist)
+        _setlist: JSON.stringify(enrichedSetlist),
       });
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const handleItemClick = (idx: number) => {
@@ -255,7 +316,8 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   const copyShareLink = () => {
     const url = window.location.origin + window.location.pathname + `#setlist/${setlistId}`;
-    navigator.clipboard.writeText(url)
+    navigator.clipboard
+      .writeText(url)
       .then(() => toast(t('setlist.linkCopied') || 'Link copied to clipboard', 'success'))
       .catch(() => toast('Failed to copy link', 'error'));
   };
@@ -268,20 +330,35 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     <>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}>&#8592; {t('songView.back')}</button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}
+          >
+            &#8592; {t('songView.back')}
+          </button>
           <div style={{ display: 'flex', gap: 8 }}>
             {setlist.entries.length > 0 && (
-              <button className="btn btn-sm" onClick={() => handleItemClick(0)}>{t('setlist.play')}</button>
+              <button className="btn btn-sm" onClick={() => handleItemClick(0)}>
+                {t('setlist.play')}
+              </button>
             )}
             {!isLocal && setlist.visibility === 'public' && (
-              <button className="btn btn-ghost btn-sm" onClick={copyShareLink}>{t('setlist.share')}</button>
+              <button className="btn btn-ghost btn-sm" onClick={copyShareLink}>
+                {t('setlist.share')}
+              </button>
             )}
-            {isEditable && <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</button>}
+            {isEditable && (
+              <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>
+                {t('admin.delete')}
+              </button>
+            )}
           </div>
         </div>
         <div className="setlist-name-row">
           {!isEditable ? (
-            <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>{setlist.name}</div>
+            <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>
+              {setlist.name}
+            </div>
           ) : (
             <input
               type="text"
@@ -289,7 +366,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
               className="setlist-name-input"
               defaultValue={setlist.name}
               onBlur={saveMeta}
-              onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
             />
           )}
         </div>
@@ -299,19 +378,30 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
           ) : !isEditable ? (
             <>
               {setlist.username && <span style={{ fontSize: 13, color: 'var(--muted)' }}>By @{setlist.username}</span>}
-              {setlist.event_date && <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 8 }}>Date: {setlist.event_date}</span>}
+              {setlist.event_date && (
+                <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 8 }}>Date: {setlist.event_date}</span>
+              )}
             </>
           ) : (
             <>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
                 <span className="toggle">
-                  <input type="checkbox" id="setlist-visibility" defaultChecked={setlist.visibility === 'public'} onChange={saveMeta} />
+                  <input
+                    type="checkbox"
+                    id="setlist-visibility"
+                    defaultChecked={setlist.visibility === 'public'}
+                    onChange={saveMeta}
+                  />
                   <span className="toggle-slider" />
                 </span>
                 {t('setlist.visibility')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                <span style={{ color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 12 }}>{t('setlist.date')}</span>
+                <span
+                  style={{ color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 12 }}
+                >
+                  {t('setlist.date')}
+                </span>
                 <input type="date" id="setlist-date" defaultValue={setlist.event_date || ''} onChange={saveMeta} />
               </label>
             </>
@@ -333,6 +423,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
               onRemove={removeEntry}
               onTranspose={handleTransposeEntry}
               onClick={handleItemClick}
+              onSavePreparation={savePreparation}
               dragProps={dragProps(idx)}
               handleProps={handleProps(idx)}
               isDragging={draggedIdx === idx}
@@ -344,7 +435,9 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
       {isEditable && (
         <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <button className="btn" onClick={() => setPickerOpen(true)}>{t('setlist.addSongs')}</button>
+          <button className="btn" onClick={() => setPickerOpen(true)}>
+            {t('setlist.addSongs')}
+          </button>
         </div>
       )}
 
