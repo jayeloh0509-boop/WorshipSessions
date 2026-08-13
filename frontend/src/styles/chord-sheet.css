@@ -194,3 +194,64 @@
   margin-left: -32px;
   border-radius: 8px;
 }
+
+/* Normal Song View uses a warm, print-like reading surface. Setlist and
+   Live Mode charts retain the default dark performance surface. */
+.chord-sheet-wrap.chord-sheet-paper {
+  max-width: var(--chart-max-width);
+  margin: 10px auto 0;
+  padding: clamp(24px, 5vw, 54px) clamp(18px, 6vw, 68px);
+  border-color: rgba(84, 70, 46, 0.18);
+  border-radius: var(--radius-panel);
+  background: var(--paper);
+  box-shadow: var(--shadow-panel);
+}
+
+.chord-sheet-paper .chord-sheet .lyrics {
+  color: #202523;
+}
+
+.chord-sheet-paper .chord-sheet .chord {
+  color: #8b6325;
+  font-weight: 700;
+}
+
+.chord-sheet-paper .chord-sheet .comment,
+.chord-sheet-paper .chord-sheet .tag {
+  color: #6f716d;
+}
+
+.chord-sheet-paper .chord-sheet .section-label,
+.chord-sheet-paper .chord-sheet h3.label {
+  --badge-bg-top: transparent;
+  --badge-bg-bot: transparent;
+  --badge-text: #69655d;
+  --badge-border: transparent;
+  --badge-padding: 8px 0 5px;
+  --badge-radius: 0;
+  display: block !important;
+  width: 100%;
+  border-bottom: 1px solid rgba(78, 69, 53, 0.2) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+}
+
+.chord-sheet-paper .chord-sheet .paragraph.chorus,
+.chord-sheet-paper .chord-sheet .paragraph.bridge,
+.chord-sheet-paper .chord-sheet .paragraph.prechorus {
+  margin-left: 0;
+  padding: 0;
+  border-left: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+@media (max-width: 600px) {
+  .chord-sheet-wrap.chord-sheet-paper {
+    padding: 24px 16px 36px;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+  }
+}

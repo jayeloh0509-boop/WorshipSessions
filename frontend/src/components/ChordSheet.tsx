@@ -6,13 +6,16 @@ interface ChordSheetProps {
   twoCol?: boolean;
   fontSize?: number;
   autoFit?: boolean; // Kept for class naming if needed
+  tone?: 'default' | 'paper';
 }
 
-export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps) {
+export function ChordSheet({ html, twoCol, fontSize, autoFit, tone = 'default' }: ChordSheetProps) {
   // Manual/Legacy Scaling Logic
   const manualScale = fontScaleValue(fontSize || 0);
-  
-  const style: React.CSSProperties = manualScale ? { '--font-scale': String(manualScale) } as React.CSSProperties : {};
+
+  const style: React.CSSProperties = manualScale
+    ? ({ '--font-scale': String(manualScale) } as React.CSSProperties)
+    : {};
 
   // Premium: chords briefly settle in when the rendered sheet changes (transpose, notation)
   const [settle, setSettle] = useState(false);
@@ -27,13 +30,10 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
     return () => clearTimeout(t);
   }, [html]);
 
-  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${settle ? ' chord-settle' : ''}`;
+  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${settle ? ' chord-settle' : ''}${tone === 'paper' ? ' chord-sheet-paper' : ''}`;
 
   return (
-    <div
-      className={cls}
-      style={style}
-    >
+    <div className={cls} style={style}>
       <div id="chord-output" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   );

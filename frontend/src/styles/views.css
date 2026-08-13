@@ -2475,3 +2475,171 @@
     margin-left: 4px;
   }
 }
+
+/* -- Chord chart workspace redesign ------- */
+.song-view-header {
+  max-width: var(--chart-max-width);
+  margin: 0 auto 20px;
+}
+
+.song-view-nav {
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.song-view-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.song-view-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+}
+
+.song-view-eyebrow {
+  margin-bottom: 6px;
+  color: var(--accent-active);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.song-view-title {
+  max-width: 760px;
+  font-family: var(--font-sans);
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 720;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.song-view-artist {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+
+.song-view-key {
+  min-width: 96px;
+  padding: 12px 16px 10px;
+  border: 1px solid rgba(208, 168, 93, 0.38);
+  border-radius: var(--radius-panel);
+  background: rgba(208, 168, 93, 0.09);
+  text-align: center;
+}
+
+.song-view-key-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.song-view-key-value {
+  display: block;
+  margin-top: 2px;
+  color: var(--accent-chord);
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.song-view-meta {
+  margin-top: 16px;
+  gap: 7px;
+}
+
+.song-view-stat,
+.song-view-by {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: var(--ghost-bg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.song-reading-controls {
+  max-width: var(--chart-max-width);
+  margin: 0 auto;
+}
+
+.song-reading-controls .transpose-bar {
+  position: sticky;
+  top: 62px;
+  z-index: 5;
+  border-radius: var(--radius-panel);
+  background: var(--nav-bg);
+  backdrop-filter: blur(16px);
+  box-shadow: none;
+}
+
+.song-roadmap {
+  max-width: var(--chart-max-width);
+  margin: 8px auto 10px;
+  top: 118px;
+}
+
+.song-roadmap-item {
+  min-height: 34px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+  .song-view-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 22px;
+  }
+
+  .song-view-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .song-view-identity {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 76px;
+    gap: 12px;
+  }
+
+  .song-view-title {
+    font-size: clamp(32px, 11vw, 44px);
+  }
+
+  .song-view-key {
+    min-width: 76px;
+    padding: 10px 9px 8px;
+  }
+
+  .song-view-key-value { font-size: 25px; }
+
+  .song-reading-controls .transpose-bar {
+    top: 58px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .song-reading-controls .transpose-bar::-webkit-scrollbar { display: none; }
+  .song-roadmap { top: 112px; }
+}

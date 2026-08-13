@@ -217,7 +217,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
           >
             &#8592; {t('songView.back')}
           </button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="song-view-actions" role="group" aria-label="Song actions">
             {isOwner && (
               <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                 &#9998; {t('songView.edit')}
@@ -241,17 +241,26 @@ export function SongView({ songId, navigate }: SongViewProps) {
             </button>
           </div>
         </div>
-        <h1 className="song-view-title">{song.title}</h1>
-        {song.artist && <div className="song-view-artist">{song.artist}</div>}
+        <div className="song-view-identity">
+          <div className="song-view-heading">
+            <div className="song-view-eyebrow">Chord chart</div>
+            <h1 className="song-view-title">{song.title}</h1>
+            {song.artist && <div className="song-view-artist">{song.artist}</div>}
+          </div>
+          <div className="song-view-key" aria-label={`Current key ${chord.currentKey || 'unknown'}`}>
+            <span className="song-view-key-label">Key</span>
+            <span className="song-view-key-value">{chord.currentKey || '?'}</span>
+          </div>
+        </div>
         <div className="song-view-meta">
+          {song.bpm && <span className="song-view-stat">{song.bpm} BPM</span>}
           {!isOwner && song.username && <span className="song-view-by">@{song.username}</span>}
-          {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
           {song.language && (
-            <span className="badge badge-lang" title={languageName(song.language)}>
-              {song.language.toUpperCase()}
+            <span className="song-view-stat" title={languageName(song.language)}>
+              {languageName(song.language)}
             </span>
           )}
-          {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
+          {isOwner && song.visibility === 'private' && <span className="song-view-stat">&#128274; Private</span>}
           {versions.length > 1 && (
             <div className="version-selector-container">
               <span className="version-selector-label">Version</span>
@@ -276,25 +285,27 @@ export function SongView({ songId, navigate }: SongViewProps) {
         </div>
       </div>
 
-      <Toolbar
-        currentKey={chord.currentKey}
-        nashville={chord.nashville}
-        nashvilleDisabled={!songHasKey(content, chord.transpose)}
-        onNashvilleChange={chord.toggleNashville}
-        twoCol={twoColState.twoCol}
-        onTwoColToggle={twoColState.toggleTwoCol}
-        fontSize={fontScale.fontSize}
-        onFontChange={fontScale.changeFontSize}
-        onReset={() => {
-          fontScale.resetFontSize();
-          twoColState.setTwoColTo(false);
-        }}
-        onPickKey={chord.pickKey}
-        onAutoFit={handleAutoFit}
-        autoFitActive={autoFitActive}
-        onExportPdf={handleExportPdf}
-        renderKey={songId}
-      />
+      <div className="song-reading-controls" aria-label="Chart reading controls">
+        <Toolbar
+          currentKey={chord.currentKey}
+          nashville={chord.nashville}
+          nashvilleDisabled={!songHasKey(content, chord.transpose)}
+          onNashvilleChange={chord.toggleNashville}
+          twoCol={twoColState.twoCol}
+          onTwoColToggle={twoColState.toggleTwoCol}
+          fontSize={fontScale.fontSize}
+          onFontChange={fontScale.changeFontSize}
+          onReset={() => {
+            fontScale.resetFontSize();
+            twoColState.setTwoColTo(false);
+          }}
+          onPickKey={chord.pickKey}
+          onAutoFit={handleAutoFit}
+          autoFitActive={autoFitActive}
+          onExportPdf={handleExportPdf}
+          renderKey={songId}
+        />
+      </div>
 
       {roadmap.length > 0 && (
         <nav className="song-roadmap" aria-label="Song sections">
@@ -311,6 +322,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         twoCol={twoColState.twoCol}
         fontSize={fontScale.fontSize}
         autoFit={autoFitActive}
+        tone="paper"
       />
 
       {(song.tags || song.youtube_url) && (
