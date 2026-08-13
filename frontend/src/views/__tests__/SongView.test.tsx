@@ -75,14 +75,15 @@ describe('SongView chord-reading workspace', () => {
 
     render(<SongView songId={7} navigate={vi.fn()} />);
 
-    expect(await screen.findByRole('heading', { name: 'Goodness of God', level: 2 })).toBeInTheDocument();
-    expect(screen.getByText('Bethel Music', { selector: '.lead-sheet-heading p' })).toBeInTheDocument();
-    expect(screen.getByText('Ab', { selector: '.lead-sheet-key-value' })).toBeInTheDocument();
-    expect(screen.getByText('63', { selector: '.lead-sheet-tempo-value' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Goodness of God', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Bethel Music', { selector: '.song-view-artist' })).toBeInTheDocument();
+    expect(screen.getByText('Ab', { selector: '.song-view-key-value' })).toBeInTheDocument();
+    expect(screen.getByText('63 BPM', { selector: '.song-view-stat' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Song actions' })).toBeInTheDocument();
     expect(screen.getByTestId('reading-controls')).toBeInTheDocument();
     expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'paper');
-    expect(screen.getByRole('region', { name: 'Goodness of God chord chart' })).toHaveClass('lead-sheet-document');
+    expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
+    expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Song sections' })).toBeInTheDocument();
 
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('GET', '/api/songs/7/versions'));
