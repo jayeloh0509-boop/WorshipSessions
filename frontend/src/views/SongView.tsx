@@ -12,18 +12,15 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, isSectionLabel } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
-
-const ROADMAP_LABEL_RE =
-  /^(?:INTRO|VERSE(?:\s+\d+)?|PRE[- ]?CHORUS|CHORUS|TAG|INTERLUDE|INSTRUMENTAL|BRIDGE|OUTRO|REPEAT\s+.+|FINAL\s+CHORD)(?:\s*\([^)]*\))?$/i;
 
 function extractRoadmap(content: string): string[] {
   const seen = new Set<string>();
   return content.split('\n').reduce<string[]>((sections, rawLine) => {
     const line = rawLine.trim().replace(/^\[|\]$/g, '');
-    if (line && ROADMAP_LABEL_RE.test(line) && !seen.has(line.toLowerCase())) {
+    if (line && isSectionLabel(line) && !seen.has(line.toLowerCase())) {
       seen.add(line.toLowerCase());
       sections.push(line);
     }

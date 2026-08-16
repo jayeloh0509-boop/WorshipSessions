@@ -32,11 +32,15 @@ vi.mock('../../hooks/useTwoCol', () => ({
   useTwoCol: () => ({ twoCol: false, toggleTwoCol: vi.fn(), setTwoColTo: vi.fn() }),
 }));
 vi.mock('../../hooks/useKeyboardShortcuts', () => ({ useKeyboardShortcuts: vi.fn() }));
-vi.mock('../../lib/chords', () => ({
-  renderChordPro: () => '<div class="chord-sheet"><div class="label">VERSE 1</div></div>',
-  songHasKey: () => true,
-  autoFit: () => ({ fontSize: 0, twoCol: false }),
-}));
+vi.mock('../../lib/chords', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/chords')>();
+  return {
+    ...actual,
+    renderChordPro: () => '<div class="chord-sheet"><div class="label">VERSE 1</div></div>',
+    songHasKey: () => true,
+    autoFit: () => ({ fontSize: 0, twoCol: false }),
+  };
+});
 vi.mock('../../components/Toolbar', () => ({
   Toolbar: ({ currentKey }: { currentKey: string }) => <div data-testid="reading-controls">Controls {currentKey}</div>,
 }));
@@ -87,5 +91,24 @@ describe('SongView chord-reading workspace', () => {
     expect(screen.getByRole('navigation', { name: 'Song sections' })).toBeInTheDocument();
 
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('GET', '/api/songs/7/versions'));
+  });
+
+  it('includes extended imported section labels in the roadmap', async () => {
+    apiCall.mockImplementation((_method: string, path: string) => {
+      if (path.endsWith('/versions')) return Promise.resolve([]);
+      if (path.endsWith('/corrections')) return Promise.resolve([]);
+      return Promise.resolve({
+        ...song,
+        content: '{key: Bb}\nHalf-Chorus\n[Bb]One\nVamp\n[Eb]Two\nAlt Verse 1\n[F]Three\nREPEAT VERSE 1',
+      });
+    });
+
+    render(<SongView songId={7} navigate={vi.fn()} />);
+
+    const roadmap = await screen.findByRole('navigation', { name: 'Song sections' });
+    expect(roadmap).toHaveTextContent('Half-Chorus');
+    expect(roadmap).toHaveTextContent('Vamp');
+    expect(roadmap).toHaveTextContent('Alt Verse 1');
+    expect(roadmap).toHaveTextContent('REPEAT VERSE 1');
   });
 });

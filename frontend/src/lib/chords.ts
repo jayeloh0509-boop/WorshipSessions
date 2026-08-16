@@ -14,13 +14,21 @@ const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
 const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
 
 const SECTION_NAMES =
-  'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain';
-// Matches a section label with or without surrounding brackets and a trailing colon,
-// e.g. "Chorus", "Verse 2", "[Bridge]", "Pre-Chorus:".
+  'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre[- ]?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain|Vamp';
+const SECTION_BASE = String.raw`(?:Half[- ]?Chorus|Alt\s+Verse|${SECTION_NAMES})`;
+const SECTION_ANNOTATION = String.raw`(?:down|up|quiet|soft|loud|build|full|all\s+in|a\s+cappella|acapella|instrumental|\d+\s*(?:bars?|times?|x)|x\s*\d+)`;
+const SECTION_VARIANT = String.raw`${SECTION_BASE}(?:\s*\d+)?(?:\s*\(${SECTION_ANNOTATION}\))?`;
+const REPEAT_SECTION_VARIANT = String.raw`REPEAT\s+${SECTION_BASE}(?:\s+\d+)?(?:\s*(?:X\s*\d+|\d+\s*X))?(?:\s*\(${SECTION_ANNOTATION}\))?`;
+// Matches vocabulary-driven section labels only. Ordinary lyric or instruction
+// prose beginning with "Repeat" must not become a section or roadmap item.
 const SECTION_LABEL_RE = new RegExp(
-  `^\\[?(?:(?:${SECTION_NAMES})(?:\\s*\\d+|\\s*\\(\\d+X\\))?|REPEAT\\s+(?:${SECTION_NAMES})(?:\\s*\\d+X|\\s*\\(\\d+X\\))?|FINAL\\s+CHORD)\\s*:?\\]?$`,
+  String.raw`^\[?(?:${SECTION_VARIANT}|${REPEAT_SECTION_VARIANT}|FINAL\s+CHORD)\s*:?\]?$`,
   'i',
 );
+
+export function isSectionLabel(value: string): boolean {
+  return SECTION_LABEL_RE.test(value.trim());
+}
 
 export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
@@ -66,6 +74,88 @@ export function updateDirective(content: string, name: string, value: string | n
 // line before each section label when one isn't already there, so a
 // paragraph break exists at every section boundary regardless of source
 // formatting.
+const COMPACT_BAR_ROOT = String.raw`[A-G](?:#|b)?`;
+const COMPACT_BAR_EXTENSION = String.raw`(?:2|4|5|6|7|9|11|13)`;
+const COMPACT_BAR_DECORATION = String.raw`(?:sus[24]|add(?:2|4|6|9|11|13)|no(?:3|5)|[#b](?:5|9|11|13))`;
+const COMPACT_BAR_SUFFIX_RE = new RegExp(
+  String.raw`^(?:(?:maj|min|m|dim|aug)?${COMPACT_BAR_EXTENSION}?|[°ø∆Δ+]${COMPACT_BAR_EXTENSION}?|sus[24]|add(?:2|4|6|9|11|13)|\((?:add|no|sus)?[#b]?(?:2|3|4|5|6|9|11|13)\))(?:${COMPACT_BAR_DECORATION})*$`,
+);
+const COMPACT_BAR_CHORD_RE = new RegExp(String.raw`^(${COMPACT_BAR_ROOT})([^/]*)(?:\/(${COMPACT_BAR_ROOT}))?$`);
+
+function isCompactBarChord(token: string): boolean {
+  const match = token.match(COMPACT_BAR_CHORD_RE);
+  if (!match || !COMPACT_BAR_SUFFIX_RE.test(match[2])) return false;
+
+  const decorations = match[2].match(new RegExp(COMPACT_BAR_DECORATION, 'g')) ?? [];
+  const normalized = decorations.map((part) => part.toLowerCase());
+  if (new Set(normalized).size !== normalized.length) return false;
+  if (normalized.filter((part) => part.startsWith('sus')).length > 1) return false;
+
+  const susIntervals = new Set(
+    normalized.filter((part) => part.startsWith('sus')).map((part) => part.slice(3)),
+  );
+  const addIntervals = normalized
+    .filter((part) => part.startsWith('add'))
+    .map((part) => part.slice(3));
+  if (addIntervals.some((interval) => susIntervals.has(interval))) return false;
+
+  const decoratedIntervals = normalized.map((part) => part.match(/\d+$/)?.[0]).filter(Boolean);
+  const baseExtension = match[2].match(/^(?:maj|min|m|dim|aug)?(2|4|5|6|7|9|11|13)/)?.[1];
+  if (baseExtension && decoratedIntervals.includes(baseExtension)) return false;
+  return true;
+}
+
+function parseCompactBarSegment(segment: string): string | null {
+  const parts = segment.split(/(\/{2,})/);
+  if (parts.length === 1) return isCompactBarChord(segment) ? `[${segment}]` : null;
+  if (!parts[0] || !isCompactBarChord(parts[0])) return null;
+
+  let output = `[${parts[0]}]`;
+  for (let index = 1; index < parts.length; index += 2) {
+    const separator = parts[index];
+    const nextChord = parts[index + 1] ?? '';
+    output += separator;
+    if (!nextChord) {
+      if (index !== parts.length - 2) return null;
+      continue;
+    }
+    if (!isCompactBarChord(nextChord)) return null;
+    output += `[${nextChord}]`;
+  }
+  return output;
+}
+
+// Expand only a complete, validated compact-bar group. Anything that is not
+// bounded by outer barlines or contains an unsupported token is returned
+// verbatim, preventing bracketed prose and malformed annotations from being
+// silently reinterpreted as chords.
+function expandCompactBarGroup(inner: string): string | null {
+  const trimmed = inner.trim();
+  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return null;
+
+  let output = '';
+  let cursor = 0;
+  while (cursor < inner.length) {
+    if (/\s|\|/.test(inner[cursor])) {
+      output += inner[cursor];
+      cursor += 1;
+      continue;
+    }
+
+    let end = cursor;
+    while (end < inner.length && !/\s|\|/.test(inner[end])) end += 1;
+    const expanded = parseCompactBarSegment(inner.slice(cursor, end));
+    if (expanded === null) return null;
+    output += expanded;
+    cursor = end;
+  }
+  return output;
+}
+
+function expandCompactBarNotation(text: string): string {
+  return text.replace(/\[([^\]\n]*\|[^\]\n]*)\]/g, (match, inner: string) => expandCompactBarGroup(inner) ?? match);
+}
+
 function ensureSectionParagraphBreaks(text: string): string {
   const lines = text.split('\n');
   const out: string[] = [];
@@ -82,7 +172,12 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   // Pre-process content: force all chords to preferred enharmonic spellings (Sharps)
   // and fix spacing issues in slash chords (e.g. [A / C#] -> [A/C#]) BEFORE parsing.
   // This ensures transpose and Nashville work correctly.
-  let content = rawContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+  let content = expandCompactBarNotation(rawContent).replace(/\[([^\]]+)\]/g, (match, inner) => {
+    // Rejected outer compact-bar groups are fail-closed source. Do not let the
+    // generic slash normalizer mutate or reinterpret them after validation.
+    const trimmed = inner.trim();
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) return match;
+
     // 1. Fix spaces around slashes
     const cleaned = inner.replace(/\s*\/\s*/g, '/');
     // Preserve the source chart's written enharmonic spelling.
@@ -166,6 +261,10 @@ export function detectFormat(content: string): string | null {
 }
 
 export function toChordPro(content: string): string {
+  // Compact bar notation is already valid app input. Formatting it through
+  // ChordSheetJS would rewrite the source, so preserve it verbatim on save.
+  if (/\[\s*\|[^\]\n]*\|\s*\]/.test(content)) return content;
+
   // Separate directive lines from body so x_ directives survive UG parser conversion
   const lines = content.split('\n');
   const directiveLines: string[] = [];
@@ -226,6 +325,8 @@ function firstChordRoot(song: ChordSheetJS.Song): string | null {
 }
 
 export function ensureKeyDirective(content: string): string {
+  // Compact bar source must survive the complete persistence path byte-for-byte.
+  if (/\[\s*\|[^\]\n]*\|\s*\]/.test(content)) return content;
   if (/\{key:\s*\S/.test(content)) return content;
   try {
     const root = firstChordRoot(new ChordSheetJS.ChordProParser().parse(content));
@@ -361,12 +462,34 @@ class ResponsiveHtmlFormatter {
   }
 }
 
+function transposeUnsupportedSymbolChords(song: ChordSheetJS.Song, semitones: number): void {
+  song.mapChordLyricsPairs((pair) => {
+    const item = pair as unknown as { chords?: string };
+    const match = item.chords?.match(/^([A-G](?:#|b)?)([°ø∆].*?)(?:\/([A-G](?:#|b)?))?$/);
+    if (!match) return pair;
+
+    try {
+      const root = ChordSheetJS.Chord.parse(match[1])?.transpose(semitones).toString();
+      const bass = match[3]
+        ? ChordSheetJS.Chord.parse(match[3])?.transpose(semitones).toString()
+        : null;
+      if (root) item.chords = `${root}${match[2]}${bass ? `/${bass}` : ''}`;
+    } catch {
+      /* leave unsupported symbol spelling unchanged */
+    }
+    return pair;
+  });
+}
+
 export function prepareSong(content: string, semitones = 0, nashville = false): ChordSheetJS.Song | null {
   try {
     const song = parseSongAuto(content);
     if (!song) return null;
 
     let transposed = semitones !== 0 ? song.transpose(semitones) : song;
+    // ChordSheetJS preserves °, ø, and ∆ tokens but does not transpose their
+    // roots. Handle those accepted symbols explicitly without rewriting source.
+    if (semitones !== 0) transposeUnsupportedSymbolChords(transposed, semitones);
     // Preserve source spelling at concert pitch; normalize only after explicit transposition.
     if (semitones !== 0) fixChordAccidentals(transposed);
 
@@ -405,6 +528,16 @@ export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordS
     const chords = it.chords?.trim();
     if (!chords || SECTION_LABEL_RE.test(chords)) return pair;
     try {
+      const symbol = chords.match(/^([A-G](?:#|b)?)([°ø∆Δ+].*?)(?:\/([A-G](?:#|b)?))?$/);
+      if (symbol) {
+        const root = ChordSheetJS.Chord.parse(symbol[1])?.toNumeric(key).toString();
+        const bass = symbol[3]
+          ? ChordSheetJS.Chord.parse(symbol[3])?.toNumeric(key).toString()
+          : null;
+        if (root) it.chords = `${root}${symbol[2]}${bass ? `/${bass}` : ''}`;
+        return pair;
+      }
+
       const c = ChordSheetJS.Chord.parse(chords);
       if (c) it.chords = c.toNumeric(key).toString();
     } catch {

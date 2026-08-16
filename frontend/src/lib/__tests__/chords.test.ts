@@ -1,4 +1,12 @@
-import { extractDirective, updateDirective, toChordPro, ensureKeyDirective, detectFormat, getSongKey } from '../chords';
+import {
+  extractDirective,
+  updateDirective,
+  toChordPro,
+  ensureKeyDirective,
+  detectFormat,
+  getSongKey,
+  isSectionLabel,
+} from '../chords';
 
 // ─── extractDirective ───────────────────────────────────────────────
 
@@ -49,8 +57,8 @@ describe('updateDirective', () => {
     expect(result).toContain('{artist: Artist Name}');
     // artist should come after title
     const lines = result.split('\n');
-    const titleIdx = lines.findIndex(l => l.includes('{title:'));
-    const artistIdx = lines.findIndex(l => l.includes('{artist:'));
+    const titleIdx = lines.findIndex((l) => l.includes('{title:'));
+    const artistIdx = lines.findIndex((l) => l.includes('{artist:'));
     expect(artistIdx).toBeGreaterThan(titleIdx);
   });
 
@@ -58,8 +66,8 @@ describe('updateDirective', () => {
     const content = '{title: Song}\n{artist: Bob}\n[G]Lyrics';
     const result = updateDirective(content, 'tempo', '120');
     const lines = result.split('\n');
-    const artistIdx = lines.findIndex(l => l.includes('{artist:'));
-    const tempoIdx = lines.findIndex(l => l.includes('{tempo:'));
+    const artistIdx = lines.findIndex((l) => l.includes('{artist:'));
+    const tempoIdx = lines.findIndex((l) => l.includes('{tempo:'));
     expect(tempoIdx).toBeGreaterThan(artistIdx);
   });
 
@@ -167,6 +175,12 @@ describe('toChordPro', () => {
     expect(result).toMatch(/\[G\]/);
   });
 
+  it('preserves compact bracketed bar notation through ChordPro conversion', () => {
+    const content = `{title: Song}
+[| Bb//Bb Cm7 Bb/D | Eb2///|]`;
+    expect(toChordPro(content)).toBe(content);
+  });
+
   it('converts chords-over-lyrics to ChordPro bracket format', () => {
     const content = '  G        D\n  Let it   be';
     const result = toChordPro(content);
@@ -235,7 +249,7 @@ describe('renderChordPro sections', () => {
   it('recognizes Pre-Chorus with or without hyphen', () => {
     const html1 = renderChordPro('Pre-Chorus\n[G]Lyrics');
     expect(html1).toContain('class="paragraph prechorus"');
-    
+
     const html2 = renderChordPro('PreChorus\n[G]Lyrics');
     expect(html2).toContain('class="paragraph prechorus"');
   });
@@ -259,6 +273,18 @@ describe('renderChordPro sections', () => {
     expect(html).toContain('class="paragraph chorus"');
     expect(html).toContain('class="label">Chorus</h3>');
   });
+
+  it.each(['Half-Chorus', 'Vamp', 'Alt Verse 1', 'REPEAT VERSE 1'])('recognizes imported section label %s', (label) => {
+    const html = renderChordPro(`${label}\n[Bb]Lyrics`);
+    expect(html).toContain(`class="label">${label}</h3>`);
+  });
+
+  it.each(['Pre Chorus', 'CHORUS (down)', 'INTRO (2 bars)', 'REPEAT CHORUS X2'])(
+    'preserves legacy section label %s',
+    (label) => {
+      expect(isSectionLabel(label)).toBe(true);
+    },
+  );
 });
 
 describe('renderChordPro number notation', () => {
@@ -316,7 +342,6 @@ describe('ensureKeyDirective', () => {
   });
 });
 
-
 import { prepareSong } from '../chords';
 
 describe('prepareSong', () => {
@@ -339,6 +364,140 @@ describe('prepareSong', () => {
   it('converts to numbers when nashville is on', () => {
     const song = prepareSong('{key: G}\n[G]a [C]b', 0, true);
     expect(chordsOf(song!)).toEqual(['1', '4']);
+  });
+
+  it('transposes compact bracketed bar notation as individual chords', () => {
+    const source = `{key: Bb}
+[| Bb//Bb Cm7 Bb/D | Eb2///|]`;
+    const song = prepareSong(source, 2);
+
+    expect(chordsOf(song!)).toEqual(['C', 'C', 'Dm7', 'C/E', 'F2']);
+    expect(source).toBe(`{key: Bb}
+[| Bb//Bb Cm7 Bb/D | Eb2///|]`);
+  });
+
+  it('converts compact bracketed bar notation to Nashville numbers', () => {
+    const song = prepareSong(
+      `{key: Bb}
+[| Bb//Bb Cm7 Bb/D | Eb2///|]`,
+      0,
+      true,
+    );
+
+    expect(chordsOf(song!)).toEqual(['1', '1', '2m7', '1/3', '42']);
+  });
+
+  it('converts advanced symbol chords and slash basses to Nashville without changing quality', () => {
+    const source = `{key: Bb}
+[| Bb° Bb°7/Eb Bbø7/F# BbΔ7/Eb Bb∆/F# Bb+7/Eb |]`;
+
+    expect(chordsOf(prepareSong(source, 2, true)!)).toEqual([
+      '1°',
+      '1°7/4',
+      '1ø7/#5',
+      '1Δ7/4',
+      '1∆/#5',
+      '1+7/4',
+    ]);
+    expect(chordsOf(prepareSong(source, -2, true)!)).toEqual([
+      '1°',
+      '1°7/4',
+      '1ø7/b6',
+      '1Δ7/4',
+      '1∆/b6',
+      '1+7/4',
+    ]);
+  });
+
+  it('keeps bar and rhythm marks visible after expanding compact notation', () => {
+    const html = renderChordPro(`{key: Bb}
+[| Bb//Bb Cm7 Bb/D | Eb2///|]`);
+
+    expect(html).toContain('|');
+    expect(html).toContain('//');
+    expect(html).toContain('///');
+  });
+
+  it('preserves invalid compact groups exactly through conversion', () => {
+    for (const group of ['[| C/ |]', '[| C/D/E |]', '[| C999 |]', '[| C7sus2sus4 |]']) {
+      expect(
+        toChordPro(`{title: Unsafe}
+${group}`),
+      ).toBe(`{title: Unsafe}
+${group}`);
+    }
+  });
+
+  it.each([
+    '[Chorus | Bridge]',
+    '[D.C. | repeat]',
+    '[| Cmaj7#11 C7sus4 C(add9) nope |]',
+    '[| BAD |]',
+    '[| FACE |]',
+    '[| Cmajmaj |]',
+    '[| C() |]',
+    '[| C### |]',
+    '[| C/D/E |]',
+    '[| C999 |]',
+    '[| C7#9#9 |]',
+    '[| Cadd9add9 |]',
+    '[| C9add9 |]',
+    '[| C2add2 |]',
+    '[| C6add6 |]',
+    '[| C13add13 |]',
+    '[| Csus2add2 |]',
+    '[| Csus4add4 |]',
+    '[| Cadd2sus2 |]',
+    '[| Cadd4sus4 |]',
+    '[| C / D |]',
+    '[| /C |]',
+    '[| C/ |]',
+  ])('leaves unsafe compact bracket group unchanged: %s', (group) => {
+    const song = prepareSong(`{key: C}
+${group}`);
+    expect(chordsOf(song!)).toEqual([group.slice(1, -1)]);
+  });
+
+  it.each([
+    'Repeat after me',
+    'Repeat the last word softly',
+    'Chorus (I love you)',
+    'Verse (You are good)',
+    'Repeat Chorus (softly)',
+    'Chorus ()',
+  ])('does not classify arbitrary repeat prose as a section: %s', (line) => {
+    expect(isSectionLabel(line)).toBe(false);
+  });
+
+  it('preserves compact bar source through key insertion used by save paths', () => {
+    const source = `{title: T}
+{x_language: en}
+[G]lyric
+[| C D |]`;
+    expect(ensureKeyDirective(toChordPro(source))).toBe(source);
+  });
+
+  it('accepts complete advanced chord tokens in compact bar notation', () => {
+    const song = prepareSong(
+      `{key: C}
+[| Cmaj7#11 C7sus4 C(add9) C7b9#9 C7#9b9 C7b5#5 C7#5b5 C13b9#9 C°7 Cø7 CΔ7 C∆7 C+7 |]`,
+      2,
+    );
+    expect(chordsOf(song!)).toEqual([
+      'Dmaj7#11',
+      'D7sus4',
+      'D(add9)',
+      'D7b9#9',
+      'D7#9b9',
+      'D7b5#5',
+      'D7#5b5',
+      'D13b9#9',
+      'D°7',
+      'Dø7',
+      'DΔ7',
+      'D∆7',
+      'D+7',
+    ]);
   });
 
   // parseSongAuto falls back to a lyrics-only ChordPro parse when it finds no
