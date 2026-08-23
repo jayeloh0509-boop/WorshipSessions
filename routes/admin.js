@@ -9,6 +9,7 @@ const { parseId, validateUserCredentials } = require('../lib/validation');
 const { handleDbError } = require('../lib/errors');
 const { ROLES, LIMITS } = require('../lib/constants');
 const { blockInDemo } = require('../lib/demo');
+const Changelog = require('../lib/models/changelog');
 
 function resolveAdminTarget(req, res) {
   const targetId = parseId(req.params.id);
@@ -36,9 +37,72 @@ function resolveAdminTarget(req, res) {
   return { targetId, target };
 }
 
+function validateChangelog(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return 'Request body is required';
+  const fields = [
+    ['version', LIMITS.MAX_CHANGELOG_VERSION],
+    ['title', LIMITS.MAX_CHANGELOG_TITLE],
+    ['summary', LIMITS.MAX_CHANGELOG_SUMMARY],
+    ['body', LIMITS.MAX_CHANGELOG_BODY],
+  ];
+  for (const [field, max] of fields) {
+    if (typeof input[field] !== 'string' || !input[field].trim()) return `${field} is required`;
+    if (input[field].trim().length > max) return `${field} is too long`;
+  }
+  return null;
+}
+
 function createAdminRouter() {
   const router = express.Router();
 
+  router.get('/admin/changelog', requireAuth, requireAdmin, (req, res) => {
+    res.json(Changelog.list());
+  });
+
+  router.post('/admin/changelog', requireAuth, requireAdmin, blockInDemo, (req, res) => {
+    const error = validateChangelog(req.body);
+    if (error) return res.status(400).json({ error });
+    res.status(201).json(Changelog.create(req.body, req.user.id));
+  });
+
+  router.put('/admin/changelog/:id', requireAuth, requireAdmin, blockInDemo, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid changelog ID' });
+    const error = validateChangelog(req.body);
+    if (error) return res.status(400).json({ error });
+    const existing = Changelog.get(id);
+    if (!existing) return res.status(404).json({ error: 'Changelog entry not found' });
+    if (existing.status === 'published') {
+      return res.status(409).json({ error: 'Unpublish this entry before editing it' });
+    }
+    const entry = Changelog.update(id, req.body, req.user.id);
+    if (!entry) return res.status(404).json({ error: 'Changelog entry not found' });
+    res.json(entry);
+  });
+
+  router.post('/admin/changelog/:id/publish', requireAuth, requireAdmin, blockInDemo, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid changelog ID' });
+    const entry = Changelog.publish(id, req.user.id);
+    if (!entry) return res.status(404).json({ error: 'Changelog entry not found' });
+    res.json(entry);
+  });
+
+  router.post('/admin/changelog/:id/unpublish', requireAuth, requireAdmin, blockInDemo, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid changelog ID' });
+    const entry = Changelog.unpublish(id, req.user.id);
+    if (!entry) return res.status(404).json({ error: 'Changelog entry not found' });
+    res.json(entry);
+  });
+
+  router.delete('/admin/changelog/:id', requireAuth, requireAdmin, blockInDemo, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid changelog ID' });
+    const result = Changelog.delete(id);
+    if (!result.changes) return res.status(404).json({ error: 'Changelog entry not found' });
+    res.json({ success: true });
+  });
   router.get('/admin/stats', requireAuth, requireAdmin, (req, res) => {
     const userCount = User.count().count;
     const songCount = Song.count();

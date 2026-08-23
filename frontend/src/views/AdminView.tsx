@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { Loading } from '../components/Loading';
-import type { AdminStats, AdminUser, InviteCode, AdminConfig, Correction } from '../types';
+import type { AdminStats, AdminUser, InviteCode, AdminConfig, Correction, ChangelogEntry } from '../types';
 import { useDemo } from '../context/DemoContext';
 import { languageName } from '../lib/languages';
 
@@ -24,6 +24,9 @@ export function AdminView({ navigate }: AdminViewProps) {
   const [config, setConfig] = useState<AdminConfig>({ allowRegistration: true });
   const [invites, setInvites] = useState<InviteCode[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [draft, setDraft] = useState({ version: '', title: '', summary: '', body: '' });
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const loadInvites = useCallback(async () => {
     try {
@@ -36,16 +39,18 @@ export function AdminView({ navigate }: AdminViewProps) {
 
   const load = useCallback(async () => {
     try {
-      const [s, u, c, cfg] = await Promise.all([
+      const [s, u, c, cfg, ch] = await Promise.all([
         apiCall<AdminStats>('GET', '/api/admin/stats'),
         apiCall<AdminUser[]>('GET', '/api/admin/users'),
         apiCall<Correction[]>('GET', '/api/admin/corrections'),
         apiCall<AdminConfig>('GET', '/api/admin/config'),
+        apiCall<ChangelogEntry[]>('GET', '/api/admin/changelog'),
       ]);
       setStats(s);
       setUsers(u);
       setCorrections(c);
       setConfig(cfg);
+      setChangelog(ch);
       loadInvites();
     } catch (e) {
       toast((e as Error).message, 'error');
@@ -150,6 +155,57 @@ export function AdminView({ navigate }: AdminViewProps) {
     }
   };
 
+  const saveChangelog = async () => {
+    try {
+      const entry = await apiCall<ChangelogEntry>(
+        editingId ? 'PUT' : 'POST',
+        editingId ? `/api/admin/changelog/${editingId}` : '/api/admin/changelog',
+        draft,
+      );
+      setChangelog((items) =>
+        editingId ? items.map((item) => (item.id === entry.id ? entry : item)) : [entry, ...items],
+      );
+      setDraft({ version: '', title: '', summary: '', body: '' });
+      setEditingId(null);
+      toast('Changelog draft saved', 'success');
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+
+  const setChangelogStatus = async (id: number, publish: boolean) => {
+    try {
+      const entry = await apiCall<ChangelogEntry>(
+        'POST',
+        `/api/admin/changelog/${id}/${publish ? 'publish' : 'unpublish'}`,
+      );
+      setChangelog((items) => items.map((item) => (item.id === id ? entry : item)));
+      toast(publish ? 'Changelog entry published' : 'Changelog entry returned to draft', 'success');
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+
+  const deleteChangelog = async (id: number) => {
+    if (!confirm('Delete this changelog entry?')) return;
+    try {
+      await apiCall('DELETE', `/api/admin/changelog/${id}`);
+      setChangelog((items) => items.filter((item) => item.id !== id));
+      if (editingId === id) {
+        setEditingId(null);
+        setDraft({ version: '', title: '', summary: '', body: '' });
+      }
+      toast('Changelog entry deleted', 'success');
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+
+  const editChangelog = (entry: ChangelogEntry) => {
+    setEditingId(entry.id);
+    setDraft({ version: entry.version, title: entry.title, summary: entry.summary, body: entry.body });
+  };
+
   if (!stats) return <Loading />;
 
   const isOwner = user?.role === 'owner';
@@ -198,7 +254,87 @@ export function AdminView({ navigate }: AdminViewProps) {
         </div>
       )}
 
-      <h3 className="admin-section-title">{t('admin.inviteUsers')}</h3>
+      <h3 className="admin-section-title">Admin changelog</h3>
+      <section className="ocr-invite-card" aria-label="Admin changelog editor">
+        <div className="settings-grid">
+          <label>
+            Version
+            <input
+              value={draft.version}
+              onChange={(e) => setDraft({ ...draft, version: e.target.value })}
+              placeholder="v1.23.0"
+            />
+          </label>
+          <label>
+            Title
+            <input
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              placeholder="What changed?"
+            />
+          </label>
+        </div>
+        <label>
+          Summary
+          <textarea rows={2} value={draft.summary} onChange={(e) => setDraft({ ...draft, summary: e.target.value })} />
+        </label>
+        <label>
+          Details
+          <textarea rows={6} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
+        </label>
+        <div className="flex-align-center" style={{ gap: 8, marginTop: 12 }}>
+          <button className="btn" onClick={saveChangelog} disabled={demoMode}>
+            {editingId ? 'Update draft' : 'Save draft'}
+          </button>
+          {editingId && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setEditingId(null);
+                setDraft({ version: '', title: '', summary: '', body: '' });
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+        <div style={{ marginTop: 18 }}>
+          {changelog.length === 0 && <div className="muted-text">No changelog entries yet.</div>}
+          {changelog.map((entry) => (
+            <article key={entry.id} className="song-card" style={{ marginTop: 8 }}>
+              <div className="song-card-info">
+                <div className="song-card-title">
+                  {entry.version} · {entry.title}
+                </div>
+                <div className="song-card-meta">
+                  <span className={`badge ${entry.status === 'published' ? 'badge-admin' : 'badge-disabled'}`}>
+                    {entry.status}
+                  </span>{' '}
+                  · {entry.summary}
+                </div>
+              </div>
+              <div className="song-card-actions">
+                {entry.status !== 'published' && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => editChangelog(entry)}>
+                    Edit
+                  </button>
+                )}
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setChangelogStatus(entry.id, entry.status !== 'published')}
+                  disabled={demoMode}
+                >
+                  {entry.status === 'published' ? 'Unpublish' : 'Publish'}
+                </button>
+                <button className="btn btn-danger btn-sm" onClick={() => deleteChangelog(entry.id)} disabled={demoMode}>
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <div className="ocr-invite-card">
         <div style={{ marginBottom: 14 }}>
           <label className="sl-option">

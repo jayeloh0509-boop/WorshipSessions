@@ -9,3 +9,4 @@ export type {
 } from './setlist';
 export type { User, AuthConfig, AuthResponse } from './user';
 export type { AdminStats, AdminUser, InviteCode, AdminConfig } from './admin';
+export type { ChangelogEntry } from './changelog';
