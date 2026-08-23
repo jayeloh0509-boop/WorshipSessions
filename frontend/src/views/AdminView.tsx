@@ -255,65 +255,95 @@ export function AdminView({ navigate }: AdminViewProps) {
       )}
 
       <h3 className="admin-section-title">Admin changelog</h3>
-      <section className="ocr-invite-card" aria-label="Admin changelog editor">
-        <div className="settings-grid">
-          <label>
-            Version
-            <input
-              value={draft.version}
-              onChange={(e) => setDraft({ ...draft, version: e.target.value })}
-              placeholder="v1.23.0"
-            />
-          </label>
-          <label>
-            Title
-            <input
-              value={draft.title}
-              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              placeholder="What changed?"
-            />
-          </label>
+      <section className="admin-changelog" aria-label="Admin changelog editor">
+        <div className="admin-changelog-header">
+          <div>
+            <div className="admin-eyebrow">Release notes</div>
+            <h2>Admin changelog</h2>
+            <p>Write clear updates for the WorshipSessions team. Save a draft first, then publish when it is ready.</p>
+          </div>
+          <div className="admin-changelog-count">
+            <strong>{changelog.length}</strong>
+            <span>{changelog.length === 1 ? 'entry' : 'entries'}</span>
+          </div>
         </div>
-        <label>
-          Summary
-          <textarea rows={2} value={draft.summary} onChange={(e) => setDraft({ ...draft, summary: e.target.value })} />
-        </label>
-        <label>
-          Details
-          <textarea rows={6} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
-        </label>
-        <div className="flex-align-center" style={{ gap: 8, marginTop: 12 }}>
-          <button className="btn" onClick={saveChangelog} disabled={demoMode}>
-            {editingId ? 'Update draft' : 'Save draft'}
-          </button>
-          {editingId && (
-            <button
-              className="btn btn-ghost"
-              onClick={() => {
-                setEditingId(null);
-                setDraft({ version: '', title: '', summary: '', body: '' });
-              }}
-            >
-              Cancel
+        <div className="admin-changelog-editor">
+          <div className="admin-changelog-editor-heading">
+            <div>
+              <h3>{editingId ? 'Edit draft' : 'New release note'}</h3>
+              <span>Only published entries are visible to administrators as released.</span>
+            </div>
+            {editingId && <span className="admin-changelog-editing">Editing draft</span>}
+          </div>
+          <div className="admin-changelog-fields">
+            <label>
+              <span>Version</span>
+              <input
+                value={draft.version}
+                onChange={(e) => setDraft({ ...draft, version: e.target.value })}
+                placeholder="v1.23.0"
+              />
+            </label>
+            <label>
+              <span>Title</span>
+              <input
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                placeholder="What changed?"
+              />
+            </label>
+          </div>
+          <label>
+            <span>Summary</span>
+            <textarea
+              rows={2}
+              value={draft.summary}
+              onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
+              placeholder="A short sentence for the release list"
+            />
+          </label>
+          <label>
+            <span>Details</span>
+            <textarea
+              rows={6}
+              value={draft.body}
+              onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+              placeholder="Explain the changes, fixes, or important notes…"
+            />
+          </label>
+          <div className="admin-changelog-actions">
+            <button className="btn" onClick={saveChangelog} disabled={demoMode}>
+              {editingId ? 'Update draft' : 'Save draft'}
             </button>
-          )}
+            {editingId && (
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setEditingId(null);
+                  setDraft({ version: '', title: '', summary: '', body: '' });
+                }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
-        <div style={{ marginTop: 18 }}>
-          {changelog.length === 0 && <div className="muted-text">No changelog entries yet.</div>}
+        <div className="admin-changelog-list">
+          {changelog.length === 0 && (
+            <div className="admin-changelog-empty">No release notes yet. Your first draft will appear here.</div>
+          )}
           {changelog.map((entry) => (
-            <article key={entry.id} className="song-card" style={{ marginTop: 8 }}>
-              <div className="song-card-info">
-                <div className="song-card-title">
-                  {entry.version} · {entry.title}
+            <article key={entry.id} className="admin-changelog-entry">
+              <div className="admin-changelog-entry-main">
+                <div className="admin-changelog-entry-topline">
+                  <span className="admin-changelog-version">{entry.version}</span>
+                  <span className={`admin-changelog-status ${entry.status}`}>{entry.status}</span>
+                  {entry.published_at && <time>{new Date(entry.published_at).toLocaleDateString()}</time>}
                 </div>
-                <div className="song-card-meta">
-                  <span className={`badge ${entry.status === 'published' ? 'badge-admin' : 'badge-disabled'}`}>
-                    {entry.status}
-                  </span>{' '}
-                  · {entry.summary}
-                </div>
+                <h3>{entry.title}</h3>
+                <p>{entry.summary}</p>
               </div>
-              <div className="song-card-actions">
+              <div className="admin-changelog-entry-actions">
                 {entry.status !== 'published' && (
                   <button className="btn btn-ghost btn-sm" onClick={() => editChangelog(entry)}>
                     Edit

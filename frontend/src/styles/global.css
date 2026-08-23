@@ -2,6 +2,7 @@
 @import './base.css';
 @import './components.css';
 @import './views.css';
+@import './admin-changelog.css';
 @import './chord-sheet.css';
 @import './editor.css';
 @import './premium.css';
