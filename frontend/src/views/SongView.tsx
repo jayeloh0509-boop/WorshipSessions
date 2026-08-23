@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -8,12 +8,14 @@ import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
 import { useChartTone } from '../hooks/useChartTone';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSongReadingPreferences } from '../hooks/useSongReadingPreferences';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
 import { renderChordPro, songHasKey, autoFit, isSectionLabel } from '../lib/chords';
 import { languageName } from '../lib/languages';
+import { getTransposeDelta } from '../lib/keys';
 import type { Song, SongVersion, Correction } from '../types';
 
 function extractRoadmap(content: string): string[] {
@@ -73,27 +75,71 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const content = song?.content || '';
   const chord = useChordRenderer(content);
-  const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
   const chartTone = useChartTone();
-  const [autoFitActive, setAutoFitActive] = useState(false);
+  const preferenceId = song ? song.parent_id || song.id : null;
+  const {
+    preferences,
+    update: updateReadingPreferences,
+    reset: resetReadingPreferences,
+  } = useSongReadingPreferences(preferenceId, {
+    fontSize: fontScale.fontSize,
+    twoCol: twoColState.twoCol,
+    chartTone: chartTone.tone,
+  });
 
-  const handleAutoFit = () => {
-    setAutoFitActive(true);
-    setTimeout(() => {
-      const result = autoFit();
-      fontScale.changeFontSize(result.fontSize);
-      twoColState.setTwoColTo(result.twoCol);
-      setAutoFitActive(false);
+  const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
+  const autoFitTimer = useRef<number | null>(null);
+
+  const scheduleAutoFit = useCallback(() => {
+    if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
+    autoFitTimer.current = window.setTimeout(() => {
+      setAutoFitResult(autoFit());
+      autoFitTimer.current = null;
     }, 100);
-  };
+  }, []);
 
-  // Reset transpose/nashville when navigating to a different song
+  const cancelAutoFit = useCallback(() => {
+    if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
+    autoFitTimer.current = null;
+    setAutoFitResult(null);
+  }, []);
+
+  const handleAutoFit = useCallback(() => {
+    if (preferences.autoFit) {
+      updateReadingPreferences({ autoFit: false });
+      cancelAutoFit();
+      return;
+    }
+    updateReadingPreferences({ autoFit: true });
+    scheduleAutoFit();
+  }, [cancelAutoFit, preferences.autoFit, scheduleAutoFit, updateReadingPreferences]);
+
+  const { setTranspose, setNashville } = chord;
+
   useEffect(() => {
-    resetChordTranspose(0);
-    resetChordNashville(false);
-  }, [songId, resetChordTranspose, resetChordNashville]);
+    setTranspose(preferences.transpose);
+    setNashville(preferences.nashville);
+  }, [preferenceId, preferences.transpose, preferences.nashville, setTranspose, setNashville]);
+
+  useEffect(() => {
+    cancelAutoFit();
+  }, [preferenceId, cancelAutoFit]);
+
+  useEffect(() => {
+    if (!preferences.autoFit) {
+      cancelAutoFit();
+      return;
+    }
+    scheduleAutoFit();
+    window.addEventListener('resize', scheduleAutoFit);
+    return () => {
+      window.removeEventListener('resize', scheduleAutoFit);
+      if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
+      autoFitTimer.current = null;
+    };
+  }, [content, chord.transpose, chord.nashville, preferences.autoFit, preferenceId, scheduleAutoFit, cancelAutoFit]);
 
   const renderedHtml = useMemo(
     () => renderChordPro(content, chord.transpose, chord.nashville),
@@ -117,25 +163,44 @@ export function SongView({ songId, navigate }: SongViewProps) {
     () => ({
       ArrowUp: (e: KeyboardEvent) => {
         e.preventDefault();
+        const transpose = chord.transpose + 1;
         chord.doTranspose(1);
+        updateReadingPreferences({ transpose, nashville: false });
       },
       ArrowDown: (e: KeyboardEvent) => {
         e.preventDefault();
+        const transpose = chord.transpose - 1;
         chord.doTranspose(-1);
+        updateReadingPreferences({ transpose, nashville: false });
       },
       '+': (e: KeyboardEvent) => {
         e.preventDefault();
+        const transpose = chord.transpose + 1;
         chord.doTranspose(1);
+        updateReadingPreferences({ transpose, nashville: false });
       },
       '-': (e: KeyboardEvent) => {
         e.preventDefault();
+        const transpose = chord.transpose - 1;
         chord.doTranspose(-1);
+        updateReadingPreferences({ transpose, nashville: false });
       },
-      '0': () => chord.resetTranspose(),
-      n: () => chord.toggleNashville(!chord.nashville),
-      N: () => chord.toggleNashville(!chord.nashville),
+      '0': () => {
+        chord.resetTranspose();
+        updateReadingPreferences({ transpose: 0 });
+      },
+      n: () => {
+        const nashville = !chord.nashville;
+        chord.toggleNashville(nashville);
+        updateReadingPreferences({ nashville });
+      },
+      N: () => {
+        const nashville = !chord.nashville;
+        chord.toggleNashville(nashville);
+        updateReadingPreferences({ nashville });
+      },
     }),
-    [chord],
+    [chord, updateReadingPreferences],
   );
 
   useKeyboardShortcuts(shortcuts, !!song);
@@ -163,7 +228,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
       const missing = await exportSongPdf(song, {
         transpose: chord.transpose,
         nashville: chord.nashville,
-        fontSize: fontScale.fontSize,
+        fontSize: preferences.fontSize,
       });
       if (missing.length) {
         toast(`PDF exported, but these characters may be missing: ${missing.slice(0, 8).join(' ')}`, 'error');
@@ -289,25 +354,47 @@ export function SongView({ songId, navigate }: SongViewProps) {
       <div className="song-reading-controls" aria-label="Chart reading controls">
         <Toolbar
           currentKey={chord.currentKey}
-          nashville={chord.nashville}
+          nashville={preferences.nashville}
           nashvilleDisabled={!songHasKey(content, chord.transpose)}
-          onNashvilleChange={chord.toggleNashville}
-          twoCol={twoColState.twoCol}
-          onTwoColToggle={twoColState.toggleTwoCol}
-          fontSize={fontScale.fontSize}
-          onFontChange={fontScale.changeFontSize}
-          onReset={() => {
-            fontScale.resetFontSize();
-            twoColState.setTwoColTo(false);
+          onNashvilleChange={(nashville) => updateReadingPreferences({ nashville })}
+          twoCol={preferences.twoCol}
+          onTwoColToggle={() => {
+            cancelAutoFit();
+            updateReadingPreferences({ twoCol: !preferences.twoCol, autoFit: false });
           }}
-          onPickKey={chord.pickKey}
+          fontSize={preferences.fontSize}
+          onFontChange={(delta) => {
+            cancelAutoFit();
+            updateReadingPreferences({ fontSize: preferences.fontSize + delta, autoFit: false });
+          }}
+          onReset={() => {
+            chord.setTranspose(0);
+            chord.setNashville(false);
+            cancelAutoFit();
+            resetReadingPreferences();
+          }}
+          onPickKey={(key) => {
+            const delta = getTransposeDelta(chord.currentKey, key);
+            chord.pickKey(key);
+            updateReadingPreferences({ transpose: chord.transpose + delta, nashville: false });
+          }}
           onAutoFit={handleAutoFit}
-          autoFitActive={autoFitActive}
+          autoFitActive={preferences.autoFit}
           onExportPdf={handleExportPdf}
           renderKey={songId}
           compactKey
-          chartTone={chartTone.tone}
-          onChartToneChange={chartTone.toggleTone}
+          chartTone={preferences.chartTone}
+          onChartToneChange={() =>
+            updateReadingPreferences({ chartTone: preferences.chartTone === 'paper' ? 'dark' : 'paper' })
+          }
+          resetDisabled={
+            preferences.transpose === 0 &&
+            !preferences.nashville &&
+            preferences.fontSize === fontScale.fontSize &&
+            preferences.twoCol === twoColState.twoCol &&
+            preferences.chartTone === chartTone.tone &&
+            !preferences.autoFit
+          }
         />
       </div>
 
@@ -324,10 +411,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
       <section className="chart-reading-surface" aria-label="Chord chart">
         <ChordSheet
           html={renderedHtml}
-          twoCol={twoColState.twoCol}
-          fontSize={fontScale.fontSize}
-          autoFit={autoFitActive}
-          tone={chartTone.tone}
+          twoCol={autoFitResult?.twoCol ?? preferences.twoCol}
+          fontSize={autoFitResult?.fontSize ?? preferences.fontSize}
+          autoFit={preferences.autoFit}
+          tone={preferences.chartTone}
         />
       </section>
 

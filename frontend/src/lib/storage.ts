@@ -1,4 +1,14 @@
 import type { User, LocalSetlist } from '../types';
+import { clampFontSize } from './chords';
+
+export type SongReadingPreferences = {
+  transpose?: number;
+  nashville?: boolean;
+  fontSize?: number;
+  twoCol?: boolean;
+  chartTone?: 'paper' | 'dark';
+  autoFit?: boolean;
+};
 
 const KEYS = {
   user: 'cv_user',
@@ -7,6 +17,7 @@ const KEYS = {
   fontsize: 'cv_fontsize',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
+  songReadingPreferences: 'cv_song_reading_preferences_v1',
 } as const;
 
 export function getStoredUser(): User | null {
@@ -60,6 +71,64 @@ export function getLocalSetlists(): LocalSetlist[] {
 
 export function saveLocalSetlists(arr: LocalSetlist[]): void {
   localStorage.setItem(KEYS.localSetlists, JSON.stringify(arr));
+}
+
+export function sanitizeSongReadingPreferences(value: unknown): SongReadingPreferences {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const raw = value as Record<string, unknown>;
+  const result: SongReadingPreferences = {};
+  if (typeof raw.transpose === 'number' && Number.isFinite(raw.transpose)) {
+    result.transpose = Math.max(-11, Math.min(11, Math.trunc(raw.transpose)));
+  }
+  if (typeof raw.nashville === 'boolean') result.nashville = raw.nashville;
+  if (typeof raw.fontSize === 'number' && Number.isFinite(raw.fontSize)) {
+    result.fontSize = clampFontSize(raw.fontSize);
+  }
+  if (typeof raw.twoCol === 'boolean') result.twoCol = raw.twoCol;
+  if (raw.chartTone === 'paper' || raw.chartTone === 'dark') result.chartTone = raw.chartTone;
+  if (typeof raw.autoFit === 'boolean') result.autoFit = raw.autoFit;
+  if (result.nashville) result.transpose = 0;
+  return result;
+}
+
+function getSongReadingPreferenceMap(): Record<string, SongReadingPreferences> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(KEYS.songReadingPreferences) || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getSongReadingPreferences(songId: number | string): SongReadingPreferences {
+  return sanitizeSongReadingPreferences(getSongReadingPreferenceMap()[String(songId)]);
+}
+
+export function saveSongReadingPreferences(
+  songId: number | string,
+  patch: Partial<SongReadingPreferences>,
+): SongReadingPreferences {
+  const all = getSongReadingPreferenceMap();
+  const id = String(songId);
+  const next = sanitizeSongReadingPreferences({ ...getSongReadingPreferences(id), ...patch });
+  all[id] = next;
+  try {
+    localStorage.setItem(KEYS.songReadingPreferences, JSON.stringify(all));
+  } catch {
+    // Preferences are best-effort. Private browsing, storage quotas, or
+    // browser policy can make localStorage writes fail.
+  }
+  return next;
+}
+
+export function clearSongReadingPreferences(songId: number | string): void {
+  const all = getSongReadingPreferenceMap();
+  delete all[String(songId)];
+  try {
+    localStorage.setItem(KEYS.songReadingPreferences, JSON.stringify(all));
+  } catch {
+    // Best-effort local preference cleanup.
+  }
 }
 
 /**

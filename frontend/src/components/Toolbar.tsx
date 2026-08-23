@@ -31,6 +31,9 @@ interface ToolbarProps {
    * setlist prep) simply omit both props. */
   chartTone?: 'paper' | 'dark';
   onChartToneChange?: () => void;
+  /** Override the built-in font/column default calculation when the caller
+   * owns additional preference state (key, Nashville, tone, FIT). */
+  resetDisabled?: boolean;
 }
 
 export function Toolbar({
@@ -57,10 +60,11 @@ export function Toolbar({
   compactKey,
   chartTone,
   onChartToneChange,
+  resetDisabled,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
-  const isDefault = fontSize === 0 && !twoCol;
+  const isDefault = resetDisabled ?? (fontSize === 0 && !twoCol);
 
   useEffect(() => {
     setPickerOpen(false);
@@ -148,7 +152,7 @@ export function Toolbar({
           className="transpose-btn font-btn font-reset"
           onClick={onReset}
           disabled={isDefault}
-          title="Reset font and columns"
+          title="Reset reading preferences"
         >
           &#8634;
         </button>

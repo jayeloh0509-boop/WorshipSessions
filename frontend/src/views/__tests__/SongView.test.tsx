@@ -1,28 +1,34 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SongView } from '../SongView';
 
 const apiCall = vi.hoisted(() => vi.fn());
+const toast = vi.hoisted(() => vi.fn());
+const authUser = vi.hoisted(() => ({ id: 1, username: 'owner', role: 'user', token: 'token' }));
+const translate = vi.hoisted(() => (_key: string, fallback?: string) => fallback || 'Back');
+const chordActions = vi.hoisted(() => ({
+  setTranspose: vi.fn(),
+  setNashville: vi.fn(),
+  doTranspose: vi.fn(),
+  resetTranspose: vi.fn(),
+  toggleNashville: vi.fn(),
+  pickKey: vi.fn(),
+}));
 
 vi.mock('../../hooks/useApi', () => ({ useApi: () => apiCall }));
 vi.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 1, username: 'owner', role: 'user', token: 'token' } }),
+  useAuth: () => ({ user: authUser }),
 }));
 vi.mock('../../context/I18nContext', () => ({
-  useI18n: () => ({ t: (_key: string, fallback?: string) => fallback || 'Back' }),
+  useI18n: () => ({ t: translate }),
 }));
-vi.mock('../../context/ToastContext', () => ({ useToast: () => vi.fn() }));
+vi.mock('../../context/ToastContext', () => ({ useToast: () => toast }));
 vi.mock('../../hooks/useChordRenderer', () => ({
   useChordRenderer: () => ({
     transpose: 0,
     nashville: false,
     currentKey: 'Ab',
-    setTranspose: vi.fn(),
-    setNashville: vi.fn(),
-    doTranspose: vi.fn(),
-    resetTranspose: vi.fn(),
-    toggleNashville: vi.fn(),
-    pickKey: vi.fn(),
+    ...chordActions,
   }),
 }));
 vi.mock('../../hooks/useFontScale', () => ({
@@ -42,7 +48,23 @@ vi.mock('../../lib/chords', async (importOriginal) => {
   };
 });
 vi.mock('../../components/Toolbar', () => ({
-  Toolbar: ({ currentKey }: { currentKey: string }) => <div data-testid="reading-controls">Controls {currentKey}</div>,
+  Toolbar: (props: {
+    currentKey: string;
+    onTwoColToggle?: () => void;
+    onFontChange?: (delta: number) => void;
+    onReset?: () => void;
+    onAutoFit?: () => void;
+    onChartToneChange?: () => void;
+  }) => (
+    <div data-testid="reading-controls">
+      Controls {props.currentKey}
+      <button aria-label="test two columns" onClick={props.onTwoColToggle} />
+      <button aria-label="test larger font" onClick={() => props.onFontChange?.(1)} />
+      <button aria-label="test reset" onClick={props.onReset} />
+      <button aria-label="test auto fit" onClick={props.onAutoFit} />
+      <button aria-label="test tone" onClick={props.onChartToneChange} />
+    </div>
+  ),
 }));
 vi.mock('../../components/ChordSheet', () => ({
   ChordSheet: ({ tone }: { tone?: string }) => <div data-testid="chart-surface" data-tone={tone} />,
@@ -89,6 +111,14 @@ describe('SongView chord-reading workspace', () => {
     expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
     expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Song sections' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'test larger font' }));
+    fireEvent.click(screen.getByRole('button', { name: 'test tone' }));
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('cv_song_reading_preferences_v1') || '{}')).toMatchObject({
+        7: { fontSize: 1, chartTone: 'dark' },
+      });
+    });
 
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('GET', '/api/songs/7/versions'));
   });

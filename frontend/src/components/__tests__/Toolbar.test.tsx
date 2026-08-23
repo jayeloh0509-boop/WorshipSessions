@@ -30,6 +30,18 @@ describe('Toolbar chart controls', () => {
     expect(screen.queryByRole('button', { name: /chart/i })).not.toBeInTheDocument();
   });
 
+  it('lets Song View override reset availability for non-font preferences', () => {
+    const onReset = vi.fn();
+    const { rerender } = render(<Toolbar {...requiredProps} onReset={onReset} resetDisabled={false} />);
+    const reset = screen.getByTitle('Reset reading preferences');
+    expect(reset).toBeEnabled();
+    fireEvent.click(reset);
+    expect(onReset).toHaveBeenCalledOnce();
+
+    rerender(<Toolbar {...requiredProps} onReset={onReset} resetDisabled />);
+    expect(screen.getByTitle('Reset reading preferences')).toBeDisabled();
+  });
+
   it('shows compact key and chart-tone controls only for Song View', () => {
     const onChartToneChange = vi.fn();
     render(<Toolbar {...requiredProps} compactKey chartTone="dark" onChartToneChange={onChartToneChange} />);
