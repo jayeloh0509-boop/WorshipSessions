@@ -28,34 +28,39 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
-    const params: string[] = [];
-    if (q) params.push(`q=${encodeURIComponent(q)}`);
-    if (from) params.push(`date_from=${encodeURIComponent(from)}`);
-    if (to) params.push(`date_to=${encodeURIComponent(to)}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    const qs = params.length > 0 ? `?${params.join('&')}` : '';
-    try {
-      interface PaginatedSetlistsResponse {
-        setlists: SetlistListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+  const load = useCallback(
+    async (q = '', from = '', to = '', targetPage = 1) => {
+      const params: string[] = [];
+      if (q) params.push(`q=${encodeURIComponent(q)}`);
+      if (from) params.push(`date_from=${encodeURIComponent(from)}`);
+      if (to) params.push(`date_to=${encodeURIComponent(to)}`);
+      params.push(`page=${targetPage}`);
+      params.push(`limit=20`);
+      const qs = params.length > 0 ? `?${params.join('&')}` : '';
+      try {
+        interface PaginatedSetlistsResponse {
+          setlists: SetlistListItem[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+        const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists/public${qs}`);
+        setSetlists(data.setlists);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+        setLoaded(true);
+
+        setSessionItem('cv_publicsetlists_query', q);
+        setSessionItem('cv_publicsetlists_date_from', from);
+        setSessionItem('cv_publicsetlists_date_to', to);
+        setSessionItem('cv_publicsetlists_page', String(data.page));
+      } catch (e) {
+        toast((e as Error).message, 'error');
       }
-      const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists/public${qs}`);
-      setSetlists(data.setlists);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setLoaded(true);
-      
-      setSessionItem('cv_publicsetlists_query', q);
-      setSessionItem('cv_publicsetlists_date_from', from);
-      setSessionItem('cv_publicsetlists_date_to', to);
-      setSessionItem('cv_publicsetlists_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall, toast]);
+    },
+    [apiCall, toast],
+  );
 
   useEffect(() => {
     load(query, dateFrom, dateTo, page);
@@ -82,7 +87,9 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
       </div>
       <div className="setlist-tabs">
-        <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
+        <button className="setlist-tab" onClick={() => navigate('setlists')}>
+          My Setlists
+        </button>
         <button className="setlist-tab active">Public Setlists</button>
       </div>
       {showSearch && (
@@ -94,14 +101,12 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
                 placeholder={t('setlist.searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch();
+                }}
               />
               {query && (
-                <button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
+                <button className="search-clear-btn" onClick={handleClear} title="Clear search">
                   &times;
                 </button>
               )}
@@ -116,14 +121,30 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
             >
               &#128197; Date
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</button>
+            <button className="btn btn-ghost btn-sm" onClick={handleSearch}>
+              {t('songs.search')}
+            </button>
           </div>
           {showDates && (
             <div className="search-row" style={{ marginTop: -10 }}>
               <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>From</label>
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); load(query, e.target.value, dateTo, 1); }} />
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  load(query, e.target.value, dateTo, 1);
+                }}
+              />
               <label style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'nowrap' }}>To</label>
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); load(query, dateFrom, e.target.value, 1); }} />
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  load(query, dateFrom, e.target.value, 1);
+                }}
+              />
             </div>
           )}
         </>

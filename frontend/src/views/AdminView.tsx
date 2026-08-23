@@ -29,7 +29,9 @@ export function AdminView({ navigate }: AdminViewProps) {
     try {
       const inv = await apiCall<InviteCode[]>('GET', '/api/admin/invites');
       setInvites(inv);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [apiCall]);
 
   const load = useCallback(async () => {
@@ -40,13 +42,22 @@ export function AdminView({ navigate }: AdminViewProps) {
         apiCall<Correction[]>('GET', '/api/admin/corrections'),
         apiCall<AdminConfig>('GET', '/api/admin/config'),
       ]);
-      setStats(s); setUsers(u); setCorrections(c); setConfig(cfg);
+      setStats(s);
+      setUsers(u);
+      setCorrections(c);
+      setConfig(cfg);
       loadInvites();
-    } catch (e) { toast((e as Error).message, 'error'); navigate('my-songs'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+      navigate('my-songs');
+    }
   }, [apiCall, toast, navigate, loadInvites]);
 
   useEffect(() => {
-    if (!isAdmin) { navigate('my-songs'); return; }
+    if (!isAdmin) {
+      navigate('my-songs');
+      return;
+    }
     load();
   }, [isAdmin, navigate, load]);
 
@@ -55,7 +66,9 @@ export function AdminView({ navigate }: AdminViewProps) {
       await apiCall('PUT', '/api/admin/config', { allowRegistration: val });
       setConfig({ ...config, allowRegistration: val });
       toast(val ? 'Registration enabled' : 'Registration disabled', 'success');
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const generateInvite = async () => {
@@ -63,12 +76,18 @@ export function AdminView({ navigate }: AdminViewProps) {
       const data = await apiCall<{ code: string }>('POST', '/api/admin/invites');
       setInviteCode(data.code);
       loadInvites();
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const deleteInvite = async (id: number) => {
-    try { await apiCall('DELETE', `/api/admin/invites/${id}`); loadInvites(); }
-    catch (e) { toast((e as Error).message, 'error'); }
+    try {
+      await apiCall('DELETE', `/api/admin/invites/${id}`);
+      loadInvites();
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const setRole = async (userId: number, role: string) => {
@@ -78,7 +97,9 @@ export function AdminView({ navigate }: AdminViewProps) {
       await apiCall('PUT', `/api/admin/users/${userId}/role`, { role });
       toast(role === 'admin' ? t('admin.userPromoted') : t('admin.userDemoted'), 'success');
       load();
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const setDisabled = async (userId: number, disabled: boolean) => {
@@ -87,29 +108,46 @@ export function AdminView({ navigate }: AdminViewProps) {
       await apiCall('PUT', `/api/admin/users/${userId}/disabled`, { disabled });
       toast(disabled ? t('admin.userDisabled') : t('admin.userEnabled'), 'success');
       load();
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const deleteUser = async (userId: number, username: string) => {
     if (!confirm(tReplace('admin.confirmDeleteUser', { username }))) return;
-    try { await apiCall('DELETE', `/api/admin/users/${userId}`); toast(t('admin.userDeleted'), 'success'); load(); }
-    catch (e) { toast((e as Error).message, 'error'); }
+    try {
+      await apiCall('DELETE', `/api/admin/users/${userId}`);
+      toast(t('admin.userDeleted'), 'success');
+      load();
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const resetPassword = async (userId: number, username: string) => {
     const newPassword = prompt(tReplace('admin.resetPasswordPrompt', { username }));
     if (!newPassword) return;
-    if (newPassword.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+    if (newPassword.length < 6) {
+      toast('Password must be at least 6 characters', 'error');
+      return;
+    }
     try {
       await apiCall('PUT', `/api/admin/users/${userId}/password`, { password: newPassword });
       toast(t('admin.passwordReset'), 'success');
-    } catch (e) { toast((e as Error).message, 'error'); }
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   const deleteSong = async (songId: number, title: string) => {
     if (!confirm(tReplace('admin.confirmDeleteSong', { title }))) return;
-    try { await apiCall('DELETE', `/api/admin/songs/${songId}`); toast(t('admin.songDeleted'), 'success'); load(); }
-    catch (e) { toast((e as Error).message, 'error'); }
+    try {
+      await apiCall('DELETE', `/api/admin/songs/${songId}`);
+      toast(t('admin.songDeleted'), 'success');
+      load();
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
   };
 
   if (!stats) return <Loading />;
@@ -120,12 +158,30 @@ export function AdminView({ navigate }: AdminViewProps) {
 
   return (
     <>
-      <div className="view-header"><h2 className="view-title">{t('admin.title')}</h2></div>
+      <div className="view-header">
+        <h2 className="view-title">{t('admin.title')}</h2>
+      </div>
       <div className="admin-stats">
-        <div className="stat-card"><div className="stat-value">{stats.userCount}</div><div className="stat-label">{t('admin.users')}</div></div>
-        <div className="stat-card"><div className="stat-value">{stats.songCount}</div><div className="stat-label">{t('admin.songs')}</div></div>
-        {stats.pendingCount > 0 && <div className="stat-card stat-warn"><div className="stat-value">{stats.pendingCount}</div><div className="stat-label">Pending corrections</div></div>}
-        {stats.noFormatCount > 0 && <div className="stat-card stat-warn"><div className="stat-value">{stats.noFormatCount}</div><div className="stat-label">No chords detected</div></div>}
+        <div className="stat-card">
+          <div className="stat-value">{stats.userCount}</div>
+          <div className="stat-label">{t('admin.users')}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats.songCount}</div>
+          <div className="stat-label">{t('admin.songs')}</div>
+        </div>
+        {stats.pendingCount > 0 && (
+          <div className="stat-card stat-warn">
+            <div className="stat-value">{stats.pendingCount}</div>
+            <div className="stat-label">Pending corrections</div>
+          </div>
+        )}
+        {stats.noFormatCount > 0 && (
+          <div className="stat-card stat-warn">
+            <div className="stat-value">{stats.noFormatCount}</div>
+            <div className="stat-label">No chords detected</div>
+          </div>
+        )}
       </div>
 
       {stats.languageDistribution && stats.languageDistribution.length > 0 && (
@@ -148,34 +204,94 @@ export function AdminView({ navigate }: AdminViewProps) {
           <label className="sl-option">
             <span>Open Registration</span>
             <span className="toggle">
-              <input type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode} />
+              <input
+                type="checkbox"
+                checked={config.allowRegistration}
+                onChange={(e) => toggleReg(e.target.checked)}
+                disabled={demoMode}
+              />
               <span className="toggle-slider" />
             </span>
           </label>
           <div className="muted-text" style={{ marginTop: 4 }}>
-            {config.allowRegistration ? 'Anyone can create an account — no email verification, so open to spam. Use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
+            {config.allowRegistration
+              ? 'Anyone can create an account — no email verification, so open to spam. Use invite codes instead.'
+              : 'Registration is closed. Use invite codes to add new users.'}
           </div>
-          {demoMode && <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>Disabled in demo mode</div>}
+          {demoMode && (
+            <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>
+              Disabled in demo mode
+            </div>
+          )}
         </div>
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
           <div className="flex-align-center" style={{ gap: 12, flexWrap: 'wrap' }}>
-            <button className="btn" onClick={generateInvite} disabled={demoMode} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</button>
+            <button
+              className="btn"
+              onClick={generateInvite}
+              disabled={demoMode}
+              title={demoMode ? 'Disabled in demo mode' : ''}
+            >
+              {t('admin.generateInvite')}
+            </button>
             {inviteCode && (
               <div className="flex-align-center">
-                <code style={{ fontSize: 18, fontWeight: 600, padding: '6px 14px', background: 'var(--accent-bg)', borderRadius: 8, userSelect: 'all' as const, letterSpacing: '0.08em' }}>{inviteCode}</code>
-                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteCode); toast(t('admin.codeCopied'), 'success'); }}>{t('admin.copy')}</button>
+                <code
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    padding: '6px 14px',
+                    background: 'var(--accent-bg)',
+                    borderRadius: 8,
+                    userSelect: 'all' as const,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {inviteCode}
+                </code>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteCode);
+                    toast(t('admin.codeCopied'), 'success');
+                  }}
+                >
+                  {t('admin.copy')}
+                </button>
               </div>
             )}
           </div>
-          <div className="muted-text" style={{ marginTop: 8 }}>Generate a single-use code and share it. The person enters it on the sign-in page to create their account.</div>
+          <div className="muted-text" style={{ marginTop: 8 }}>
+            Generate a single-use code and share it. The person enters it on the sign-in page to create their account.
+          </div>
           {pending.length > 0 && (
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-              <div className="muted-text" style={{ fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{t('admin.pendingInvites')}</div>
+              <div
+                className="muted-text"
+                style={{
+                  fontSize: 12,
+                  marginBottom: 6,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontWeight: 600,
+                }}
+              >
+                {t('admin.pendingInvites')}
+              </div>
               {pending.map((inv) => (
                 <div key={inv.id} className="flex-align-center" style={{ marginBottom: 4 }}>
                   <code style={{ fontSize: 13 }}>{inv.code}</code>
-                  <span className="muted-text" style={{ fontSize: 12 }}>{new Date(inv.created_at).toLocaleDateString()}</span>
-                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode}>&#10005;</button>
+                  <span className="muted-text" style={{ fontSize: 12 }}>
+                    {new Date(inv.created_at).toLocaleDateString()}
+                  </span>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 11, padding: '2px 6px' }}
+                    onClick={() => deleteInvite(inv.id)}
+                    disabled={demoMode}
+                  >
+                    &#10005;
+                  </button>
                 </div>
               ))}
             </div>
@@ -196,8 +312,14 @@ export function AdminView({ navigate }: AdminViewProps) {
             <div key={u.id} className="user-card">
               <div className="user-card-top">
                 <div className="user-card-info">
-                  <div className="song-card-title">@{u.username}{isSelf && <span className="muted-text"> {t('admin.you')}</span>}</div>
-                  <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
+                  <div className="song-card-title">
+                    @{u.username}
+                    {isSelf && <span className="muted-text"> {t('admin.you')}</span>}
+                  </div>
+                  <div className="song-card-meta">
+                    {u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot;{' '}
+                    {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}
+                  </div>
                 </div>
                 <div className="user-card-badges">
                   {u.role === 'owner' && <span className="badge badge-owner">owner</span>}
@@ -207,13 +329,55 @@ export function AdminView({ navigate }: AdminViewProps) {
               </div>
               {canManage && !demoMode && (
                 <div className="user-card-actions">
-                  {isOwner && (isTargetAdmin
-                    ? <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</button>
-                    : <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'admin'); }}>{t('admin.promote')}</button>
-                  )}
-                  <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); resetPassword(u.id, u.username); }}>{t('admin.resetPassword')}</button>
-                  <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setDisabled(u.id, !u.disabled); }}>{u.disabled ? t('admin.enable') : t('admin.disable')}</button>
-                  <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); deleteUser(u.id, u.username); }}>{t('admin.delete')}</button>
+                  {isOwner &&
+                    (isTargetAdmin ? (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRole(u.id, 'user');
+                        }}
+                      >
+                        {t('admin.demote')}
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRole(u.id, 'admin');
+                        }}
+                      >
+                        {t('admin.promote')}
+                      </button>
+                    ))}
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      resetPassword(u.id, u.username);
+                    }}
+                  >
+                    {t('admin.resetPassword')}
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDisabled(u.id, !u.disabled);
+                    }}
+                  >
+                    {u.disabled ? t('admin.enable') : t('admin.disable')}
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteUser(u.id, u.username);
+                    }}
+                  >
+                    {t('admin.delete')}
+                  </button>
                 </div>
               )}
             </div>
@@ -229,10 +393,21 @@ export function AdminView({ navigate }: AdminViewProps) {
               <div key={s.id} className="song-card" onClick={() => navigate('song-view', { id: String(s.id) })}>
                 <div className="song-card-info">
                   <div className="song-card-title">{s.title}</div>
-                  <div className="song-card-meta">{s.artist ? `${s.artist} · ` : ''}@{s.username} &middot; {new Date(s.created_at).toLocaleDateString()}</div>
+                  <div className="song-card-meta">
+                    {s.artist ? `${s.artist} · ` : ''}@{s.username} &middot;{' '}
+                    {new Date(s.created_at).toLocaleDateString()}
+                  </div>
                 </div>
                 <div className="song-card-actions">
-                  <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); deleteSong(s.id, s.title); }}>{t('admin.delete')}</button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSong(s.id, s.title);
+                    }}
+                  >
+                    {t('admin.delete')}
+                  </button>
                 </div>
               </div>
             ))}
@@ -248,9 +423,13 @@ export function AdminView({ navigate }: AdminViewProps) {
               <div key={c.id} className="song-card" onClick={() => navigate('song-view', { id: String(c.parent_id) })}>
                 <div className="song-card-info">
                   <div className="song-card-title">{c.title}</div>
-                  <div className="song-card-meta">by @{c.submitter} &middot; {new Date(c.created_at).toLocaleDateString()}</div>
+                  <div className="song-card-meta">
+                    by @{c.submitter} &middot; {new Date(c.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-                <div className="song-card-actions"><span className="badge badge-pending">pending</span></div>
+                <div className="song-card-actions">
+                  <span className="badge badge-pending">pending</span>
+                </div>
               </div>
             ))}
           </div>

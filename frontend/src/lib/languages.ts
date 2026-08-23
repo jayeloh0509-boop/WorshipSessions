@@ -101,8 +101,8 @@ export const LANGUAGES: Language[] = [
   { code: 'zu', name: 'Zulu' },
 ];
 
-export const LANGUAGE_CODES = new Set(LANGUAGES.map(l => l.code));
+export const LANGUAGE_CODES = new Set(LANGUAGES.map((l) => l.code));
 
 export function languageName(code: string): string {
-  return LANGUAGES.find(l => l.code === code)?.name ?? code.toUpperCase();
+  return LANGUAGES.find((l) => l.code === code)?.name ?? code.toUpperCase();
 }

@@ -1,21 +1,12 @@
 import { buildPdfConfig } from '../pdf-config';
 import { EMBEDDED_FONT } from '../constants';
 
-const SECTIONS = [
-  'title',
-  'subtitle',
-  'metadata',
-  'text',
-  'chord',
-  'comment',
-  'annotation',
-  'sectionLabel',
-] as const;
+const SECTIONS = ['title', 'subtitle', 'metadata', 'text', 'chord', 'comment', 'annotation', 'sectionLabel'] as const;
 
 type StyledItem = { style?: { name?: string } };
 const styledItems = (cfg: ReturnType<typeof buildPdfConfig>): StyledItem[] =>
   [...(cfg.layout?.header?.content ?? []), ...(cfg.layout?.footer?.content ?? [])].filter(
-    (i): i is StyledItem => !!(i as StyledItem).style
+    (i): i is StyledItem => !!(i as StyledItem).style,
   );
 
 describe('buildPdfConfig', () => {
@@ -61,9 +52,7 @@ describe('buildPdfConfig', () => {
   // suppress an item, so the fixed text has to go.
   it('leaves no orphaned label when tempo, time or artist are absent', () => {
     const cfg = buildPdfConfig({ fontName: null, fontSize: 0 });
-    const templates = (cfg.layout?.header?.content ?? []).map(
-      (i) => (i as { template?: string }).template ?? '',
-    );
+    const templates = (cfg.layout?.header?.content ?? []).map((i) => (i as { template?: string }).template ?? '');
     const joined = templates.join(' ');
     expect(joined).not.toContain('%{tempo}');
     expect(joined).not.toContain('%{time}');

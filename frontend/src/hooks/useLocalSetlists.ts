@@ -29,7 +29,11 @@ export function useLocalSetlists() {
   const rename = useCallback((id: string, name: string) => {
     const all = getLocalSetlists();
     const sl = all.find((s) => s.id === id);
-    if (sl) { sl.name = name; saveLocalSetlists(all); setSetlists([...all]); }
+    if (sl) {
+      sl.name = name;
+      saveLocalSetlists(all);
+      setSetlists([...all]);
+    }
   }, []);
 
   const getOne = useCallback((id: string): LocalSetlist | undefined => {
@@ -49,7 +53,11 @@ export function useLocalSetlists() {
   const removeEntry = useCallback((id: string, idx: number) => {
     const all = getLocalSetlists();
     const sl = all.find((s) => s.id === id);
-    if (sl) { sl.entries.splice(idx, 1); saveLocalSetlists(all); setSetlists([...all]); }
+    if (sl) {
+      sl.entries.splice(idx, 1);
+      saveLocalSetlists(all);
+      setSetlists([...all]);
+    }
   }, []);
 
   const moveEntry = useCallback((id: string, idx: number, dir: number) => {
@@ -85,6 +93,17 @@ export function useLocalSetlists() {
     }
   }, []);
 
-  return { setlists, refresh, create, remove, rename, getOne, addEntry, removeEntry, moveEntry, updateEntry, reorderEntries };
+  return {
+    setlists,
+    refresh,
+    create,
+    remove,
+    rename,
+    getOne,
+    addEntry,
+    removeEntry,
+    moveEntry,
+    updateEntry,
+    reorderEntries,
+  };
 }
-

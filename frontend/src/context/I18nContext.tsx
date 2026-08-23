@@ -32,23 +32,31 @@ export function I18nProvider({ children }: { children: ReactNode }) {
               return;
             }
           }
-        } catch { /* try next */ }
+        } catch {
+          /* try next */
+        }
       }
       setLoaded(true);
     })();
   }, []);
 
-  const t = useCallback((key: string, fallback?: string): string => {
-    return locale[key] || fallback || key;
-  }, [locale]);
+  const t = useCallback(
+    (key: string, fallback?: string): string => {
+      return locale[key] || fallback || key;
+    },
+    [locale],
+  );
 
-  const tReplace = useCallback((key: string, replacements: Record<string, string | number>): string => {
-    let str = locale[key] || key;
-    for (const k in replacements) {
-      str = str.replace(`{${k}}`, escHtml(String(replacements[k])));
-    }
-    return str;
-  }, [locale]);
+  const tReplace = useCallback(
+    (key: string, replacements: Record<string, string | number>): string => {
+      let str = locale[key] || key;
+      for (const k in replacements) {
+        str = str.replace(`{${k}}`, escHtml(String(replacements[k])));
+      }
+      return str;
+    },
+    [locale],
+  );
 
   const value = useMemo(() => ({ t, tReplace, loaded }), [t, tReplace, loaded]);
 

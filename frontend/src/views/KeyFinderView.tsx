@@ -1,17 +1,6 @@
 import { useState } from 'react';
-import {
-  detectKey,
-  parseChordSymbol,
-  type KeyDetectionResult,
-  type KeyCandidate,
-} from '../lib/tools';
-import {
-  chordDegree,
-  diatonicTriads,
-  noteToPc,
-  parseKeyName,
-  scaleNotes,
-} from '../lib/theory';
+import { detectKey, parseChordSymbol, type KeyDetectionResult, type KeyCandidate } from '../lib/tools';
+import { chordDegree, diatonicTriads, noteToPc, parseKeyName, scaleNotes } from '../lib/theory';
 import { ToolShell, RelatedTools } from '../components/ToolShell';
 import { stashToolPayload, useToolHandoff } from '../lib/toolState';
 
@@ -36,9 +25,7 @@ function candidateLabel(c: KeyCandidate): string {
 
 function evidenceFor(c: KeyCandidate, result: KeyDetectionResult): string {
   const distinct = new Set(result.chords.map((x) => x.symbol)).size;
-  const parts: string[] = [
-    `${c.matched.length} of ${distinct} distinct chords fit ${candidateLabel(c)}.`,
-  ];
+  const parts: string[] = [`${c.matched.length} of ${distinct} distinct chords fit ${candidateLabel(c)}.`];
   const key = parseKeyName(c.key);
   const last = result.chords[result.chords.length - 1];
   const first = result.chords[0];
@@ -124,8 +111,8 @@ export function KeyFinderView({ navigate }: KeyFinderViewProps) {
         {result && result.chords.length === 0 && (
           <div className="tool-result">
             <p className="tool-empty">
-              No chords recognized. Try chord symbols like <code>G</code>, <code>Em7</code> or{' '}
-              <code>D/F#</code>, separated by spaces or on their own lines.
+              No chords recognized. Try chord symbols like <code>G</code>, <code>Em7</code> or <code>D/F#</code>,
+              separated by spaces or on their own lines.
             </p>
           </div>
         )}
@@ -135,9 +122,7 @@ export function KeyFinderView({ navigate }: KeyFinderViewProps) {
             <div className="tool-result-head">
               <span className="tool-result-key">{candidateLabel(working)}</span>
               {workingIdx === 0 ? (
-                <span className={`tool-confidence ${result.confidence}`}>
-                  {CONFIDENCE_LABEL[result.confidence]}
-                </span>
+                <span className={`tool-confidence ${result.confidence}`}>{CONFIDENCE_LABEL[result.confidence]}</span>
               ) : (
                 <span className="tool-confidence">Chosen alternative</span>
               )}
@@ -156,16 +141,14 @@ export function KeyFinderView({ navigate }: KeyFinderViewProps) {
                       onClick={() => setWorkingIdx(i)}
                     >
                       {candidateLabel(c)}
-                      <span className="tool-chip-degree">
-                        {Math.round((c.score / candidates[0].score) * 100)}%
-                      </span>
+                      <span className="tool-chip-degree">{Math.round((c.score / candidates[0].score) * 100)}%</span>
                     </button>
                   ))}
                 </div>
                 {result.confidence !== 'high' && (
                   <p className="tool-alt">
-                    Relative major/minor pairs share the same chords, so listen for which chord feels
-                    like home — then pick it as the working key above.
+                    Relative major/minor pairs share the same chords, so listen for which chord feels like home — then
+                    pick it as the working key above.
                   </p>
                 )}
               </div>
@@ -188,16 +171,13 @@ export function KeyFinderView({ navigate }: KeyFinderViewProps) {
               </div>
               {working.outside.length > 0 && (
                 <p className="tool-alt">
-                  Greyed chords fall outside {candidateLabel(working)} — likely borrowed chords, or
-                  the song modulates.
+                  Greyed chords fall outside {candidateLabel(working)} — likely borrowed chords, or the song modulates.
                 </p>
               )}
             </div>
 
             <div className="tool-chip-section">
-              <span className="tool-chip-label">
-                Scale notes{workingKey.minor ? ' (natural minor)' : ''}
-              </span>
+              <span className="tool-chip-label">Scale notes{workingKey.minor ? ' (natural minor)' : ''}</span>
               <div className="tool-chips">
                 {scaleNotes(workingKey).map((n, i) => (
                   <span key={`${n}${i}`} className="tool-chip">
@@ -221,8 +201,8 @@ export function KeyFinderView({ navigate }: KeyFinderViewProps) {
             </div>
 
             <p className="tool-note">
-              Key detection is a best guess from chord usage, not music-theory certainty — many
-              progressions fit more than one key.
+              Key detection is a best guess from chord usage, not music-theory certainty — many progressions fit more
+              than one key.
             </p>
 
             <RelatedTools

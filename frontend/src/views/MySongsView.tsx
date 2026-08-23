@@ -25,33 +25,36 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback((q = '', targetPage = 1) => {
-    let url = '/api/songs';
-    const params: string[] = [];
-    if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    url += '?' + params.join('&');
-    
-    interface PaginatedSongsResponse {
-      songs: SongListItem[];
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }
+  const load = useCallback(
+    (q = '', targetPage = 1) => {
+      let url = '/api/songs';
+      const params: string[] = [];
+      if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
+      params.push(`page=${targetPage}`);
+      params.push(`limit=20`);
+      url += '?' + params.join('&');
 
-    api<PaginatedSongsResponse>('GET', url)
-      .then((data) => {
-        setSongs(data.songs);
-        setPage(data.page);
-        setTotalPages(data.totalPages);
-        setLoaded(true);
-        setSessionItem('cv_mysongs_query', q);
-        setSessionItem('cv_mysongs_page', String(data.page));
-      })
-      .catch((e) => toast(e.message, 'error'));
-  }, [api, toast]);
+      interface PaginatedSongsResponse {
+        songs: SongListItem[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+
+      api<PaginatedSongsResponse>('GET', url)
+        .then((data) => {
+          setSongs(data.songs);
+          setPage(data.page);
+          setTotalPages(data.totalPages);
+          setLoaded(true);
+          setSessionItem('cv_mysongs_query', q);
+          setSessionItem('cv_mysongs_page', String(data.page));
+        })
+        .catch((e) => toast(e.message, 'error'));
+    },
+    [api, toast],
+  );
 
   useEffect(() => {
     load(query, page);
@@ -82,20 +85,22 @@ export function MySongsView({ navigate }: MySongsViewProps) {
             placeholder={t('songs.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') doSearch();
+            }}
           />
           {query && (
-            <button
-              className="search-clear-btn"
-              onClick={handleClear}
-              title="Clear search"
-            >
+            <button className="search-clear-btn" onClick={handleClear} title="Clear search">
               &times;
             </button>
           )}
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
-        <button className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={doSearch}>
+          {t('songs.search')}
+        </button>
+        <button className="btn btn-sm" onClick={() => navigate('song-edit')}>
+          {t('songs.newSong')}
+        </button>
       </div>
       <div className="song-grid">
         {loaded && songs.length === 0 ? (

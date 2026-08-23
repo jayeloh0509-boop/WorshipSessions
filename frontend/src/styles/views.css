@@ -2649,7 +2649,9 @@
     padding: 10px 9px 8px;
   }
 
-  .song-view-key-value { font-size: 25px; }
+  .song-view-key-value {
+    font-size: 25px;
+  }
 
   .song-reading-controls .transpose-bar {
     top: 58px;
@@ -2658,8 +2660,12 @@
     scrollbar-width: none;
   }
 
-  .song-reading-controls .transpose-bar::-webkit-scrollbar { display: none; }
-  .song-roadmap { top: 112px; }
+  .song-reading-controls .transpose-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .song-roadmap {
+    top: 112px;
+  }
 }
 
 /* -- Setlist library rows ----------------- */

@@ -35,8 +35,7 @@ function textOf(bytes: Uint8Array): string {
     for (const block of s.matchAll(/beginbfrange([\s\S]*?)endbfrange/g))
       for (const p of block[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g)) {
         const [from, to, uni] = [parseInt(p[1], 16), parseInt(p[2], 16), parseInt(p[3], 16)];
-        for (let i = from; i <= to; i++)
-          map[i.toString(16).padStart(4, '0')] = String.fromCodePoint(uni + i - from);
+        for (let i = from; i <= to; i++) map[i.toString(16).padStart(4, '0')] = String.fromCodePoint(uni + i - from);
       }
   }
   return [...streams.join('').matchAll(/<([0-9a-fA-F]+)>\s*Tj/g)]
@@ -94,6 +93,47 @@ describe('exportSongPdf', () => {
     expect(text).toContain('D');
   });
 
+  // Regression: a bare (unbracketed) instrumental Intro line used to survive
+  // transposition unchanged in both the on-screen HTML and the PDF, since
+  // PDF export shares prepareSong with the HTML renderer (see pdf-export.ts's
+  // renderOne). This proves the fix applies to the PDF path too, not just HTML.
+  it('transposes a bare instrumental Intro line, not just bracketed sections', async () => {
+    await exportSongPdf(
+      song('{key: C}\nIntro\nC F G Am\n\nVerse 1\n[C]Amazing [F]grace how [G]sweet the [Am]sound\n'),
+      { ...opts, transpose: 2 },
+    );
+    const text = textOf(await lastPdf());
+    // The transposed Intro chords must be present...
+    expect(text).toContain('D');
+    expect(text).toContain('Bm');
+    // ...and the original, untransposed Intro root must not have survived as
+    // a standalone chord line (the word "Amazing" legitimately contains no
+    // "C", so this is a safe, specific check for the literal untransposed
+    // "C F G Am" line rather than the correctly-transposed chords).
+    expect(text).not.toContain('C F G Am');
+  });
+
+  // Regression: pipe/slash bar-notation Intro lines (e.g. "|G / / / |Cmaj7 /
+  // / / |") — a third instrumental-notation shape, distinct from both a bare
+  // space-separated chord line and the bracketed compact-bar syntax — used
+  // to survive untransposed in both HTML and PDF, since neither existing
+  // "is this a chord line?" detector recognized a pipe-prefixed line. Proves
+  // the fix (bracketBarNotationLines) applies to the PDF export path too.
+  it('transposes a pipe/slash bar-notation Intro line', async () => {
+    await exportSongPdf(
+      song('{key: G}\nIntro\n|G / / / |Gmaj7 / / / |Cmaj7 / / / |Cmaj7 / / / |\n\nVerse 1\n[G]Amazing [Cmaj7]grace\n'),
+      { ...opts, transpose: 2 },
+    );
+    const text = textOf(await lastPdf());
+    expect(text).toContain('A');
+    // PDF export's chord-suffix normalization renders "maj7" as "ma7" — a
+    // pre-existing, unrelated convention (see the other exportSongPdf tests);
+    // this only checks that the transposed root/quality landed correctly.
+    expect(text).toContain('Dma7');
+    // The original untransposed root must not have survived as literal text.
+    expect(text).not.toContain('G / / /');
+  });
+
   it('applies number notation', async () => {
     await exportSongPdf(song('{key: G}\n[G]a [C]b\n'), { ...opts, nashville: true });
     const text = textOf(await lastPdf());
@@ -137,8 +177,7 @@ const setlist = (entries: SetlistEntry[]): Setlist => ({
 });
 
 // pdf-lib writes compressed object streams, so count pages by reloading it
-const pageCount = async (bytes: Uint8Array) =>
-  (await PDFDocument.load(bytes)).getPageCount();
+const pageCount = async (bytes: Uint8Array) => (await PDFDocument.load(bytes)).getPageCount();
 
 describe('exportSetlistPdf', () => {
   it('merges one page per song', async () => {

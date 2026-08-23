@@ -17,12 +17,16 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
   const [keyPickerVisible, setKeyPickerVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const contentRef = useRef(content);
-  useEffect(() => { contentRef.current = content; }, [content]);
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setDebouncedContent(content), debounceMs);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [content, debounceMs]);
 
   // Force immediate render on mobile tab switch
@@ -35,7 +39,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
 
   const html = useMemo(
     () => renderChordPro(debouncedContent, transpose, nashville),
-    [debouncedContent, transpose, nashville]
+    [debouncedContent, transpose, nashville],
   );
 
   // Derive current key from {key:} directive
@@ -82,9 +86,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
           </button>
         )}
       </div>
-      {currentKey && (
-        <KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} />
-      )}
+      {currentKey && <KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} />}
       <ChordSheet html={html} />
     </div>
   );

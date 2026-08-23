@@ -9,7 +9,7 @@ function renderView(navigate: (view: string) => void = () => {}) {
   return render(
     <ToastProvider>
       <DiatonicChordsView navigate={navigate} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 
@@ -23,9 +23,7 @@ describe('DiatonicChordsView', () => {
     await userEvent.selectOptions(screen.getByLabelText('Key'), 'C');
     const cards = document.querySelectorAll('.diatonic-card');
     expect(cards).toHaveLength(7);
-    const symbols = Array.from(document.querySelectorAll('.diatonic-symbol')).map(
-      (el) => el.textContent
-    );
+    const symbols = Array.from(document.querySelectorAll('.diatonic-symbol')).map((el) => el.textContent);
     expect(symbols).toEqual(['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim']);
     expect(screen.getByText('vii°')).toBeInTheDocument();
     expect(screen.getByText('Nashville 7°')).toBeInTheDocument();
@@ -35,9 +33,7 @@ describe('DiatonicChordsView', () => {
     renderView();
     await userEvent.selectOptions(screen.getByLabelText('Mode'), 'minor');
     await userEvent.selectOptions(screen.getByLabelText('Key'), 'Am');
-    const symbols = Array.from(document.querySelectorAll('.diatonic-symbol')).map(
-      (el) => el.textContent
-    );
+    const symbols = Array.from(document.querySelectorAll('.diatonic-symbol')).map((el) => el.textContent);
     expect(symbols).toEqual(['Am', 'Bdim', 'C', 'Dm', 'Em', 'F', 'G']);
     expect(screen.getByText('Nashville b3')).toBeInTheDocument();
   });

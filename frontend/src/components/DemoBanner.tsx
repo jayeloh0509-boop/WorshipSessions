@@ -6,7 +6,8 @@ export function DemoBanner() {
 
   return (
     <div className="demo-banner">
-      Demo instance &middot; Login: <strong>demo</strong> / <strong>demopass123</strong> &middot; Data resets every 6 hours
+      Demo instance &middot; Login: <strong>demo</strong> / <strong>demopass123</strong> &middot; Data resets every 6
+      hours
     </div>
   );
 }

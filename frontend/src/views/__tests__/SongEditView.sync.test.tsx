@@ -23,26 +23,24 @@ vi.mock('../../components/EditorPreview', () => ({
   EditorPreview: () => <div data-testid="preview" />,
 }));
 
-// Mock OcrModal
+// Mock OcrModal — the merged component now has one flow (no `source` prop);
+// the server's returned `method` drives Worship-Together-specific behavior
+// (privacy default, x_source tag) instead of which button was clicked.
 vi.mock('../../components/OcrModal', () => ({
   OcrModal: ({
-    source,
     onResult,
     onClose,
   }: {
-    source?: string;
-    onResult: (text: string, language?: string | null) => void;
+    onResult: (text: string, language?: string | null, method?: string) => void;
     onClose: () => void;
   }) => (
-    <div
-      role="dialog"
-      aria-label={source === 'worship-together' ? 'Import Worship Together chart' : 'Import from image or PDF'}
-    >
+    <div role="dialog" aria-label="Import chart">
       <button
         onClick={() =>
           onResult(
             '{title: Downloaded Song}\n{artist: Worship Artist}\n{key: D}\n{x_language: en}\n\n[D]Downloaded [G]chart',
             'en',
+            'worship-together-text',
           )
         }
       >
@@ -72,7 +70,6 @@ vi.mock('../../components/SongSearchModal', () => ({
 
 // Mock hooks — stable references to avoid infinite re-renders from effect deps
 const mockApiCall = vi.fn().mockImplementation((_method: string, path: string) => {
-  if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
   if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
   return Promise.resolve({});
 });
@@ -116,7 +113,6 @@ describe('SongEditView two-way sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiCall.mockImplementation((_method: string, path: string) => {
-      if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
       if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
       return Promise.resolve({});
     });
@@ -222,8 +218,8 @@ describe('SongEditView two-way sync', () => {
   it('imports an officially downloaded Worship Together chart and defaults it to private', async () => {
     await renderEditor();
 
-    fireEvent.click(screen.getByRole('button', { name: /worship together/i }));
-    expect(screen.getByRole('dialog', { name: /import worship together chart/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /image, pdf or text/i }));
+    expect(screen.getByRole('dialog', { name: /import chart/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /complete chart import/i }));
 
     await waitFor(() => {
@@ -236,7 +232,6 @@ describe('SongEditView two-way sync', () => {
 
   it('replaces an existing song from Worship Together while preserving privacy and absent metadata', async () => {
     mockApiCall.mockImplementation((_method: string, path: string) => {
-      if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
       if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
       if (path === '/api/songs/42') {
         return Promise.resolve({
@@ -261,7 +256,7 @@ describe('SongEditView two-way sync', () => {
     });
     await waitFor(() => expect(getTitleInput().value).toBe('Existing Song'));
 
-    fireEvent.click(screen.getByRole('button', { name: /replace from worship together pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /replace from image, pdf or text/i }));
     fireEvent.click(screen.getByRole('button', { name: /complete chart import/i }));
 
     await waitFor(() => {

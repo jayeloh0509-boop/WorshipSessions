@@ -9,12 +9,40 @@ vi.mock('../../context/AuthContext', () => ({
 }));
 vi.mock('../../context/ToastContext', () => ({ useToast: () => mockToast }));
 
-describe('OcrModal Worship Together import', () => {
+// OcrModal merged what used to be two separate flows (a Worship-Together-only
+// button and a general image/PDF/text button) into one button and one
+// endpoint (/api/songs/import-chart). The server decides which parsing tier
+// actually handled the file and reports it back via `method` — these tests
+// exercise that unified contract rather than a `source` prop, since the prop
+// no longer exists.
+describe('OcrModal unified chart import', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('authenticates the raw PDF request with the signed-in user token', async () => {
+  it('shows a generic label before any file is chosen, and switches to a PDF-specific label once one is', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: /import chart/i })).toBeDisabled();
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, new File(['%PDF-test'], 'chart.pdf', { type: 'application/pdf' }));
+
+    expect(screen.getByRole('button', { name: /convert pdf to editable chart/i })).toBeEnabled();
+  });
+
+  it('shows an image-specific label once an image is chosen', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, new File(['image'], 'chart.png', { type: 'image/png' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /recognize chart/i })).toBeEnabled());
+  });
+
+  it('authenticates the PDF import request with the signed-in user token via the unified endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -23,11 +51,12 @@ describe('OcrModal Worship Together import', () => {
 
 [G]Test`,
         language: 'en',
+        method: 'local',
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<OcrModal hasGeminiKey={false} source="worship-together" onResult={vi.fn()} onClose={vi.fn()} />);
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(input, new File(['%PDF-test'], 'chart.pdf', { type: 'application/pdf' }));
@@ -35,14 +64,15 @@ describe('OcrModal Worship Together import', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/songs/import-pdf',
+      '/api/songs/import-chart',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ Authorization: 'Bearer signed-in-token' }),
       }),
     );
   });
-  it('shows an editable import review and passes edited ChordPro into the editor', async () => {
+
+  it('shows an editable import review, and passes the detected method (Worship Together) through onResult', async () => {
     const onResult = vi.fn();
     vi.stubGlobal(
       'fetch',
@@ -61,10 +91,11 @@ Verse 1
 Chorus
 [Ab2]Fall like rain`,
           language: 'en',
+          method: 'worship-together-text',
         }),
       }),
     );
-    render(<OcrModal hasGeminiKey={false} source="worship-together" onResult={onResult} onClose={vi.fn()} />);
+    render(<OcrModal onResult={onResult} onClose={vi.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(input, new File(['%PDF-test'], 'chart.pdf', { type: 'application/pdf' }));
     fireEvent.click(screen.getByRole('button', { name: /convert pdf to editable chart/i }));
@@ -75,25 +106,26 @@ Chorus
     expect(review).not.toHaveAttribute('readonly');
     fireEvent.change(review, { target: { value: '{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric' } });
     fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
-    expect(onResult).toHaveBeenCalledWith('{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric', 'en');
+    expect(onResult).toHaveBeenCalledWith('{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric', 'en', 'worship-together-text');
   });
 
-  it('uses managed TheClawBay or MiniMax recognition for regular image imports', async () => {
+  it('recognizes image imports via the same unified endpoint, method "vision", and still shows the review panel', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({
-        text: `{title: Test}
+        content: `{title: Test}
 {x_language: en}
 
 [G]Test`,
         language: 'en',
+        method: 'vision',
         provider: 'theclawbay',
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<OcrModal hasGeminiKey={false} onResult={vi.fn()} onClose={vi.fn()} />);
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(input, new File(['image'], 'chart.png', { type: 'image/png' }));
     const recognizeButton = screen.getByRole('button', { name: /recognize chart/i });
@@ -102,21 +134,41 @@ Chorus
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/songs/import-vision',
+      '/api/songs/import-chart',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ Authorization: 'Bearer signed-in-token' }),
       }),
     );
-    expect(mockToast).toHaveBeenCalledWith('Chart recognized with TheClawBay', 'success');
+    expect(mockToast).toHaveBeenCalledWith('Chart recognized', 'success');
+    // The review/summary panel used to be gated to WT/text imports only — it
+    // should now show for every import method, including vision.
+    expect(await screen.findByLabelText('Import summary')).toHaveTextContent('Test');
   });
 
-  it('loads a text chord chart locally without calling a recognition endpoint', async () => {
+  it('shows an error instead of success when the server returns an empty chart', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ content: '   ', method: 'local' }) }),
+    );
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
+
+    const input = screen.getByLabelText(/select image, pdf or text chart/i);
+    fireEvent.change(input, {
+      target: { files: [new File(['pdf'], 'empty.pdf', { type: 'application/pdf' })] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /convert pdf to editable chart/i }));
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith(expect.stringContaining('empty chart'), 'error'));
+    expect(mockToast).not.toHaveBeenCalledWith('Chart recognized', 'success');
+  });
+
+  it('loads a text chord chart locally without calling the import endpoint, and reports method "text"', async () => {
     const onResult = vi.fn();
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<OcrModal hasGeminiKey={false} onResult={onResult} onClose={vi.fn()} />);
+    render(<OcrModal onResult={onResult} onClose={vi.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(
       input,
@@ -134,6 +186,18 @@ Chorus
     expect(chart).toContain('{key: Ab}');
     expect(fetchMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
-    expect(onResult).toHaveBeenCalledWith(expect.stringContaining('VERSE 1'), 'en');
+    expect(onResult).toHaveBeenCalledWith(expect.stringContaining('VERSE 1'), 'en', 'text');
+  });
+
+  it('shows a Worship Together guide as a collapsed, non-gating hint', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
+
+    const details = screen.getByText(/downloading from worship together/i).closest('details');
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute('open');
+    // The file input accepts everything regardless of the hint being open or closed.
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input.accept).toBe('image/*,application/pdf,text/plain,.txt');
   });
 });

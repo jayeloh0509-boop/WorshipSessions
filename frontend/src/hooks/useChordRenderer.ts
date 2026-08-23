@@ -6,20 +6,11 @@ export function useChordRenderer(content: string) {
   const [transpose, setTranspose] = useState(0);
   const [nashville, setNashville] = useState(false);
 
-  const renderedHtml = useMemo(
-    () => renderChordPro(content, transpose, nashville),
-    [content, transpose, nashville]
-  );
+  const renderedHtml = useMemo(() => renderChordPro(content, transpose, nashville), [content, transpose, nashville]);
 
-  const currentKey = useMemo(
-    () => getSongKey(content, transpose),
-    [content, transpose]
-  );
+  const currentKey = useMemo(() => getSongKey(content, transpose), [content, transpose]);
 
-  const hasKey = useMemo(
-    () => songHasKey(content, transpose),
-    [content, transpose]
-  );
+  const hasKey = useMemo(() => songHasKey(content, transpose), [content, transpose]);
 
   const doTranspose = useCallback((delta: number) => {
     setTranspose((prev) => prev + delta);
@@ -34,12 +25,15 @@ export function useChordRenderer(content: string) {
     if (checked) setTranspose(0);
   }, []);
 
-  const pickKey = useCallback((targetKey: string) => {
-    const delta = getTransposeDelta(currentKey, targetKey);
-    if (delta !== 0) {
-      setTranspose((prev) => prev + delta);
-    }
-  }, [currentKey]);
+  const pickKey = useCallback(
+    (targetKey: string) => {
+      const delta = getTransposeDelta(currentKey, targetKey);
+      if (delta !== 0) {
+        setTranspose((prev) => prev + delta);
+      }
+    },
+    [currentKey],
+  );
 
   return {
     transpose,

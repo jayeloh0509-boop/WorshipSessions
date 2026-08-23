@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     removeSessionItem('cv_setlists_page');
   }, []);
 
-  const isAdmin = useMemo(() => user ? isAdminRole(user.role) : false, [user]);
+  const isAdmin = useMemo(() => (user ? isAdminRole(user.role) : false), [user]);
 
   const value = useMemo(() => ({ user, isAdmin, login, logout }), [user, isAdmin, login, logout]);
 

@@ -9,7 +9,7 @@ function renderView(navigate: (view: string) => void = () => {}) {
   return render(
     <ToastProvider>
       <NashvilleView navigate={navigate} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 

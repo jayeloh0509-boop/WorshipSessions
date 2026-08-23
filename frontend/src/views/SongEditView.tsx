@@ -11,7 +11,7 @@ import { OcrModal } from '../components/OcrModal';
 import { SongSearchModal } from '../components/SongSearchModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
-import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
+import { detectFormat, prepareForPersist, extractDirective, updateDirective } from '../lib/chords';
 import type { Song } from '../types';
 
 interface SongEditViewProps {
@@ -28,9 +28,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
   const [ocrOpen, setOcrOpen] = useState(false);
-  const [ocrSource, setOcrSource] = useState<'worship-together' | undefined>();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
@@ -67,9 +65,6 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
 
   useEffect(() => {
     if (user) {
-      apiCall<{ hasKey: boolean }>('GET', '/api/settings/gemini-key')
-        .then((d) => setHasGeminiKey(d.hasKey))
-        .catch(() => {});
       apiCall<{ languages: string[] }>('GET', '/api/settings/languages')
         .then((d) => setPreferredLanguages(d.languages))
         .catch(() => {});
@@ -105,8 +100,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       return;
     }
 
-    let finalContent = toChordPro(content);
-    finalContent = ensureKeyDirective(finalContent);
+    const finalContent = prepareForPersist(content);
 
     try {
       if (song) {
@@ -174,8 +168,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       return;
     }
 
-    let finalContent = toChordPro(content);
-    finalContent = ensureKeyDirective(finalContent);
+    const finalContent = prepareForPersist(content);
 
     try {
       const result = await apiCall<{ id: number }>('POST', `/api/songs/${targetId}/version`, {
@@ -292,7 +285,8 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             dangerouslySetInnerHTML={{
               __html:
                 t('songEdit.chordproHint') +
-                ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.',
+                ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' +
+                ' For a run of bars, compact notation like <code>[| G D | Em C |]</code> expands each chord automatically.',
             }}
           />
           {state.formatBadge && (
@@ -306,23 +300,8 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
                 &#128269; Search song library
               </button>
             )}
-            <button
-              className="btn btn-sm wt-import-trigger"
-              onClick={() => {
-                setOcrSource('worship-together');
-                setOcrOpen(true);
-              }}
-            >
-              {songId ? '♫ Replace from Worship Together PDF' : '♫ Import Worship Together download'}
-            </button>
-            <button
-              className="btn btn-sm btn-ghost"
-              onClick={() => {
-                setOcrSource(undefined);
-                setOcrOpen(true);
-              }}
-            >
-              &#128247; Import from image, PDF or text
+            <button className="btn btn-sm" onClick={() => setOcrOpen(true)}>
+              &#128247; {songId ? 'Replace from image, PDF or text' : 'Import from image, PDF or text'}
             </button>
           </div>
         )}
@@ -373,9 +352,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       )}
       {ocrOpen && (
         <OcrModal
-          hasGeminiKey={hasGeminiKey}
-          source={ocrSource}
-          onResult={(text, lang) => {
+          onResult={(text, lang, method) => {
             let c = text;
             const preservedDirectives = ['title', 'artist', 'key', 'tempo', 'x_language', 'x_youtube', 'x_tags'];
             for (const directive of preservedDirectives) {
@@ -385,7 +362,11 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
               }
             }
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
-            if (ocrSource === 'worship-together') {
+            // The server only reaches this method by successfully running its
+            // Worship-Together-specific parser — a reliable signal that this
+            // really is a Worship Together download, without the user having
+            // to tell us via a separate button.
+            if (method === 'worship-together-text') {
               c = updateDirective(c, 'x_source', 'Worship Together download');
               if (!songId) setVisibility('private');
               else setReplacementPending(true);

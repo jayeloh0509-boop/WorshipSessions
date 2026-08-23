@@ -38,13 +38,7 @@ function restyle<T>(items: readonly T[], fontName: string | null, delta: number)
   });
 }
 
-export function buildPdfConfig({
-  fontName,
-  fontSize,
-}: {
-  fontName: string | null;
-  fontSize: number;
-}): PdfConfig {
+export function buildPdfConfig({ fontName, fontSize }: { fontName: string | null; fontSize: number }): PdfConfig {
   // The stock templates assume metadata WorshipSessions charts often lack and leave the
   // literal text behind when it is absent: "Key of G - BPM  - Time", and a bare
   // "By". Conditions do not suppress an item, so strip the fixed text instead.

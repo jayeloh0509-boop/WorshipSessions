@@ -13,7 +13,9 @@ export function getStoredUser(): User | null {
   try {
     const raw = localStorage.getItem(KEYS.user);
     return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function setStoredUser(user: User): void {
@@ -51,7 +53,9 @@ export function setStoredFontSize(size: number): void {
 export function getLocalSetlists(): LocalSetlist[] {
   try {
     return JSON.parse(localStorage.getItem(KEYS.localSetlists) || '[]');
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function saveLocalSetlists(arr: LocalSetlist[]): void {
@@ -62,11 +66,15 @@ export function saveLocalSetlists(arr: LocalSetlist[]): void {
  * Gets personal transpose/Nashville overrides for a specific setlist.
  * Format: { [entryId]: { transpose: number, nashville: boolean, font: number, two_col: boolean } }
  */
-export function getSetlistOverrides(setlistId: number | string): Record<string, { transpose?: number; nashville?: boolean; font?: number; two_col?: number | null }> {
+export function getSetlistOverrides(
+  setlistId: number | string,
+): Record<string, { transpose?: number; nashville?: boolean; font?: number; two_col?: number | null }> {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
     return all[String(setlistId)] || {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -75,7 +83,7 @@ export function getSetlistOverrides(setlistId: number | string): Record<string, 
 export function saveSetlistOverride(
   setlistId: number | string,
   entryId: number | string,
-  data: { transpose?: number; nashville?: boolean; font?: number | null; two_col?: number | null }
+  data: { transpose?: number; nashville?: boolean; font?: number | null; two_col?: number | null },
 ): void {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
@@ -84,7 +92,9 @@ export function saveSetlistOverride(
     if (!all[sid]) all[sid] = {};
     all[sid][eid] = { ...all[sid][eid], ...data };
     localStorage.setItem(KEYS.setlistOverrides, JSON.stringify(all));
-  } catch (e) { console.error('Failed to save setlist override', e); }
+  } catch (e) {
+    console.error('Failed to save setlist override', e);
+  }
 }
 
 export function getSessionItem(key: string): string | null {

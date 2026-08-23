@@ -15,10 +15,9 @@ describe('useDragReorder Hook', () => {
   it('syncs items when initialItems changes externally', () => {
     const onSave = vi.fn();
     const initialItems = ['A', 'B', 'C'];
-    const { result, rerender } = renderHook(
-      ({ items }) => useDragReorder(items, onSave),
-      { initialProps: { items: initialItems } }
-    );
+    const { result, rerender } = renderHook(({ items }) => useDragReorder(items, onSave), {
+      initialProps: { items: initialItems },
+    });
 
     expect(result.current.items).toEqual(initialItems);
 
@@ -78,7 +77,7 @@ describe('useDragReorder Hook', () => {
     const mockClosest = vi.fn().mockReturnValue({
       getAttribute: (attr: string) => (attr === 'data-index' ? '2' : null),
     });
-    
+
     document.elementFromPoint = vi.fn().mockReturnValue({
       closest: mockClosest,
     } as unknown as Element);

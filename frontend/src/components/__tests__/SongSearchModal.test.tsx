@@ -10,11 +10,37 @@ describe('SongSearchModal public catalog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiCall.mockImplementation((_method: string, path: string) => {
-      if (path === '/api/songs/public-catalog/popular') return Promise.resolve({ songs: [
-        { slug: 'amazing-grace', title: 'Amazing Grace', artist: 'John Newton', key: 'G', source: 'WorshipChordBook', license: 'Public Domain' },
-      ] });
-      if (path.startsWith('/api/songs/public-catalog/search')) return Promise.resolve({ songs: [{ slug: 'amazing-grace', title: 'Amazing Grace', artist: 'John Newton', key: 'G', source: 'WorshipChordBook', license: 'Public Domain' }] });
-      if (path === '/api/songs/public-catalog/amazing-grace') return Promise.resolve({ title: 'Amazing Grace', content: '{title: Amazing Grace}\n{key: G}\n{x_language: en}\n\n[G]Amazing grace' });
+      if (path === '/api/songs/public-catalog/popular')
+        return Promise.resolve({
+          songs: [
+            {
+              slug: 'amazing-grace',
+              title: 'Amazing Grace',
+              artist: 'John Newton',
+              key: 'G',
+              source: 'WorshipChordBook',
+              license: 'Public Domain',
+            },
+          ],
+        });
+      if (path.startsWith('/api/songs/public-catalog/search'))
+        return Promise.resolve({
+          songs: [
+            {
+              slug: 'amazing-grace',
+              title: 'Amazing Grace',
+              artist: 'John Newton',
+              key: 'G',
+              source: 'WorshipChordBook',
+              license: 'Public Domain',
+            },
+          ],
+        });
+      if (path === '/api/songs/public-catalog/amazing-grace')
+        return Promise.resolve({
+          title: 'Amazing Grace',
+          content: '{title: Amazing Grace}\n{key: G}\n{x_language: en}\n\n[G]Amazing grace',
+        });
       return Promise.resolve({ songs: [] });
     });
   });

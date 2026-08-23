@@ -25,11 +25,12 @@ export function LanguagePicker({ value, onChange, preferredLanguages }: Language
     if (open && inputRef.current) inputRef.current.focus();
   }, [open]);
 
-  const preferred = LANGUAGES.filter(l => preferredLanguages.includes(l.code));
+  const preferred = LANGUAGES.filter((l) => preferredLanguages.includes(l.code));
   const lowerSearch = search.toLowerCase();
   const filtered = LANGUAGES.filter(
-    l => !preferredLanguages.includes(l.code) &&
-      (l.name.toLowerCase().includes(lowerSearch) || l.code.includes(lowerSearch))
+    (l) =>
+      !preferredLanguages.includes(l.code) &&
+      (l.name.toLowerCase().includes(lowerSearch) || l.code.includes(lowerSearch)),
   );
 
   const select = (code: string) => {
@@ -60,7 +61,7 @@ export function LanguagePicker({ value, onChange, preferredLanguages }: Language
           {preferred.length > 0 && !search && (
             <>
               <div className="language-picker-section">My Languages</div>
-              {preferred.map(l => (
+              {preferred.map((l) => (
                 <button
                   key={l.code}
                   type="button"
@@ -73,10 +74,17 @@ export function LanguagePicker({ value, onChange, preferredLanguages }: Language
               <div className="language-picker-divider" />
             </>
           )}
-          {(search ? [...LANGUAGES.filter(l =>
-            preferredLanguages.includes(l.code) &&
-            (l.name.toLowerCase().includes(lowerSearch) || l.code.includes(lowerSearch))
-          ), ...filtered] : filtered).map(l => (
+          {(search
+            ? [
+                ...LANGUAGES.filter(
+                  (l) =>
+                    preferredLanguages.includes(l.code) &&
+                    (l.name.toLowerCase().includes(lowerSearch) || l.code.includes(lowerSearch)),
+                ),
+                ...filtered,
+              ]
+            : filtered
+          ).map((l) => (
             <button
               key={l.code}
               type="button"

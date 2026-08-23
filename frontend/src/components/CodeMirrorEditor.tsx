@@ -28,13 +28,19 @@ const cvTheme = EditorView.theme({
   '.cm-activeLine': { backgroundColor: 'var(--ghost-bg)' },
 });
 
-const darkTheme = EditorView.theme({
-  '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
-}, { dark: true });
+const darkTheme = EditorView.theme(
+  {
+    '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
+  },
+  { dark: true },
+);
 
-const lightTheme = EditorView.theme({
-  '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
-}, { dark: false });
+const lightTheme = EditorView.theme(
+  {
+    '&': { backgroundColor: 'var(--surface)', color: 'var(--text)' },
+  },
+  { dark: false },
+);
 
 export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: CodeMirrorEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,9 +49,15 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
   const valueRef = useRef(value);
   const placeholderRef = useRef(placeholder);
 
-  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
-  useEffect(() => { valueRef.current = value; }, [value]);
-  useEffect(() => { placeholderRef.current = placeholder; }, [placeholder]);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+  useEffect(() => {
+    placeholderRef.current = placeholder;
+  }, [placeholder]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -73,7 +85,10 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
 
-    return () => { view.destroy(); viewRef.current = null; };
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
   }, [darkMode]);
 
   // Sync external value changes (OCR import, initial load) into CodeMirror

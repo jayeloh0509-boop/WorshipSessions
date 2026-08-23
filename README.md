@@ -27,7 +27,7 @@ This project remains licensed under **AGPL-3.0-or-later**. See [NOTICE.md](NOTIC
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
 - **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
-- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
+- **Smart OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF, then review and edit the extracted chart before saving. No API key required. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
@@ -154,8 +154,6 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 
 > **Registration** is disabled by default on fresh installs. The first user to register becomes the owner. After that, the owner enables registration from the admin panel or generates invite codes.
 
-> **Gemini API key** for Smart OCR is configured per-user in Settings (not an env var). Keys are stored AES-256-GCM encrypted, derived from `JWT_SECRET`. Users can also customize the OCR prompt and default Gemini model from Settings.
-
 ## Cloudflare Tunnel / reverse proxy
 
 For a private-origin deployment, bind WorshipSessions to `127.0.0.1` and route a Cloudflare named tunnel to that local port. Keep app authentication enabled; a tunnel URL is transport, not authorization. A permanent public deployment must also provide the corresponding source required by the AGPL.
@@ -217,6 +215,12 @@ Songs are stored internally as [ChordPro](https://www.chordpro.org/), but you ca
 [C]When I find myself in [G]times of trouble
 ```
 
+**Compact bar shorthand:** inside ChordPro brackets, pipe-delimited bar groups expand into individual chords automatically — a quick way to type out a chord run without bracketing each chord by hand:
+```
+[| G D | Em C |]
+```
+expands to `| [G] [D] | [Em] [C] |`. Rhythm slashes (e.g. `Bb//Bb`) and slash/bass chords (e.g. `Bb/D`) are recognized too.
+
 **Chords Over Lyrics:**
 ```
 C                G
@@ -230,7 +234,7 @@ C                G
 When I find myself in times of trouble
 ```
 
-**Image or PDF (via OCR):** Use the "Import from image or PDF" button in the song editor to extract text from a photo or PDF of a chord sheet. After extraction, use the built-in chat to refine the result — describe what's wrong and Gemini will fix it. Requires a Gemini Flash API key (configured in Settings). Max file size: 18MB.
+**Image, PDF, or text file:** Use the "Import from image, PDF or text" button in the song editor. Text-based PDFs (including Worship Together downloads) are parsed locally; images and scanned PDFs are recognized automatically. Review and edit the result before saving. No API key required. Max file size: 18MB.
 
 A live format badge in the editor shows which format was detected. The editor itself is CodeMirror 6 with ChordPro syntax highlighting — the right pane shows a live rendered preview that updates as you type.
 
@@ -327,21 +331,12 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/ocr/gemini` | Yes | Extract text from image/PDF via Gemini Flash |
-| POST | `/api/ocr/gemini/refine` | Yes | Refine OCR result via multi-turn conversation |
+| POST | `/api/songs/import-chart` | Yes | Import a chart from an image, PDF, or text file — PDFs are parsed locally first (including a Worship Together-specific parser), falling back to vision recognition; images go straight to vision |
 
 ### Settings
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/settings/gemini-key` | Yes | Check if Gemini key is set |
-| PUT | `/api/settings/gemini-key` | Yes | Save encrypted Gemini API key |
-| DELETE | `/api/settings/gemini-key` | Yes | Remove Gemini API key |
-| GET | `/api/settings/ocr-prompt` | Yes | Get custom OCR prompt (or null) + default |
-| PUT | `/api/settings/ocr-prompt` | Yes | Save custom OCR prompt |
-| DELETE | `/api/settings/ocr-prompt` | Yes | Reset to default OCR prompt |
-| GET | `/api/settings/ocr-model` | Yes | Get preferred model + available models |
-| PUT | `/api/settings/ocr-model` | Yes | Save default OCR model preference |
 | GET | `/api/settings/languages` | Yes | Get preferred languages |
 | PUT | `/api/settings/languages` | Yes | Save preferred languages |
 

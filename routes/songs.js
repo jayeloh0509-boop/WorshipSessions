@@ -112,15 +112,59 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     }
   });
 
+  // Unified chart import: one endpoint for PDFs and images, used by a single
+  // "Import chart" button regardless of source. PDFs always get the fast/free
+  // local-parsing tiers first (Worship-Together-specific parser, then a
+  // generic text-PDF parser) before falling back to vision recognition;
+  // images go straight to vision. `method` in the response tells the caller
+  // which tier actually produced the result — 'worship-together-text' is a
+  // reliable signal that this really is a Worship Together download, used to
+  // drive privacy-default/tagging behavior without needing the user to
+  // self-declare the source via a separate button.
   router.post(
-    '/songs/import-pdf',
+    '/songs/import-chart',
     requireAuth,
-    express.raw({ type: ['application/pdf', 'application/octet-stream'], limit: LIMITS.MAX_BODY_JSON }),
+    express.raw({ type: ['application/pdf', 'application/octet-stream', 'image/*'], limit: LIMITS.MAX_BODY_JSON }),
     async (req, res, next) => {
       try {
         const body = req.body;
-        if (!body || !body.length) return res.status(400).json({ error: 'PDF file is required' });
-        const filename = req.headers['x-filename'] || 'worship-together.pdf';
+        if (!body || !body.length) return res.status(400).json({ error: 'Chart image or PDF is required' });
+        const filename = req.headers['x-filename'] || 'chart-upload';
+        const mimeType = req.headers['content-type'] || 'application/octet-stream';
+        const isPdf = mimeType === 'application/pdf' || /\.pdf$/i.test(filename);
+
+        // Runs vision recognition and returns a response payload. Throws an
+        // AppError (caught by the outer try/catch below) if vision itself fails.
+        async function runVision(vizFn) {
+          let recognized;
+          try {
+            recognized = await vizFn();
+          } catch (visionError) {
+            const timedOut = visionError.code === 'ETIMEDOUT' || /timed out/i.test(visionError.message);
+            throw new AppError(
+              timedOut
+                ? 'Chart recognition timed out. Try a text-based PDF, a smaller image, or fewer pages.'
+                : `Could not import this chart: ${visionError.message}`,
+              timedOut ? 504 : 422,
+              timedOut ? 'CHART_IMPORT_TIMEOUT' : 'CHART_IMPORT_FAILED',
+            );
+          }
+          return {
+            title: extractDirective(recognized.content, 'title') || '',
+            artist: extractDirective(recognized.content, 'artist') || '',
+            key: extractDirective(recognized.content, 'key') || '',
+            content: recognized.content,
+            language: extractDirective(recognized.content, 'x_language') || 'en',
+            method: 'vision',
+            provider: recognized.provider,
+            model: recognized.model,
+          };
+        }
+
+        if (!isPdf) {
+          return res.json(await runVision(() => importFileWithVision(body, filename, mimeType)));
+        }
+
         try {
           let parsed;
           let method = 'local';
@@ -135,68 +179,12 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
             artist: parsed.artist,
             key: parsed.key,
             content: parsed.content,
+            language: extractDirective(parsed.content, 'x_language') || 'en',
             method,
           });
-        } catch (localError) {
-          let recognized;
-          try {
-            recognized = await importPdfWithVision(body, filename);
-          } catch (visionError) {
-            const timedOut = visionError.code === 'ETIMEDOUT' || /timed out/i.test(visionError.message);
-            throw new AppError(
-              timedOut
-                ? 'Chart recognition timed out. Try a text-based Worship Together PDF or upload fewer pages.'
-                : `Could not import this chart: ${visionError.message}`,
-              timedOut ? 504 : 422,
-              timedOut ? 'CHART_IMPORT_TIMEOUT' : 'CHART_IMPORT_FAILED',
-            );
-          }
-          return res.json({
-            title: extractDirective(recognized.content, 'title') || '',
-            artist: extractDirective(recognized.content, 'artist') || '',
-            key: extractDirective(recognized.content, 'key') || '',
-            content: recognized.content,
-            method: 'vision',
-            provider: recognized.provider,
-            model: recognized.model,
-            localError: localError.message,
-          });
+        } catch {
+          return res.json(await runVision(() => importPdfWithVision(body, filename)));
         }
-      } catch (error) {
-        next(error);
-      }
-    },
-  );
-
-  router.post(
-    '/songs/import-vision',
-    requireAuth,
-    express.raw({ type: ['application/pdf', 'application/octet-stream', 'image/*'], limit: LIMITS.MAX_BODY_JSON }),
-    async (req, res, next) => {
-      try {
-        const body = req.body;
-        if (!body || !body.length) return res.status(400).json({ error: 'Chart image or PDF is required' });
-        const filename = req.headers['x-filename'] || 'chart-upload';
-        const mimeType = req.headers['content-type'] || 'application/octet-stream';
-        let recognized;
-        try {
-          recognized = await importFileWithVision(body, filename, mimeType);
-        } catch (visionError) {
-          const timedOut = visionError.code === 'ETIMEDOUT' || /timed out/i.test(visionError.message);
-          throw new AppError(
-            timedOut
-              ? 'Chart recognition timed out. Try a smaller image or a PDF with fewer pages.'
-              : `Could not recognize this chart: ${visionError.message}`,
-            timedOut ? 504 : 422,
-            timedOut ? 'CHART_IMPORT_TIMEOUT' : 'CHART_IMPORT_FAILED',
-          );
-        }
-        return res.json({
-          text: recognized.content,
-          language: extractDirective(recognized.content, 'x_language') || 'en',
-          provider: recognized.provider,
-          model: recognized.model,
-        });
       } catch (error) {
         next(error);
       }

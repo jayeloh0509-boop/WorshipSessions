@@ -146,11 +146,7 @@ export function TransposeView({ navigate }: TransposeViewProps) {
           </div>
           <div className="field">
             <label htmlFor="tr-shift-mode">Shift by</label>
-            <select
-              id="tr-shift-mode"
-              value={mode}
-              onChange={(e) => setMode(e.target.value as ShiftMode)}
-            >
+            <select id="tr-shift-mode" value={mode} onChange={(e) => setMode(e.target.value as ShiftMode)}>
               <option value="key">Target key</option>
               <option value="steps">Semitones</option>
             </select>
@@ -199,8 +195,8 @@ export function TransposeView({ navigate }: TransposeViewProps) {
 
         {mode === 'key' && input.trim() && (!source || !target) && (
           <p className="tool-note">
-            Pick both keys (or use &ldquo;Detect key&rdquo;) — or switch to semitone shift if you
-            just want to move everything up or down.
+            Pick both keys (or use &ldquo;Detect key&rdquo;) — or switch to semitone shift if you just want to move
+            everything up or down.
           </p>
         )}
 
@@ -214,7 +210,9 @@ export function TransposeView({ navigate }: TransposeViewProps) {
                 </span>
               )}
             </div>
-            <pre className="tool-output" aria-label="Transposed chart">{output}</pre>
+            <pre className="tool-output" aria-label="Transposed chart">
+              {output}
+            </pre>
             <div className="tool-actions">
               <CopyButton getText={() => output} />
             </div>

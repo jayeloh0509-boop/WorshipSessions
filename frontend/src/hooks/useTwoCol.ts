@@ -6,12 +6,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  */
 function getLayoutDefault(): boolean {
   if (typeof window === 'undefined') return false;
-  
+
   const isDesktop = window.innerWidth >= 1024;
-  const isLandscapeTablet = window.innerWidth >= 768 &&
+  const isLandscapeTablet =
+    window.innerWidth >= 768 &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(orientation: landscape)').matches;
-    
+
   return isDesktop || isLandscapeTablet;
 }
 

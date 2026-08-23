@@ -1,6 +1,7 @@
 import * as ChordSheetJS from 'chordsheetjs';
 import { escHtml } from './util';
-import { normalizeKey, normalizeChord } from './keys';
+import { normalizeKey, normalizeChord, preferredAccidental } from './keys';
+import { SEPARATOR_TOKEN_RE } from './theory';
 import type { SetlistEntry, SetlistPreferences } from '../types';
 
 const PARSER_NAMES = [
@@ -22,12 +23,105 @@ const REPEAT_SECTION_VARIANT = String.raw`REPEAT\s+${SECTION_BASE}(?:\s+\d+)?(?:
 // Matches vocabulary-driven section labels only. Ordinary lyric or instruction
 // prose beginning with "Repeat" must not become a section or roadmap item.
 const SECTION_LABEL_RE = new RegExp(
-  String.raw`^\[?(?:${SECTION_VARIANT}|${REPEAT_SECTION_VARIANT}|FINAL\s+CHORD)\s*:?\]?$`,
+  String.raw`^[\[]?(?:${SECTION_VARIANT}|${REPEAT_SECTION_VARIANT}|FINAL\s+CHORD)\s*:?[\]]?$`,
   'i',
 );
 
 export function isSectionLabel(value: string): boolean {
   return SECTION_LABEL_RE.test(value.trim());
+}
+
+// Maps every recognised variant of a section name to its canonical display form
+// (Title-Case-with-Spaces, with hyphens inside compound names preserved).
+// The roadmap chip, the on-page heading, and the stored canonical form all
+// share this single source of truth so a chart imported as `VERSE1` and one
+// imported as `verse 1` both render the same way. Each regex accepts both
+// spaced (`Verse 1`) and tight (`Verse1`) variants because the parser often
+// hands the type back with the number glued on. Unknown variants fall back to
+// the cleaned, trimmed, single-spaced input.
+const SECTION_CANONICAL: Array<{ name: string; root: string }> = [
+  { name: 'half\\s*[- ]?\\s*chorus', root: 'Half-Chorus' },
+  { name: 'alt\\s+verse', root: 'Alt Verse' },
+  { name: 'vamp', root: 'Vamp' },
+  { name: 'verse', root: 'Verse' },
+  { name: 'pre\\s*[- ]?\\s*chorus', root: 'Pre-Chorus' },
+  { name: 'chorus', root: 'Chorus' },
+  { name: 'bridge', root: 'Bridge' },
+  { name: 'intro', root: 'Intro' },
+  { name: 'outro', root: 'Outro' },
+  { name: 'interlude', root: 'Interlude' },
+  { name: 'ending', root: 'Ending' },
+  { name: 'tag', root: 'Tag' },
+  { name: 'coda', root: 'Coda' },
+  { name: 'break', root: 'Break' },
+  { name: 'solo', root: 'Solo' },
+  { name: 'instrumental', root: 'Instrumental' },
+  { name: 'refrain', root: 'Refrain' },
+];
+
+export function canonicalizeSectionLabel(raw: string): string {
+  const cleaned = raw
+    .trim()
+    .replace(/[[\]:]/g, '')
+    .replace(/\s+/g, ' ');
+  if (!cleaned) return cleaned;
+  // REPEAT is a wrapper: canonicalise the inner section first.
+  const repeatMatch = cleaned.match(/^repeat\s+(.+)$/i);
+  if (repeatMatch) return `REPEAT ${canonicalizeSectionLabel(repeatMatch[1])}`;
+  if (/^final\s+chord$/i.test(cleaned)) return 'Final Chord';
+  for (const { name, root } of SECTION_CANONICAL) {
+    const m = cleaned.match(new RegExp(`^${name}(?:\\s?(\\d+))?(.*)$`, 'i'));
+    if (m) {
+      const number = m[1] ? ` ${m[1]}` : '';
+      const suffix = m[2]
+        .trim()
+        .replace(/^(?:x\s*(\d+)|(\d+)\s*x)$/i, (_match, after, before) => `X ${after || before}`);
+      return `${root}${number}${suffix ? ` ${suffix}` : ''}`;
+    }
+  }
+  // Unknown variant: keep cleaned, single-spaced.
+  return cleaned;
+}
+
+// Compact bar notation is already valid app input. Formatting it through
+// ChordSheetJS would rewrite the source, so the on-save normalizer preserves
+// it verbatim. Centralising the early-return means future save paths can't
+// drift away from this guarantee.
+export function isCompactBarNotation(content: string): boolean {
+  for (const match of content.matchAll(/\[([^\]\n]+)\]/g)) {
+    if (expandCompactBarGroup(match[1]) !== null) return true;
+  }
+  return false;
+}
+
+// Normalises the source on save so every persisted chart shares the same
+// shape: directive names lowercased, one trailing newline, no trailing
+// whitespace. Body content is left untouched apart from those housekeeping
+// rules; chord placement, lyric text, and bar notation all pass through
+// unchanged so this never alters a chart's musical content.
+export function normalizeOnSave(content: string): string {
+  if (!content) return content;
+  if (isCompactBarNotation(content)) {
+    // Compact bar source must survive byte-for-byte. Just trim trailing
+    // blank lines and ensure a single trailing newline.
+    return content.replace(/\s+$/, '') + '\n';
+  }
+  const lines = content.split('\n');
+  const normalised = lines.map((line) => {
+    const m = line.match(/^\{([a-z_]+):\s*([^}]*)\}\s*$/i);
+    if (!m) return line;
+    return `{${m[1].toLowerCase()}: ${m[2].trim()}}`;
+  });
+  return normalised.join('\n').replace(/\s+$/, '') + '\n';
+}
+
+// Single entry point every save path should use. It runs the structural
+// reformat, ensures a key directive exists, and applies the housekeeping
+// rules. Compact bar source is preserved verbatim by both
+// toChordPro and ensureKeyDirective already; the trailing-newline tidy
+// in normalizeOnSave still applies to it.
+export function prepareForPersist(content: string): string {
+  return normalizeOnSave(ensureKeyDirective(toChordPro(content)));
 }
 
 export function extractDirective(content: string, name: string): string | null {
@@ -91,12 +185,8 @@ function isCompactBarChord(token: string): boolean {
   if (new Set(normalized).size !== normalized.length) return false;
   if (normalized.filter((part) => part.startsWith('sus')).length > 1) return false;
 
-  const susIntervals = new Set(
-    normalized.filter((part) => part.startsWith('sus')).map((part) => part.slice(3)),
-  );
-  const addIntervals = normalized
-    .filter((part) => part.startsWith('add'))
-    .map((part) => part.slice(3));
+  const susIntervals = new Set(normalized.filter((part) => part.startsWith('sus')).map((part) => part.slice(3)));
+  const addIntervals = normalized.filter((part) => part.startsWith('add')).map((part) => part.slice(3));
   if (addIntervals.some((interval) => susIntervals.has(interval))) return false;
 
   const decoratedIntervals = normalized.map((part) => part.match(/\d+$/)?.[0]).filter(Boolean);
@@ -105,9 +195,50 @@ function isCompactBarChord(token: string): boolean {
   return true;
 }
 
+// A deliberately narrower version of theory.ts's SEPARATOR_TOKEN_RE: unlike
+// that shared definition, this one excludes bare "/" runs. Inside an
+// existing [| |] bracket group a lone "/" between two unrelated chords is
+// ambiguous — there's no established chord for it to hold — and the compact-
+// bar tests already lock in rejecting that (`[| C / D |]` must stay
+// unchanged). Bare-slash *continuation* of a chord ("C///") is handled
+// separately below by the glue-splitting logic that already existed before
+// this token, so nothing here needs to accept "/" on its own.
+const NON_CHORD_BAR_TOKEN_RE = /^(?:-+|%|x\d+|\d+x|N\.?C\.?)$/i;
+
+// Matches lyric text that is pure bar/hold-beat punctuation ("|", "/",
+// "///|", etc.) with nothing else in it — used by ResponsiveHtmlFormatter to
+// tell a real lyric line apart from an instrumental bar-notation line whose
+// "lyrics" are just layout punctuation.
+const BAR_PUNCTUATION_RE = /^[|/]+$/;
+
 function parseCompactBarSegment(segment: string): string | null {
+  // Non-chord notation that legitimately shares a bar line with real chords
+  // (N.C., %, x2/2x repeat counts, dash rests) — pass through as literal
+  // text rather than rejecting the whole group or trying to bracket/transpose
+  // it as a chord.
+  if (NON_CHORD_BAR_TOKEN_RE.test(segment)) return segment;
+
   const parts = segment.split(/(\/{2,})/);
-  if (parts.length === 1) return isCompactBarChord(segment) ? `[${segment}]` : null;
+  if (parts.length === 1) {
+    if (isCompactBarChord(segment)) return `[${segment}]`;
+    // A complete slash chord can carry a trailing SINGLE "/" as a glued hold
+    // marker too, not just a "//" run — e.g. Firm Foundation's real stored
+    // Interlude: "Ebmaj7/F/" (Ebmaj7 over F, held one extra beat). The
+    // /{2,} split above already handles a trailing run of two or more
+    // slashes on any chord (see "G///" and "Bb/D///"); this only covers the
+    // single-slash case, and only when the token being stripped already
+    // contains its OWN internal slash (a genuine, complete slash chord like
+    // "Ebmaj7/F"). A bare root chord with one trailing slash and no bass
+    // note of its own ("C/") stays rejected on purpose — that shape reads as
+    // a slash chord missing its bass note, not a hold marker, and the
+    // existing "[| C/ |]" test locks in treating it as invalid rather than
+    // guessing.
+    const trailingHold = segment.match(/^(.+\/.*[^/])(\/+)$/);
+    if (trailingHold && isCompactBarChord(trailingHold[1])) {
+      return `[${trailingHold[1]}]${trailingHold[2]}`;
+    }
+    return null;
+  }
   if (!parts[0] || !isCompactBarChord(parts[0])) return null;
 
   let output = `[${parts[0]}]`;
@@ -125,16 +256,48 @@ function parseCompactBarSegment(segment: string): string | null {
   return output;
 }
 
-// Expand only a complete, validated compact-bar group. Anything that is not
-// bounded by outer barlines or contains an unsupported token is returned
-// verbatim, preventing bracketed prose and malformed annotations from being
-// silently reinterpreted as chords.
+// Expand only a complete, validated compact-bar group. Anything that
+// contains an unsupported token is returned verbatim, preventing bracketed
+// prose and malformed annotations from being silently reinterpreted as
+// chords.
+//
+// Two shapes this recognizes beyond a plain glued chord list:
+//
+// 1. A standalone run of "/" as its own whitespace-delimited token (not
+//    glued onto a chord), e.g. Center's real stored Intro:
+//    "[|G / / / |Gmaj7 / / / |Cmaj7 / / / |Cmaj7 / / / |]". The app's own
+//    glued shorthand ("G///") was already handled by parseCompactBarSegment,
+//    but a bare "/" token has nothing glued to it, so it used to make the
+//    ENTIRE group fail (parseCompactBarSegment("/") returns null), leaving
+//    the whole bracket as literal, untransposed text — same failure class as
+//    the unbracketed bar-notation bug fixed last round, just one layer
+//    deeper (this content was already inside brackets). Fixed by tracking
+//    whether a real chord is currently "in scope" (hasChord) and treating a
+//    standalone slash run as a continuation of it — mirroring
+//    glueBarNotationLine's identical handling for the unbracketed case,
+//    including N.C. silence (heldNoChord) and carry-over across "|"
+//    boundaries (deliberately not reset per bar, matching that function).
+//    A lone "/" with no chord ever established (e.g. "[| /C |]") still
+//    correctly fails closed.
+//
+// 2. No leading/trailing "|" framing the whole group, only internal bar
+//    separators, e.g. What A Beautiful Name's real stored Instrumental:
+//    "[G///| A///| Bm///| F#m///]". The old boundary check
+//    (`trimmed.startsWith('|') && trimmed.endsWith('|')`) rejected this
+//    outright before even looking at its content, even though the content
+//    itself is otherwise valid compact-bar notation. Per-token validation
+//    below still rejects anything that isn't a recognizable chord or marker,
+//    so relaxing this boundary doesn't let prose through — e.g. "[Chorus |
+//    Bridge]" still fails because "Chorus" isn't a valid chord token, not
+//    because it lacks outer pipes.
 function expandCompactBarGroup(inner: string): string | null {
   const trimmed = inner.trim();
-  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return null;
+  if (!trimmed.includes('|')) return null;
 
   let output = '';
   let cursor = 0;
+  let hasChord = false;
+  let heldNoChord = false;
   while (cursor < inner.length) {
     if (/\s|\|/.test(inner[cursor])) {
       output += inner[cursor];
@@ -144,9 +307,30 @@ function expandCompactBarGroup(inner: string): string | null {
 
     let end = cursor;
     while (end < inner.length && !/\s|\|/.test(inner[end])) end += 1;
-    const expanded = parseCompactBarSegment(inner.slice(cursor, end));
+    const token = inner.slice(cursor, end);
+
+    if (/^\/+$/.test(token)) {
+      if (hasChord) {
+        output += token;
+      } else if (!heldNoChord) {
+        return null;
+      }
+      // else: still-held N.C. silence — drop the beat marker silently,
+      // matching glueBarNotationLine's identical behavior.
+      cursor = end;
+      continue;
+    }
+
+    const expanded = parseCompactBarSegment(token);
     if (expanded === null) return null;
     output += expanded;
+    if (/^N\.?C\.?$/i.test(token)) {
+      hasChord = false;
+      heldNoChord = true;
+    } else if (!NON_CHORD_BAR_TOKEN_RE.test(token)) {
+      hasChord = true;
+      heldNoChord = false;
+    }
     cursor = end;
   }
   return output;
@@ -154,6 +338,92 @@ function expandCompactBarGroup(inner: string): string | null {
 
 function expandCompactBarNotation(text: string): string {
   return text.replace(/\[([^\]\n]*\|[^\]\n]*)\]/g, (match, inner: string) => expandCompactBarGroup(inner) ?? match);
+}
+
+// Real chord charts (typed by hand, pasted from a songbook, or extracted
+// from a PDF that isn't the Worship-Together-specific format) commonly write
+// instrumental sections as bar/pipe notation with each beat spelled out as
+// its own token — "|G / / / |Gmaj7 / / / |Cmaj7 / / / |" — rather than the
+// app's own glued compact-bar shorthand ("|G/// Gmaj7/// Cmaj7///|") or
+// inline [G] brackets. This is a THIRD, distinct shape from both of those:
+// no brackets at all, and the repeat/hold slashes are separate space-
+// delimited tokens rather than glued onto the chord token. Neither
+// expandCompactBarNotation (needs an existing [| |] bracket) nor
+// bracketStandaloneChordLines (needs the line to start with a chord letter,
+// not "|") recognizes it, so it silently passed through as literal lyric
+// text and never transposed.
+//
+// This glues each run of bare "/" tokens onto the chord that precedes it
+// (carrying the chord across a bar boundary when a bar starts with "/"),
+// producing the same glued shorthand the app's compact-bar system already
+// parses correctly, then wraps the result in [| |] so the existing,
+// already-tested expandCompactBarNotation above does the actual expansion.
+// Fails closed (leaves the line untouched) on anything that doesn't cleanly
+// resolve to a chord, a held beat, or a recognized non-chord marker (N.C.,
+// %, x2, dash rests — the same vocabulary the standalone Tools chart engine
+// in theory.ts already recognizes).
+function glueBarNotationLine(line: string): string | null {
+  const segments = line.split('|');
+  if (segments.length < 3) return null;
+  if (segments[0].trim() !== '' || segments[segments.length - 1].trim() !== '') return null;
+
+  let lastChord: string | null = null;
+  // True once an explicit N.C. establishes "deliberately no chord right now".
+  // A bare "/" that follows just continues that held silence rather than
+  // failing for lack of anything to glue onto.
+  let heldNoChord = false;
+  const outBars: string[] = [];
+  for (let i = 1; i < segments.length - 1; i++) {
+    const tokens = segments[i].trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return null;
+
+    const outTokens: string[] = [];
+    let current: string | null = null;
+    for (const tok of tokens) {
+      if (/^\/+$/.test(tok)) {
+        if (current !== null) current += tok;
+        else if (lastChord !== null) current = lastChord + tok;
+        else if (heldNoChord)
+          continue; // still no chord — drop the beat marker silently
+        else return null;
+        continue;
+      }
+      if (SEPARATOR_TOKEN_RE.test(tok)) {
+        if (current !== null) {
+          outTokens.push(current);
+          current = null;
+        }
+        outTokens.push(tok);
+        if (/^N\.?C\.?$/i.test(tok)) {
+          lastChord = null;
+          heldNoChord = true;
+        }
+        continue;
+      }
+      if (!isCompactBarChord(tok)) return null;
+      if (current !== null) outTokens.push(current);
+      current = tok;
+      lastChord = tok;
+      heldNoChord = false;
+    }
+    if (current !== null) outTokens.push(current);
+    outBars.push(outTokens.join(' '));
+  }
+  return outBars.join(' | ');
+}
+
+function bracketBarNotationLines(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('|') || !trimmed.endsWith('|') || line.includes('[') || line.includes(']')) {
+        return line;
+      }
+      const glued = glueBarNotationLine(trimmed);
+      return glued === null ? line : `[| ${glued} |]`;
+    })
+    .join('\n');
 }
 
 function ensureSectionParagraphBreaks(text: string): string {
@@ -168,23 +438,70 @@ function ensureSectionParagraphBreaks(text: string): string {
   return out.join('\n');
 }
 
+const BARE_CHORD_LINE_RE = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/;
+
+function isBareChordLine(line: string): boolean {
+  return BARE_CHORD_LINE_RE.test(line) && !line.includes('[');
+}
+
+// A document that mostly uses inline [bracket] chords (ChordPro-style) may
+// still write an instrumental section — Intro, Interlude, Turnaround, Outro
+// — as a bare chord line with no lyric line underneath it, since brackets
+// don't make sense without lyrics to attach them to. The ChordPro parser has
+// no way to recognize a bare, unbracketed line as chords: it reads it as
+// ordinary lyric text, so those chords silently survive transposition
+// unchanged instead of moving with the rest of the song. Bracket a bare
+// chord line when it has no paired lyric line following (blank line,
+// another chord-only line, a section label, or end of content), so the
+// ChordPro parser picks it up like any other instrumental line. Only do this
+// when the document already has real bracket chords elsewhere — otherwise
+// this is a genuine chords-over-lyrics document, and a real two-line
+// chord/lyric pairing must be left alone for ChordsOverWordsParser to match
+// by position.
+function bracketStandaloneChordLines(text: string, hasExistingBracketChords: boolean): string {
+  if (!hasExistingBracketChords) return text;
+  const lines = text.split('\n');
+  return lines
+    .map((line, i) => {
+      if (!isBareChordLine(line)) return line;
+      const next = lines[i + 1];
+      const standalone =
+        next === undefined || next.trim() === '' || isSectionLabel(next.trim()) || isBareChordLine(next);
+      if (!standalone) return line;
+      return line.replace(/\S+/g, (token) => `[${token}]`);
+    })
+    .join('\n');
+}
+
 export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJS.Song; format: string | null } | null {
   // Pre-process content: force all chords to preferred enharmonic spellings (Sharps)
   // and fix spacing issues in slash chords (e.g. [A / C#] -> [A/C#]) BEFORE parsing.
   // This ensures transpose and Nashville work correctly.
-  let content = expandCompactBarNotation(rawContent).replace(/\[([^\]]+)\]/g, (match, inner) => {
-    // Rejected outer compact-bar groups are fail-closed source. Do not let the
-    // generic slash normalizer mutate or reinterpret them after validation.
-    const trimmed = inner.trim();
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) return match;
+  let content = expandCompactBarNotation(bracketBarNotationLines(rawContent)).replace(
+    /\[([^\]]+)\]/g,
+    (match, inner) => {
+      // Rejected outer compact-bar groups are fail-closed source. Do not let the
+      // generic slash normalizer mutate or reinterpret them after validation.
+      const trimmed = inner.trim();
+      if (trimmed.startsWith('|') && trimmed.endsWith('|')) return match;
 
-    // 1. Fix spaces around slashes
-    const cleaned = inner.replace(/\s*\/\s*/g, '/');
-    // Preserve the source chart's written enharmonic spelling.
-    return `[${cleaned}]`;
-  });
+      // 1. Fix spaces around slashes
+      const cleaned = inner.replace(/\s*\/\s*/g, '/');
+      // Preserve the source chart's written enharmonic spelling.
+      return `[${cleaned}]`;
+    },
+  );
 
   content = ensureSectionParagraphBreaks(content);
+
+  {
+    // Detect pre-existing bracket chords BEFORE bracketing standalone
+    // instrumental lines below, so the decision reflects how the song was
+    // actually authored, not a self-fulfilling result of this same step.
+    const preexistingBracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map((b) => b.slice(1, -1));
+    const hasPreexistingBracketChords = preexistingBracketContents.some((c) => !SECTION_LABEL_RE.test(c));
+    content = bracketStandaloneChordLines(content, hasPreexistingBracketChords);
+  }
 
   // Also normalize Chords-over-lyrics format (lines with only chords)
   content = content
@@ -263,7 +580,7 @@ export function detectFormat(content: string): string | null {
 export function toChordPro(content: string): string {
   // Compact bar notation is already valid app input. Formatting it through
   // ChordSheetJS would rewrite the source, so preserve it verbatim on save.
-  if (/\[\s*\|[^\]\n]*\|\s*\]/.test(content)) return content;
+  if (isCompactBarNotation(content)) return content;
 
   // Separate directive lines from body so x_ directives survive UG parser conversion
   const lines = content.split('\n');
@@ -326,7 +643,7 @@ function firstChordRoot(song: ChordSheetJS.Song): string | null {
 
 export function ensureKeyDirective(content: string): string {
   // Compact bar source must survive the complete persistence path byte-for-byte.
-  if (/\[\s*\|[^\]\n]*\|\s*\]/.test(content)) return content;
+  if (isCompactBarNotation(content)) return content;
   if (/\{key:\s*\S/.test(content)) return content;
   try {
     const root = firstChordRoot(new ChordSheetJS.ChordProParser().parse(content));
@@ -379,7 +696,7 @@ class ResponsiveHtmlFormatter {
       !content.includes('class="label"') &&
       hasRenderableContent
     ) {
-      const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
+      const typeLabel = canonicalizeSectionLabel(detectedType);
       content = `<div class="row section-row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
     }
 
@@ -397,7 +714,7 @@ class ResponsiveHtmlFormatter {
             : '') || '';
 
       if (SECTION_LABEL_RE.test(content.trim())) {
-        const cleanLabel = content.trim().replace(/[[\]:]/g, '');
+        const cleanLabel = canonicalizeSectionLabel(content.trim());
         return `<div class="row section-row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
       return `<div class="comment">${escHtml(content)}</div>`;
@@ -411,13 +728,44 @@ class ResponsiveHtmlFormatter {
       const chords = (it.chords || '').trim();
       // Only one of them should be present for a pure label line
       if (!lyrics !== !chords && SECTION_LABEL_RE.test(lyrics || chords)) {
-        const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
+        const cleanLabel = canonicalizeSectionLabel(lyrics || chords);
         return `<div class="row section-row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
     }
 
     const content = l.items.map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair)).join('');
-    return `<div class="row">${content}</div>`;
+    const rowClass = this.isInstrumentalLine(l) ? 'row row-instrumental' : 'row';
+    return `<div class="${rowClass}">${content}</div>`;
+  }
+
+  // A bar-notation/instrumental line (Intro, Interlude, etc.) renders as a
+  // run of many small chord chips with only bar/slash punctuation between
+  // them — no real lyric words. Depending on how the source was typed, that
+  // punctuation can land as its own separate column (e.g. "G / / /", each
+  // token space-delimited) or glued onto the preceding chord's lyric span
+  // (e.g. "G///|"). Either shape has ONLY punctuation for lyrics content, so
+  // detect it that way rather than relying on paragraph type (which can be
+  // "none"/"indeterminate", e.g. an Interlude with no section-label line)
+  // or on which of the two source shapes produced it. Marked with a class so
+  // CSS can give these dense chip rows clearer spacing without changing the
+  // font/line rhythm of ordinary chords-over-lyrics verses.
+  private isInstrumentalLine(l: ChordSheetJS.Line): boolean {
+    let hasChord = false;
+    for (const item of l.items) {
+      if (!('lyrics' in item)) return false;
+      const it = item as ChordSheetJS.ChordLyricsPair;
+      if ((it.chords || '').trim()) hasChord = true;
+      const lyrics = (it.lyrics || '').trim();
+      if (!lyrics) continue;
+      // A pair's lyrics can be one combined string with embedded spaces
+      // (e.g. "/ / / |" from the Center-shaped source, before renderItem's
+      // own chunk-splitting later breaks it into separate columns), so check
+      // token by token rather than the string as a whole.
+      for (const tok of lyrics.split(/\s+/)) {
+        if (!BAR_PUNCTUATION_RE.test(tok) && !SEPARATOR_TOKEN_RE.test(tok)) return false;
+      }
+    }
+    return hasChord;
   }
 
   private renderItem(it: ChordSheetJS.ChordLyricsPair): string {
@@ -454,25 +802,37 @@ class ResponsiveHtmlFormatter {
         const currentChord = rawChord;
         chordPlaced = true;
 
+        // A column with no chord of its own whose lyric text is pure bar
+        // punctuation ("|", "/", "///", "N.C.", ...) is layout marking, not
+        // a word — mark it so row-instrumental spacing (see chord-sheet.css)
+        // can keep it tight against its neighbor instead of giving it the
+        // same generous gap as an actual chord chip.
+        const isPunctColumn = !currentChord && (BAR_PUNCTUATION_RE.test(chunk) || SEPARATOR_TOKEN_RE.test(chunk));
+        const columnClass = isPunctColumn ? 'column column-punct' : 'column';
+
         const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
         const lyricText = escHtml(chunk);
-        return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
+        return `<span class="${columnClass}">${chords}<span class="lyrics">${lyricText}</span></span>`;
       })
       .join('');
   }
 }
 
-function transposeUnsupportedSymbolChords(song: ChordSheetJS.Song, semitones: number): void {
+function transposeUnsupportedSymbolChords(song: ChordSheetJS.Song, semitones: number, accidental?: '#' | 'b'): void {
   song.mapChordLyricsPairs((pair) => {
     const item = pair as unknown as { chords?: string };
     const match = item.chords?.match(/^([A-G](?:#|b)?)([°ø∆].*?)(?:\/([A-G](?:#|b)?))?$/);
     if (!match) return pair;
 
     try {
-      const root = ChordSheetJS.Chord.parse(match[1])?.transpose(semitones).toString();
-      const bass = match[3]
-        ? ChordSheetJS.Chord.parse(match[3])?.transpose(semitones).toString()
-        : null;
+      let rootChord = ChordSheetJS.Chord.parse(match[1])?.transpose(semitones);
+      if (rootChord && accidental) rootChord = rootChord.useAccidental(accidental);
+      const root = rootChord?.toString();
+
+      let bassChord = match[3] ? ChordSheetJS.Chord.parse(match[3])?.transpose(semitones) : null;
+      if (bassChord && accidental) bassChord = bassChord.useAccidental(accidental);
+      const bass = bassChord?.toString();
+
       if (root) item.chords = `${root}${match[2]}${bass ? `/${bass}` : ''}`;
     } catch {
       /* leave unsupported symbol spelling unchanged */
@@ -481,17 +841,44 @@ function transposeUnsupportedSymbolChords(song: ChordSheetJS.Song, semitones: nu
   });
 }
 
+// Reads the key ChordSheetJS lands on after a plain (no-accidental) transpose,
+// falling back to the first real chord root when the song has no {key}
+// directive. Used only to pick a single accidental for the whole song below —
+// a lone note has no internal-consistency problem, so the plain transpose's
+// default spelling is a safe source for this regardless of what it later does
+// to individual chords.
+function detectDestinationKey(transposedNoAccidental: ChordSheetJS.Song): string | null {
+  const keyRaw =
+    transposedNoAccidental.key ||
+    (transposedNoAccidental.getMetadataValue ? transposedNoAccidental.getMetadataValue('key') : null);
+  const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
+  return key || firstChordRoot(transposedNoAccidental);
+}
+
 export function prepareSong(content: string, semitones = 0, nashville = false): ChordSheetJS.Song | null {
   try {
     const song = parseSongAuto(content);
     if (!song) return null;
 
-    let transposed = semitones !== 0 ? song.transpose(semitones) : song;
-    // ChordSheetJS preserves °, ø, and ∆ tokens but does not transpose their
-    // roots. Handle those accepted symbols explicitly without rewriting source.
-    if (semitones !== 0) transposeUnsupportedSymbolChords(transposed, semitones);
-    // Preserve source spelling at concert pitch; normalize only after explicit transposition.
-    if (semitones !== 0) fixChordAccidentals(transposed);
+    let transposed = song;
+    if (semitones !== 0) {
+      // ChordSheetJS's default transpose() picks sharp or flat per chord
+      // independently, which produces mixed spelling within one key (e.g.
+      // G# Bbm Cm C# Eb Fm Gdim when transposing to "Ab"). Detect the
+      // destination key first, then re-transpose the whole song with one
+      // consistent accidental matching the app's canonical key label.
+      const provisional = song.transpose(semitones);
+      const destKey = detectDestinationKey(provisional);
+      const accidental = destKey ? preferredAccidental(destKey) : undefined;
+
+      transposed = accidental ? song.transpose(semitones, { accidental }) : provisional;
+      // ChordSheetJS preserves °, ø, and ∆ tokens but does not transpose their
+      // roots. Handle those accepted symbols explicitly without rewriting source.
+      transposeUnsupportedSymbolChords(transposed, semitones, accidental);
+      // A small set of spellings (A#/D#/Cb) that should never appear
+      // regardless of the accidental chosen above.
+      fixChordAccidentals(transposed);
+    }
 
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
@@ -509,7 +896,9 @@ export function prepareSong(content: string, semitones = 0, nashville = false): 
 export function renderChordPro(content: string, semitones = 0, nashville = false): string {
   const song = prepareSong(content, semitones, nashville);
   if (!song) {
-    return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
+    // Unparseable source: fall back to the same themed surface as a parsed
+    // chart so the page tone, fonts, and spacing stay consistent.
+    return `<div class="chord-sheet"><div class="chord-sheet-fallback">${escHtml(content)}</div></div>`;
   }
   return `<div class="chord-sheet">${new ResponsiveHtmlFormatter().format(song)}</div>`;
 }
@@ -531,9 +920,7 @@ export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordS
       const symbol = chords.match(/^([A-G](?:#|b)?)([°ø∆Δ+].*?)(?:\/([A-G](?:#|b)?))?$/);
       if (symbol) {
         const root = ChordSheetJS.Chord.parse(symbol[1])?.toNumeric(key).toString();
-        const bass = symbol[3]
-          ? ChordSheetJS.Chord.parse(symbol[3])?.toNumeric(key).toString()
-          : null;
+        const bass = symbol[3] ? ChordSheetJS.Chord.parse(symbol[3])?.toNumeric(key).toString() : null;
         if (root) it.chords = `${root}${symbol[2]}${bass ? `/${bass}` : ''}`;
         return pair;
       }

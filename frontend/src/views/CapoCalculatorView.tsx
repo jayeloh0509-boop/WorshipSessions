@@ -50,8 +50,7 @@ export function CapoCalculatorView({ navigate }: CapoCalculatorViewProps) {
   const previewOutput = useMemo(() => {
     if (!selectedOption || !preview.trim()) return '';
     const shapeKey = parseKeyName(selectedOption.shape);
-    const acc: Accidental =
-      accPref === 'auto' ? (shapeKey ? preferredAccidentalForKey(shapeKey) : 'sharp') : accPref;
+    const acc: Accidental = accPref === 'auto' ? (shapeKey ? preferredAccidentalForKey(shapeKey) : 'sharp') : accPref;
     return transposeChart(preview, -selectedOption.capo, acc);
   }, [preview, selectedOption, accPref]);
 
@@ -180,9 +179,7 @@ export function CapoCalculatorView({ navigate }: CapoCalculatorViewProps) {
               );
             })}
           </div>
-          <p className="tool-note">
-            Fret 12 repeats the no-capo fingering an octave up, so options stop at fret 11.
-          </p>
+          <p className="tool-note">Fret 12 repeats the no-capo fingering an octave up, so options stop at fret 11.</p>
 
           {options.map((o, i) => {
             const prac = capoPracticality(o.capo);
@@ -208,8 +205,8 @@ export function CapoCalculatorView({ navigate }: CapoCalculatorViewProps) {
         <div className="tool-result">
           <span className="tool-chip-label">Chord preview (optional)</span>
           <p className="tool-desc">
-            Paste the chart in the sounding key ({target}) to see the shapes you actually play with
-            the selected capo. Suffixes and slash chords are kept.
+            Paste the chart in the sounding key ({target}) to see the shapes you actually play with the selected capo.
+            Suffixes and slash chords are kept.
           </p>
           <textarea
             className="tool-textarea"
@@ -234,7 +231,9 @@ export function CapoCalculatorView({ navigate }: CapoCalculatorViewProps) {
                 You play ({selectedOption.capo === 0 ? 'no capo' : `capo ${selectedOption.capo}`},{' '}
                 {selectedOption.shape} shapes)
               </span>
-              <pre className="tool-output" aria-label="Player-facing chords">{previewOutput}</pre>
+              <pre className="tool-output" aria-label="Player-facing chords">
+                {previewOutput}
+              </pre>
               <div className="tool-actions">
                 <CopyButton getText={() => previewOutput} label="Copy shapes chart" />
               </div>

@@ -10,7 +10,7 @@ describe('KeyPicker', () => {
   it('renders all 12 keys when visible', () => {
     render(<KeyPicker currentKey="G" onPickKey={onPickKey} visible={true} />);
     const keys = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
-    keys.forEach(k => {
+    keys.forEach((k) => {
       expect(screen.getByText(k)).toBeDefined();
     });
   });
@@ -23,14 +23,14 @@ describe('KeyPicker', () => {
 
   it('shows save buttons when isModified is true', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
+      <KeyPicker
+        currentKey="A"
+        onPickKey={onPickKey}
+        visible={true}
         isModified={true}
         onSaveOnline={onSaveOnline}
         onSaveLocal={onSaveLocal}
-      />
+      />,
     );
     expect(screen.getByText('Save this key?')).toBeDefined();
     expect(screen.getByText('SAVE (Online)')).toBeDefined();
@@ -39,13 +39,7 @@ describe('KeyPicker', () => {
 
   it('calls onSaveOnline when online save button is clicked', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
-        isModified={true}
-        onSaveOnline={onSaveOnline}
-      />
+      <KeyPicker currentKey="A" onPickKey={onPickKey} visible={true} isModified={true} onSaveOnline={onSaveOnline} />,
     );
     fireEvent.click(screen.getByText('SAVE (Online)'));
     expect(onSaveOnline).toHaveBeenCalled();
@@ -53,27 +47,14 @@ describe('KeyPicker', () => {
 
   it('calls onSaveLocal when local save button is clicked', () => {
     render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
-        isModified={true}
-        onSaveLocal={onSaveLocal}
-      />
+      <KeyPicker currentKey="A" onPickKey={onPickKey} visible={true} isModified={true} onSaveLocal={onSaveLocal} />,
     );
     fireEvent.click(screen.getByText('Save (Local)'));
     expect(onSaveLocal).toHaveBeenCalled();
   });
 
   it('does not show save buttons when isModified is false', () => {
-    render(
-      <KeyPicker 
-        currentKey="A" 
-        onPickKey={onPickKey} 
-        visible={true} 
-        isModified={false}
-      />
-    );
+    render(<KeyPicker currentKey="A" onPickKey={onPickKey} visible={true} isModified={false} />);
     expect(screen.queryByText('Save this key?')).toBeNull();
   });
 });

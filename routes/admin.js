@@ -12,15 +12,27 @@ const { blockInDemo } = require('../lib/demo');
 
 function resolveAdminTarget(req, res) {
   const targetId = parseId(req.params.id);
-  if (!targetId) { res.status(400).json({ error: 'Invalid user ID' }); return null; }
+  if (!targetId) {
+    res.status(400).json({ error: 'Invalid user ID' });
+    return null;
+  }
   const target = User.getFullById(targetId);
-  if (!target) { res.status(404).json({ error: 'User not found' }); return null; }
-  if (target.role === ROLES.OWNER) { res.status(403).json({ error: 'Cannot modify the owner' }); return null; }
+  if (!target) {
+    res.status(404).json({ error: 'User not found' });
+    return null;
+  }
+  if (target.role === ROLES.OWNER) {
+    res.status(403).json({ error: 'Cannot modify the owner' });
+    return null;
+  }
   if (target.role === ROLES.ADMIN && req.user.role !== ROLES.OWNER) {
     res.status(403).json({ error: 'Only the owner can manage admins' });
     return null;
   }
-  if (targetId === req.user.id) { res.status(403).json({ error: 'Cannot modify yourself' }); return null; }
+  if (targetId === req.user.id) {
+    res.status(403).json({ error: 'Cannot modify yourself' });
+    return null;
+  }
   return { targetId, target };
 }
 
@@ -148,7 +160,8 @@ function createAdminRouter() {
 
   router.put('/admin/config', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const { allowRegistration } = req.body;
-    if (typeof allowRegistration !== 'boolean') return res.status(400).json({ error: 'allowRegistration must be a boolean' });
+    if (typeof allowRegistration !== 'boolean')
+      return res.status(400).json({ error: 'allowRegistration must be a boolean' });
     setSetting('allow_registration', allowRegistration ? '1' : '0');
     res.json({ success: true, allowRegistration });
   });

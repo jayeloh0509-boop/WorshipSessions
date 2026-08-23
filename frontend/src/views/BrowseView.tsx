@@ -30,34 +30,39 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
-    try {
-      let url = '/api/songs/public';
-      const params: string[] = [];
-      if (q) params.push(`q=${encodeURIComponent(q)}`);
-      if (lang) params.push(`language=${encodeURIComponent(lang)}`);
-      params.push(`page=${targetPage}`);
-      params.push(`limit=20`);
-      url += '?' + params.join('&');
-      
-      interface PaginatedSongsResponse {
-        songs: SongListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+  const load = useCallback(
+    async (q = '', lang = '', targetPage = 1) => {
+      try {
+        let url = '/api/songs/public';
+        const params: string[] = [];
+        if (q) params.push(`q=${encodeURIComponent(q)}`);
+        if (lang) params.push(`language=${encodeURIComponent(lang)}`);
+        params.push(`page=${targetPage}`);
+        params.push(`limit=20`);
+        url += '?' + params.join('&');
+
+        interface PaginatedSongsResponse {
+          songs: SongListItem[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+        const data = await api<PaginatedSongsResponse>('GET', url);
+        setSongs(data.songs);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+        setLoaded(true);
+
+        setSessionItem('cv_browse_query', q);
+        setSessionItem('cv_browse_lang', lang);
+        setSessionItem('cv_browse_page', String(data.page));
+      } catch (e) {
+        toast((e as Error).message, 'error');
       }
-      const data = await api<PaginatedSongsResponse>('GET', url);
-      setSongs(data.songs);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setLoaded(true);
-      
-      setSessionItem('cv_browse_query', q);
-      setSessionItem('cv_browse_lang', lang);
-      setSessionItem('cv_browse_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [api, toast]);
+    },
+    [api, toast],
+  );
 
   useEffect(() => {
     load(query, langFilter, page);
@@ -86,8 +91,12 @@ export function BrowseView({ navigate }: BrowseViewProps) {
           <div className="hero-tagline">{t('hero.tagline')}</div>
           <div className="hero-cta">{t('hero.cta')}</div>
           <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button className="btn" onClick={() => navigate('auth')}>{t('auth.signIn')}</button>
-            <button className="btn btn-ghost" onClick={() => navigate('about')}>Learn more</button>
+            <button className="btn" onClick={() => navigate('auth')}>
+              {t('auth.signIn')}
+            </button>
+            <button className="btn btn-ghost" onClick={() => navigate('about')}>
+              Learn more
+            </button>
           </div>
         </div>
       ) : (
@@ -99,19 +108,19 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 placeholder={t('songs.searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') doSearch();
+                }}
               />
               {query && (
-                <button
-                  className="search-clear-btn"
-                  onClick={handleClear}
-                  title="Clear search"
-                >
+                <button className="search-clear-btn" onClick={handleClear} title="Clear search">
                   &times;
                 </button>
               )}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
+            <button className="btn btn-ghost btn-sm" onClick={doSearch}>
+              {t('songs.search')}
+            </button>
             <button
               className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
               onClick={() => {
@@ -124,7 +133,9 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               &#9776;
             </button>
             {user && (
-              <button className="btn btn-sm" onClick={() => navigate('song-edit')}>&#43; New Song</button>
+              <button className="btn btn-sm" onClick={() => navigate('song-edit')}>
+                &#43; New Song
+              </button>
             )}
           </div>
           {showFilters && (
@@ -132,11 +143,16 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <select
                 className="language-filter"
                 value={langFilter}
-                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, 1); }}
+                onChange={(e) => {
+                  setLangFilter(e.target.value);
+                  load(query, e.target.value, 1);
+                }}
               >
                 <option value="">All languages</option>
-                {LANGUAGES.map(l => (
-                  <option key={l.code} value={l.code}>{l.name}</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.name}
+                  </option>
                 ))}
               </select>
             </div>

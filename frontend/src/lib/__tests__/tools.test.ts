@@ -1,12 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  parseChordSymbol,
-  extractChords,
-  detectKey,
-  capoForShape,
-  capoOptions,
-  capoPracticality,
-} from '../tools';
+import { parseChordSymbol, extractChords, detectKey, capoForShape, capoOptions, capoPracticality } from '../tools';
 
 describe('parseChordSymbol', () => {
   it('parses plain major and minor chords', () => {

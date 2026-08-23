@@ -9,7 +9,7 @@ function renderView(navigate: (view: string) => void = () => {}) {
   return render(
     <ToastProvider>
       <CapoCalculatorView navigate={navigate} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 
@@ -48,9 +48,7 @@ describe('CapoCalculatorView (Capo Chart Pro)', () => {
     await userEvent.selectOptions(screen.getByLabelText('Sounding key'), 'Bb');
     const strip = screen.getByRole('group', { name: 'Capo positions for Bb' });
     expect(strip.querySelectorAll('.capo-fret')).toHaveLength(13);
-    expect(
-      screen.getByRole('button', { name: 'Capo 3: play G shapes' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Capo 3: play G shapes' })).toBeInTheDocument();
   });
 
   it('supports picking a desired open shape directly', async () => {

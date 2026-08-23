@@ -36,15 +36,15 @@ interface Route {
 // Stable hash slug <-> view name for every tool page
 export const TOOL_ROUTES: Record<string, string> = {
   'key-finder': 'tools-key-finder',
-  'capo': 'tools-capo',
-  'transpose': 'tools-transpose',
-  'nashville': 'tools-nashville',
+  capo: 'tools-capo',
+  transpose: 'tools-transpose',
+  nashville: 'tools-nashville',
   'relative-keys': 'tools-relative',
-  'diatonic': 'tools-diatonic',
+  diatonic: 'tools-diatonic',
 };
 
 const TOOL_HASHES: Record<string, string> = Object.fromEntries(
-  Object.entries(TOOL_ROUTES).map(([slug, view]) => [view, `#tools/${slug}`])
+  Object.entries(TOOL_ROUTES).map(([slug, view]) => [view, `#tools/${slug}`]),
 );
 
 export function parseHash(): Route {
@@ -96,9 +96,11 @@ export function App() {
   const [animClass, setAnimClass] = useState('');
 
   useEffect(() => {
-    api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
-      if (cfg.demoMode) setDemoMode(true);
-    }).catch(() => {});
+    api<AuthConfig>('GET', '/api/auth/config')
+      .then((cfg) => {
+        if (cfg.demoMode) setDemoMode(true);
+      })
+      .catch(() => {});
   }, [setDemoMode]);
 
   // Auto-scroll to top when any overlay appears
@@ -148,19 +150,17 @@ export function App() {
     else if (TOOL_HASHES[view]) location.hash = TOOL_HASHES[view];
     else if (view === 'setlist-edit' && params.id) {
       location.hash = `#setlist/${params.id}`;
-    }
-    else if (view === 'setlist-play' && params.id) {
+    } else if (view === 'setlist-play' && params.id) {
       let h = `#setlist/${params.id}/play`;
       if (params.index && params.index !== '0') h += `/${params.index}`;
       location.hash = h;
-    }
-    else if (['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)) {
+    } else if (
+      ['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)
+    ) {
       // Use replaceState to clear hash without triggering hashchange (which would race with the rAF setRoute above)
       history.replaceState(null, '', location.pathname + location.search);
     }
   }, []);
-
-
 
   if (!user) {
     return (
@@ -182,11 +182,19 @@ export function App() {
       case 'my-songs':
         return user ? <MySongsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
       case 'song-view':
-        return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? (
+          <SongView songId={parseInt(params.id)} navigate={navigate} />
+        ) : (
+          <BrowseView navigate={navigate} />
+        );
       case 'song-edit':
         return <SongEditView songId={params.id ? parseInt(params.id) : undefined} navigate={navigate} />;
       case 'correction':
-        return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return params.id ? (
+          <CorrectionView songId={parseInt(params.id)} navigate={navigate} />
+        ) : (
+          <BrowseView navigate={navigate} />
+        );
       case 'auth':
         return <AuthView navigate={navigate} />;
       case 'setlists':
@@ -199,15 +207,27 @@ export function App() {
             setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : (
+          <SetlistsView navigate={navigate} />
+        );
       case 'setlist-play': {
         if (params._setlist) {
           // Local setlist play with pre-loaded data
           try {
             const sl = JSON.parse(params._setlist) as Setlist;
             const initialIdx = params.index ? parseInt(params.index) : undefined;
-            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
-          } catch { /* fall through */ }
+            return (
+              <SetlistPlayView
+                setlistId={sl.id}
+                isLocal
+                initialSetlist={sl}
+                initialIndex={initialIdx}
+                navigate={navigate}
+              />
+            );
+          } catch {
+            /* fall through */
+          }
         }
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
@@ -217,7 +237,9 @@ export function App() {
             initialIndex={initialIdx}
             navigate={navigate}
           />
-        ) : <SetlistsView navigate={navigate} />;
+        ) : (
+          <SetlistsView navigate={navigate} />
+        );
       }
       case 'admin':
         return <AdminView navigate={navigate} />;
@@ -249,10 +271,7 @@ export function App() {
     <>
       <DemoBanner />
       {route.view !== 'setlist-play' && <Nav view={route.view} navigate={navigate} />}
-      <main
-        id="app"
-        className={`${animClass}${route.view !== 'setlist-play' ? ' app-with-nav' : ''}`.trim()}
-      >
+      <main id="app" className={`${animClass}${route.view !== 'setlist-play' ? ' app-with-nav' : ''}`.trim()}>
         {renderView()}
       </main>
       <Toast />

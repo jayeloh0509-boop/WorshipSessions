@@ -48,8 +48,12 @@ export function SettingsPanel({
       <div className="sl-option">
         <span>Font size</span>
         <div className="sl-font-btns">
-          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(-1)}>A&#8722;</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(1)}>A+</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(-1)}>
+            A&#8722;
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onFontChange(1)}>
+            A+
+          </button>
           <button
             className={`btn btn-ghost btn-sm${fontSize === 0 ? ' disabled' : ''}`}
             onClick={onFontReset}

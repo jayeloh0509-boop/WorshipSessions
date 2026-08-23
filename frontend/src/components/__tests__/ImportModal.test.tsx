@@ -5,7 +5,9 @@ import { ImportModal } from '../ImportModal';
 
 vi.mock('../../lib/api', () => ({
   importSongs: vi.fn(async () => ({ imported: 1, skipped: [{ index: 1, reason: 'already_exists' }], errors: [] })),
-  ApiError: class extends Error { status = 0; },
+  ApiError: class extends Error {
+    status = 0;
+  },
 }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => vi.fn() }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { token: 'tok' } }) }));

@@ -23,40 +23,39 @@
   /* -- "Graphite & Brass" (dark) --
      Near-monochrome interface; the single brass accent is
      reserved for the music itself (chords, keys, tempo). */
-  --bg:           var(--ink);
-  --surface:      var(--ink-raised);
-  --surface2:     var(--ink-panel);
-  --border:       rgba(255, 255, 255, 0.07);
-  --text:         var(--text-primary);
-  --muted:        var(--text-muted);
-  --accent:       #ececea;   /* interactive = off-white, not a color */
-  --accent2:      #ffffff;
-  --accent-alt:   #5c5e66;
-  --danger:       #e05d5d;
-  --success:      #6fbf8f;
-  --chord:        var(--accent-chord);
-  --nav-bg:       rgba(13, 20, 24, 0.94);
+  --bg: var(--ink);
+  --surface: var(--ink-raised);
+  --surface2: var(--ink-panel);
+  --border: rgba(255, 255, 255, 0.07);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --accent: #ececea; /* interactive = off-white, not a color */
+  --accent2: #ffffff;
+  --accent-alt: #5c5e66;
+  --danger: #e05d5d;
+  --success: #6fbf8f;
+  --chord: var(--accent-chord);
+  --nav-bg: rgba(13, 20, 24, 0.94);
   --surface-opaque: var(--ink-raised);
   --ghost-bg: rgba(255, 255, 255, 0.035);
   --focus-ring: 0 0 0 3px rgba(224, 183, 106, 0.22);
   --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.18);
 
   /* -- Semantic UI Variables -- */
-  --ui-header-bg:    var(--bg);
-  --ui-card-bg:      transparent;
-  --ui-modal-bg:     var(--surface2);
-  --ui-overlay:      rgba(6, 7, 9, 0.72);
-  --ui-shadow:       0 12px 40px rgba(0, 0, 0, 0.5);
-  --shadow-lg:       var(--ui-shadow);
-  --accent-bg:       rgba(236, 236, 234, 0.07);
-  --accent-rgb:      236, 236, 234;
+  --ui-header-bg: var(--bg);
+  --ui-card-bg: transparent;
+  --ui-modal-bg: var(--surface2);
+  --ui-overlay: rgba(6, 7, 9, 0.72);
+  --ui-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-lg: var(--ui-shadow);
+  --accent-bg: rgba(236, 236, 234, 0.07);
+  --accent-rgb: 236, 236, 234;
 
   /* -- Typography System -- */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
-               "Noto Sans TC", sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, "Times New Roman",
-                "PingFang TC", "Microsoft YaHei", serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang TC', 'PingFang SC', 'Microsoft YaHei UI',
+    'Microsoft YaHei', 'Noto Sans TC', sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', 'PingFang TC', 'Microsoft YaHei', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
 
   /* -- Badge System -- */
@@ -64,32 +63,32 @@
   --radius: 10px;
 }
 
-:root[data-theme="light"] {
+:root[data-theme='light'] {
   /* -- "Paper & Brass" (light) --
      Warm gallery white, ink text, same brass for the music. */
-  --bg:           #faf9f7;
-  --surface:      #ffffff;
-  --surface2:     #f1efeb;
-  --border:       rgba(20, 20, 24, 0.09);
-  --text:         #1d1e22;
-  --muted:        #73757c;
-  --accent:       #1d1e22;
-  --accent2:      #000000;
-  --accent-alt:   #a8a9ae;
-  --danger:       #c0392b;
-  --success:      #2e7d54;
-  --chord:        #9a7b45;
-  --nav-bg:       rgba(250, 249, 247, 0.94);
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface2: #f1efeb;
+  --border: rgba(20, 20, 24, 0.09);
+  --text: #1d1e22;
+  --muted: #73757c;
+  --accent: #1d1e22;
+  --accent2: #000000;
+  --accent-alt: #a8a9ae;
+  --danger: #c0392b;
+  --success: #2e7d54;
+  --chord: #9a7b45;
+  --nav-bg: rgba(250, 249, 247, 0.94);
   --surface-opaque: #ffffff;
   --ghost-bg: rgba(29, 30, 34, 0.035);
   --focus-ring: 0 0 0 3px rgba(154, 123, 69, 0.2);
   --shadow-sm: 0 6px 18px rgba(60, 55, 45, 0.08);
 
-  --ui-header-bg:    var(--bg);
-  --ui-card-bg:      transparent;
-  --ui-modal-bg:     #ffffff;
-  --ui-overlay:      rgba(29, 30, 34, 0.32);
-  --ui-shadow:       0 12px 36px rgba(60, 55, 45, 0.12);
-  --accent-bg:       rgba(29, 30, 34, 0.05);
-  --accent-rgb:      29, 30, 34;
+  --ui-header-bg: var(--bg);
+  --ui-card-bg: transparent;
+  --ui-modal-bg: #ffffff;
+  --ui-overlay: rgba(29, 30, 34, 0.32);
+  --ui-shadow: 0 12px 36px rgba(60, 55, 45, 0.12);
+  --accent-bg: rgba(29, 30, 34, 0.05);
+  --accent-rgb: 29, 30, 34;
 }

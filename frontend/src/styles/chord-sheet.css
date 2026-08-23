@@ -79,6 +79,26 @@
   margin-right: 1px;
 }
 
+/* Bar-notation / instrumental rows (Intro, Interlude, etc.) are a run of
+   many small chord chips with only bar ("|") and hold-beat ("/") punctuation
+   between them, no real lyric words — the default 1px column gap reads as
+   one dense, hard-to-scan run. Give chord-bearing columns real breathing
+   room; keep the punctuation columns tight so bars/beats still read as
+   attached to their neighboring chord rather than floating on their own.
+   Columns already wrap naturally at the row's edge (inline-flex, no
+   nowrap); the added margin-bottom gives that wrap a visible gap instead of
+   the next visual line butting straight up against the first, so a long
+   instrumental line settles into clearly separated rows — the same natural
+   grouping the "Center" example that prompted this had by hand. */
+.chord-sheet .row.row-instrumental .column {
+  margin-right: 0.7em;
+  margin-bottom: 0.4em;
+}
+
+.chord-sheet .row.row-instrumental .column.column-punct {
+  margin-right: 0.08em;
+}
+
 .chord-sheet-wrap {
   --font-scale: 1;
 }
@@ -630,4 +650,15 @@
     border-right: 0;
     border-radius: 0;
   }
+}
+
+/* Unparseable chart fallback: kept inside the .chord-sheet container so it
+   inherits the same font stack, spacing, and tone variables as a parsed chart. */
+.chord-sheet .chord-sheet-fallback {
+  font-family: var(--font-lyrics, 'Inter', system-ui, sans-serif);
+  font-size: calc(0.86rem * var(--font-scale, 1));
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--text, inherit);
+  padding: 0.5rem 0;
 }

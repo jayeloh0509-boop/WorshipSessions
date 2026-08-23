@@ -28,44 +28,61 @@ export function useSongEditor(initialContent: string = '') {
   const updateBadge = useCallback((text: string) => {
     const fmt = detectFormat(text);
     if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
+    else if (text?.trim())
+      setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
     else setFormatBadge(null);
   }, []);
 
-  const syncContentToFields = useCallback((text: string) => {
-    setTitle(extractDirective(text, 'title') || '');
-    setArtist(extractDirective(text, 'artist') || '');
-    const tempo = extractDirective(text, 'tempo');
-    setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
-    setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
-    const tagStr = extractDirective(text, 'x_tags');
-    setTags(tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : []);
-    setLanguage(extractDirective(text, 'x_language') || '');
-    updateBadge(text);
-  }, [updateBadge]);
+  const syncContentToFields = useCallback(
+    (text: string) => {
+      setTitle(extractDirective(text, 'title') || '');
+      setArtist(extractDirective(text, 'artist') || '');
+      const tempo = extractDirective(text, 'tempo');
+      setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
+      setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
+      const tagStr = extractDirective(text, 'x_tags');
+      setTags(
+        tagStr
+          ? tagStr
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
+      );
+      setLanguage(extractDirective(text, 'x_language') || '');
+      updateBadge(text);
+    },
+    [updateBadge],
+  );
 
-  const setInitialContent = useCallback((text: string) => {
-    setContent(text);
-    syncContentToFields(text);
-  }, [syncContentToFields]);
-
-  const handleContentChange = useCallback((text: string) => {
-    setContent(text);
-    updateBadge(text);
-    if (syncSource.current === 'field') return;
-    if (syncTimer.current) clearTimeout(syncTimer.current);
-    syncTimer.current = setTimeout(() => {
-      syncSource.current = 'editor';
+  const setInitialContent = useCallback(
+    (text: string) => {
+      setContent(text);
       syncContentToFields(text);
-      syncSource.current = null;
-    }, 150);
-  }, [syncContentToFields, updateBadge]);
+    },
+    [syncContentToFields],
+  );
+
+  const handleContentChange = useCallback(
+    (text: string) => {
+      setContent(text);
+      updateBadge(text);
+      if (syncSource.current === 'field') return;
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+      syncTimer.current = setTimeout(() => {
+        syncSource.current = 'editor';
+        syncContentToFields(text);
+        syncSource.current = null;
+      }, 150);
+    },
+    [syncContentToFields, updateBadge],
+  );
 
   const handleFieldChange = useCallback((directive: string, value: string, setter: (v: string) => void) => {
     setter(value);
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, directive, value || null));
+    setContent((prev) => updateDirective(prev, directive, value || null));
     syncSource.current = null;
   }, []);
 
@@ -74,7 +91,7 @@ export function useSongEditor(initialContent: string = '') {
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
     const val = newTags.length > 0 ? newTags.join(',') : null;
-    setContent(prev => updateDirective(prev, 'x_tags', val));
+    setContent((prev) => updateDirective(prev, 'x_tags', val));
     syncSource.current = null;
   }, []);
 
@@ -82,7 +99,7 @@ export function useSongEditor(initialContent: string = '') {
     setLanguage(lang);
     if (syncSource.current === 'editor') return;
     syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, 'x_language', lang || null));
+    setContent((prev) => updateDirective(prev, 'x_language', lang || null));
     syncSource.current = null;
   }, []);
 
@@ -99,6 +116,6 @@ export function useSongEditor(initialContent: string = '') {
     setYoutubeUrl,
     setBpm,
     setTags,
-    setLanguage
+    setLanguage,
   };
 }

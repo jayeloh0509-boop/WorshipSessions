@@ -39,35 +39,40 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const [totalPages, setTotalPages] = useState(1);
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
-    if (!user) return;
-    const params: string[] = [];
-    if (q) params.push(`q=${encodeURIComponent(q)}`);
-    if (from) params.push(`date_from=${encodeURIComponent(from)}`);
-    if (to) params.push(`date_to=${encodeURIComponent(to)}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    const qs = params.length > 0 ? `?${params.join('&')}` : '';
-    try {
-      interface PaginatedSetlistsResponse {
-        setlists: SetlistListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+  const load = useCallback(
+    async (q = '', from = '', to = '', targetPage = 1) => {
+      if (!user) return;
+      const params: string[] = [];
+      if (q) params.push(`q=${encodeURIComponent(q)}`);
+      if (from) params.push(`date_from=${encodeURIComponent(from)}`);
+      if (to) params.push(`date_to=${encodeURIComponent(to)}`);
+      params.push(`page=${targetPage}`);
+      params.push(`limit=20`);
+      const qs = params.length > 0 ? `?${params.join('&')}` : '';
+      try {
+        interface PaginatedSetlistsResponse {
+          setlists: SetlistListItem[];
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        }
+        const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
+        setSetlists(data.setlists);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+        setLoaded(true);
+
+        setSessionItem('cv_setlists_query', q);
+        setSessionItem('cv_setlists_date_from', from);
+        setSessionItem('cv_setlists_date_to', to);
+        setSessionItem('cv_setlists_page', String(data.page));
+      } catch (e) {
+        toast((e as Error).message, 'error');
       }
-      const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
-      setSetlists(data.setlists);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setLoaded(true);
-      
-      setSessionItem('cv_setlists_query', q);
-      setSessionItem('cv_setlists_date_from', from);
-      setSessionItem('cv_setlists_date_to', to);
-      setSessionItem('cv_setlists_page', String(data.page));
-    } catch (e) { toast((e as Error).message, 'error'); }
-  }, [apiCall, toast, user]);
+    },
+    [apiCall, toast, user],
+  );
 
   useEffect(() => {
     if (activeTab === 'cloud') {
@@ -78,15 +83,26 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load, activeTab]);
 
-  useEffect(() => { if (showNew && nameRef.current) nameRef.current.focus(); }, [showNew]);
+  useEffect(() => {
+    if (showNew && nameRef.current) nameRef.current.focus();
+  }, [showNew]);
 
   const create = async () => {
-    if (!newName.trim()) { toast(t('setlist.nameRequired'), 'error'); return; }
-    if (newName.length > 200) { toast('Name too long', 'error'); return; }
+    if (!newName.trim()) {
+      toast(t('setlist.nameRequired'), 'error');
+      return;
+    }
+    if (newName.length > 200) {
+      toast('Name too long', 'error');
+      return;
+    }
 
     if (activeTab === 'local') {
       const sl = ls.create(newName.trim());
-      if (!sl) { toast('Max 50 setlists', 'error'); return; }
+      if (!sl) {
+        toast('Max 50 setlists', 'error');
+        return;
+      }
       toast(t('setlist.created'), 'success');
       navigate('setlist-edit', { id: sl.id });
     } else {
@@ -94,7 +110,9 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         const result = await apiCall<{ id: number }>('POST', '/api/setlists', { name: newName.trim() });
         toast(t('setlist.created'), 'success');
         navigate('setlist-edit', { id: String(result.id) });
-      } catch (e) { toast((e as Error).message, 'error'); }
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
     }
   };
 
@@ -121,18 +139,22 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   };
 
   const localSetlistsToRender = query.trim()
-    ? ls.setlists.filter(sl => sl.name.toLowerCase().includes(query.toLowerCase()))
+    ? ls.setlists.filter((sl) => sl.name.toLowerCase().includes(query.toLowerCase()))
     : ls.setlists;
 
   return (
     <>
       <div className="view-header">
         <h2 className="view-title">{t('setlist.title')}</h2>
-        <button className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</button>
+        <button className="btn btn-sm" onClick={() => setShowNew(true)}>
+          {t('setlist.newSetlist')}
+        </button>
       </div>
       <div className="setlist-tabs">
         <button className="setlist-tab active">My Setlists</button>
-        <button className="setlist-tab" onClick={() => navigate('public-setlists')}>Public Setlists</button>
+        <button className="setlist-tab" onClick={() => navigate('public-setlists')}>
+          Public Setlists
+        </button>
       </div>
       {!user && (
         <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>
@@ -147,10 +169,16 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             placeholder={t('setlist.namePlaceholder')}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') create();
+            }}
           />
-          <button className="btn btn-sm" onClick={create}>{t('setlist.create')}</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>{t('songEdit.cancel')}</button>
+          <button className="btn btn-sm" onClick={create}>
+            {t('setlist.create')}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(false)}>
+            {t('songEdit.cancel')}
+          </button>
         </div>
       )}
       <div className="search-row">
@@ -166,14 +194,12 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                 setSessionItem('cv_setlists_query', val);
               }
             }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearch();
+            }}
           />
           {query && (
-            <button
-              className="search-clear-btn"
-              onClick={handleClear}
-              title="Clear search"
-            >
+            <button className="search-clear-btn" onClick={handleClear} title="Clear search">
               &times;
             </button>
           )}
@@ -190,7 +216,9 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
             &#128197; Date
           </button>
         )}
-        <button className="btn btn-ghost btn-sm" onClick={handleSearch}>{t('songs.search')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={handleSearch}>
+          {t('songs.search')}
+        </button>
       </div>
       {activeTab === 'cloud' && showDates && (
         <div className="search-row" style={{ marginTop: -10 }}>
@@ -201,8 +229,8 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         </div>
       )}
       <div className="song-grid">
-        {loaded && (
-          activeTab === 'cloud' ? (
+        {loaded &&
+          (activeTab === 'cloud' ? (
             setlists.length === 0 ? (
               <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
             ) : (
@@ -216,32 +244,27 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                 />
               ))
             )
+          ) : localSetlistsToRender.length === 0 ? (
+            <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
           ) : (
-            localSetlistsToRender.length === 0 ? (
-              <EmptyState icon="&#127926;" text={t('setlist.noSetlists')} />
-            ) : (
-              localSetlistsToRender.map((sl) => (
-                <SetlistCard
-                  key={sl.id}
-                  setlist={{
-                    id: sl.id,
-                    name: sl.name,
-                    visibility: 'private',
-                    song_count: sl.entries.length,
-                    event_date: null,
-                  }}
-                  onClick={() => navigate('setlist-edit', { id: sl.id })}
-                  onPrepare={() => navigate('setlist-edit', { id: sl.id })}
-                  onPlay={() => navigate('setlist-play', { id: sl.id, local: '1' })}
-                />
-              ))
-            )
-          )
-        )}
+            localSetlistsToRender.map((sl) => (
+              <SetlistCard
+                key={sl.id}
+                setlist={{
+                  id: sl.id,
+                  name: sl.name,
+                  visibility: 'private',
+                  song_count: sl.entries.length,
+                  event_date: null,
+                }}
+                onClick={() => navigate('setlist-edit', { id: sl.id })}
+                onPrepare={() => navigate('setlist-edit', { id: sl.id })}
+                onPlay={() => navigate('setlist-play', { id: sl.id, local: '1' })}
+              />
+            ))
+          ))}
       </div>
-      {activeTab === 'cloud' && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-      )}
+      {activeTab === 'cloud' && <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />}
     </>
   );
 }

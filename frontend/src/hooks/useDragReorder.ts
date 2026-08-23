@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export function useDragReorder<T>(
-  initialItems: T[],
-  onSave: (items: T[]) => void
-) {
+export function useDragReorder<T>(initialItems: T[], onSave: (items: T[]) => void) {
   const [items, setItems] = useState<T[]>(initialItems);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [canDrag, setCanDrag] = useState(false);
@@ -53,7 +50,7 @@ export function useDragReorder<T>(
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (currentTouchIdx.current === null) return;
-    
+
     // Prevent default scrolling behavior on mobile while dragging
     if (e.cancelable) {
       e.preventDefault();
@@ -72,7 +69,7 @@ export function useDragReorder<T>(
     const reordered = [...items];
     const [draggedItem] = reordered.splice(currentTouchIdx.current, 1);
     reordered.splice(hoverIdx, 0, draggedItem);
-    
+
     currentTouchIdx.current = hoverIdx;
     setDraggedIdx(hoverIdx);
     setItems(reordered);

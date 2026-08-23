@@ -39,7 +39,9 @@ export function AddToSetlistModal({
       try {
         const sls = await apiCall<SetlistListItem[]>('GET', '/api/setlists');
         setUserSetlists(sls);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     } else {
       const formatted = setlists.map((sl) => ({
         id: sl.id,
@@ -77,7 +79,12 @@ export function AddToSetlistModal({
       return;
     }
     if (songVisibility === 'private' && targetSetlist?.visibility === 'public') {
-      if (!confirm('This song is private. Other viewers of this public setlist will see it as "[Private Song]". Continue?')) return;
+      if (
+        !confirm(
+          'This song is private. Other viewers of this public setlist will see it as "[Private Song]". Continue?',
+        )
+      )
+        return;
     }
     try {
       await apiCall('POST', `/api/setlists/${targetId}/songs`, {

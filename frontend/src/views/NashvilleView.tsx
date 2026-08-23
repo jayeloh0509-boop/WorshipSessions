@@ -104,11 +104,7 @@ export function NashvilleView({ navigate }: NashvilleViewProps) {
           {direction === 'toChords' && (
             <div className="field">
               <label htmlFor="nash-acc">Accidentals</label>
-              <select
-                id="nash-acc"
-                value={accPref}
-                onChange={(e) => setAccPref(e.target.value as AccPref)}
-              >
+              <select id="nash-acc" value={accPref} onChange={(e) => setAccPref(e.target.value as AccPref)}>
                 <option value="auto">Automatic</option>
                 <option value="sharp">Sharps (#)</option>
                 <option value="flat">Flats (b)</option>
@@ -147,7 +143,9 @@ export function NashvilleView({ navigate }: NashvilleViewProps) {
             <span className="tool-chip-label">
               {direction === 'toNumbers' ? `Numbers in ${keyName}` : `Chords in ${keyName}`}
             </span>
-            <pre className="tool-output" aria-label="Converted chart">{output}</pre>
+            <pre className="tool-output" aria-label="Converted chart">
+              {output}
+            </pre>
             <div className="tool-actions">
               <CopyButton getText={() => output} />
             </div>
@@ -156,9 +154,8 @@ export function NashvilleView({ navigate }: NashvilleViewProps) {
         {unchanged && (
           <div className="tool-result">
             <p className="tool-empty">
-              Nothing to convert — no {direction === 'toNumbers' ? 'chord symbols' : 'number tokens'}{' '}
-              were recognized in the text. Chord lines need mostly chords (lyric lines are left
-              alone on purpose).
+              Nothing to convert — no {direction === 'toNumbers' ? 'chord symbols' : 'number tokens'} were recognized in
+              the text. Chord lines need mostly chords (lyric lines are left alone on purpose).
             </p>
           </div>
         )}
@@ -176,9 +173,8 @@ export function NashvilleView({ navigate }: NashvilleViewProps) {
               ))}
             </div>
             <p className="tool-note">
-              Numbers count from the major scale of the tonic, so minor keys read b3, b6 and b7 for
-              their diatonic chords. Extensions and slash chords ride along (Em7 in G &#8594; 6m7,
-              D/F# &#8594; 5/7).
+              Numbers count from the major scale of the tonic, so minor keys read b3, b6 and b7 for their diatonic
+              chords. Extensions and slash chords ride along (Em7 in G &#8594; 6m7, D/F# &#8594; 5/7).
             </p>
           </div>
         )}

@@ -9,14 +9,7 @@ interface KeyPickerProps {
   onSaveLocal?: () => void;
 }
 
-export function KeyPicker({ 
-  currentKey, 
-  onPickKey, 
-  visible, 
-  isModified, 
-  onSaveOnline, 
-  onSaveLocal 
-}: KeyPickerProps) {
+export function KeyPicker({ currentKey, onPickKey, visible, isModified, onSaveOnline, onSaveLocal }: KeyPickerProps) {
   if (!visible) return null;
 
   const norm = normalizeKey(currentKey);
@@ -27,11 +20,7 @@ export function KeyPicker({
     <div className="key-picker" id="key-picker">
       <div className="key-grid">
         {keys.map((k) => (
-          <button
-            key={k}
-            className={`key-pill${k === norm ? ' active' : ''}`}
-            onClick={() => onPickKey(k)}
-          >
+          <button key={k} className={`key-pill${k === norm ? ' active' : ''}`} onClick={() => onPickKey(k)}>
             {k}
           </button>
         ))}

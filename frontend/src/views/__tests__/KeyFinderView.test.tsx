@@ -9,7 +9,7 @@ function renderView(navigate: (view: string) => void = () => {}) {
   return render(
     <ToastProvider>
       <KeyFinderView navigate={navigate} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 
@@ -63,9 +63,7 @@ describe('KeyFinderView', () => {
     await userEvent.type(screen.getByLabelText('Chord input'), 'C Am F G');
     await userEvent.click(screen.getByRole('button', { name: 'Find key' }));
     const group = screen.getByRole('group', { name: 'Choose working key' });
-    const alt = Array.from(group.querySelectorAll('button')).find(
-      (b) => b.getAttribute('aria-pressed') === 'false'
-    )!;
+    const alt = Array.from(group.querySelectorAll('button')).find((b) => b.getAttribute('aria-pressed') === 'false')!;
     const altKey = alt.textContent!.match(/^[A-G][#b]? (major|minor)/)![0];
     await userEvent.click(alt);
     expect(alt).toHaveAttribute('aria-pressed', 'true');

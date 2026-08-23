@@ -73,9 +73,7 @@ export function DiatonicChordsView({ navigate }: DiatonicChordsViewProps) {
         {key && (
           <>
             <div className="tool-chip-section">
-              <span className="tool-chip-label">
-                Scale notes{key.minor ? ' (natural minor)' : ''}
-              </span>
+              <span className="tool-chip-label">Scale notes{key.minor ? ' (natural minor)' : ''}</span>
               <div className="tool-chips">
                 {scaleNotes(key).map((n, i) => (
                   <span key={`${n}${i}`} className="tool-chip">
@@ -109,8 +107,8 @@ export function DiatonicChordsView({ navigate }: DiatonicChordsViewProps) {
 
             {key.minor && (
               <p className="tool-note">
-                Worship songs in minor keys usually swap the v chord for a major V (harmonic minor)
-                when they want a stronger pull back to {key.name}.
+                Worship songs in minor keys usually swap the v chord for a major V (harmonic minor) when they want a
+                stronger pull back to {key.name}.
               </p>
             )}
 
@@ -129,11 +127,7 @@ export function DiatonicChordsView({ navigate }: DiatonicChordsViewProps) {
                         </span>
                       ))}
                     </div>
-                    <CopyButton
-                      getText={() => text}
-                      label="Copy"
-                      className="btn btn-ghost btn-sm prog-copy"
-                    />
+                    <CopyButton getText={() => text} label="Copy" className="btn btn-ghost btn-sm prog-copy" />
                   </div>
                 );
               })}

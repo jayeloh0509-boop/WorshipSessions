@@ -31,7 +31,12 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
   router.get('/config', (req, res) => {
     const userCount = User.count().count;
     const hasInvites = Invite.countPending() > 0;
-    res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
+    res.json({
+      allowRegistration: isRegistrationAllowed() || userCount === 0,
+      invitesEnabled: hasInvites,
+      turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null,
+      demoMode: DEMO_MODE,
+    });
   });
 
   router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
@@ -55,7 +60,9 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const hash = await hashPassword(password);
     try {
       const result = User.create(username.trim(), hash, role);
-      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
+      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, {
+        expiresIn: '30d',
+      });
       res.json({ token, id: result.lastInsertRowid, username: username.trim(), role });
     } catch (e) {
       const appErr = handleDbError(e, { uniqueMessage: 'Username already taken' });
@@ -91,7 +98,9 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const hash = await hashPassword(password);
     try {
       const result = Invite.redeem(code.trim(), username.trim(), hash);
-      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
+      const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, {
+        expiresIn: '30d',
+      });
       res.json({ token, id: result.lastInsertRowid, username: username.trim(), role: ROLES.USER });
     } catch (e) {
       const appErr = handleDbError(e, { uniqueMessage: 'Username already taken' });
@@ -101,8 +110,10 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
 
   router.put('/password', blockInDemo, requireAuth, async (req, res) => {
     const { current_password, new_password } = req.body;
-    if (!current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
-    if (new_password.length < LIMITS.PASSWORD_MIN) return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });
+    if (!current_password || !new_password)
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    if (new_password.length < LIMITS.PASSWORD_MIN)
+      return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });
     const user = User.getFullById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (!(await bcrypt.compare(current_password, user.password_hash))) {

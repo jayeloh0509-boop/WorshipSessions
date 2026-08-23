@@ -16,7 +16,7 @@
 │   ├── songs.js       # Song CRUD, versions, corrections
 │   ├── setlists.js    # Setlist management and entries
 │   ├── admin.js       # Admin dashboard and user management
-│   └── settings.js    # User settings and OCR proxy
+│   └── settings.js    # User settings (preferred languages)
 ├── frontend/          # React + TypeScript SPA (Vite)
 │   └── src/
 │       ├── components/  # Reusable UI components

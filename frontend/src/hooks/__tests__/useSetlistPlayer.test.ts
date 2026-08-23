@@ -65,7 +65,7 @@ describe('useSetlistPlayer Hook', () => {
       useSetlistPlayer({
         setlistId: 1,
         navigate,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -85,7 +85,7 @@ describe('useSetlistPlayer Hook', () => {
       useSetlistPlayer({
         setlistId: 1,
         navigate,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -120,7 +120,7 @@ describe('useSetlistPlayer Hook', () => {
       useSetlistPlayer({
         setlistId: 1,
         navigate,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -131,19 +131,15 @@ describe('useSetlistPlayer Hook', () => {
     act(() => {
       result.current.updateEntry({ transpose: 5 });
     });
- 
+
     mockApiCall.mockResolvedValueOnce({ success: true });
- 
+
     await act(async () => {
       await result.current.saveOnline(true);
     });
 
     // Verify PUT request only sends transpose
-    expect(mockApiCall).toHaveBeenLastCalledWith(
-      'PUT',
-      '/api/setlists/1/entries/entry_1',
-      { transpose: 5 }
-    );
+    expect(mockApiCall).toHaveBeenLastCalledWith('PUT', '/api/setlists/1/entries/entry_1', { transpose: 5 });
     expect(result.current.isModified).toBe(false);
   });
 
@@ -154,7 +150,7 @@ describe('useSetlistPlayer Hook', () => {
       useSetlistPlayer({
         setlistId: 1,
         navigate,
-      })
+      }),
     );
 
     await waitFor(() => {

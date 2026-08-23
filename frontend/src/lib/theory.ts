@@ -176,8 +176,10 @@ export type TokenMapper = (token: string) => string | null;
 const BRACKET_RE = /\[([^\]]+)\]/g;
 const DIRECTIVE_LINE_RE = /^\s*\{[^}]*\}\s*$/;
 const KEY_DIRECTIVE_RE = /^(\s*\{key:\s*)([^}]*?)(\s*\}\s*)$/i;
-// Tokens that live on chord lines but are not chords (bars, repeats, rests)
-const SEPARATOR_TOKEN_RE = /^(?:-+|\/+|%|x\d+|\d+x|N\.?C\.?)$/i;
+// Tokens that live on chord lines but are not chords (bars, repeats, rests).
+// Exported so other chart-parsing code (chords.ts's compact-bar notation) can
+// recognize the same vocabulary instead of maintaining a second definition.
+export const SEPARATOR_TOKEN_RE = /^(?:-+|\/+|%|x\d+|\d+x|N\.?C\.?)$/i;
 
 function peelToken(chunk: string): { lead: string; core: string; trail: string } {
   const lead = chunk.match(/^[([|]+/)?.[0] ?? '';
@@ -193,7 +195,7 @@ function peelToken(chunk: string): { lead: string; core: string; trail: string }
 export function transformChart(
   text: string,
   mapToken: TokenMapper,
-  opts: { mapKeyDirective?: (value: string) => string | null } = {}
+  opts: { mapKeyDirective?: (value: string) => string | null } = {},
 ): string {
   return text
     .split('\n')
@@ -250,7 +252,7 @@ export function transposeChart(text: string, semitones: number, accidental: Acci
         if (!key) return null;
         return pcToName(key.tonicPc + semitones, accidental) + (key.minor ? 'm' : '');
       },
-    }
+    },
   );
 }
 
@@ -406,8 +408,7 @@ export function chordDegree(chord: ParsedChord, key: KeyInfo): DegreeLabel | nul
   if (chord.quality === 'aug') roman += '+';
   return {
     roman: accPrefix + roman,
-    nashville:
-      token + (chord.quality === 'minor' ? 'm' : chord.quality === 'dim' ? '°' : ''),
+    nashville: token + (chord.quality === 'minor' ? 'm' : chord.quality === 'dim' ? '°' : ''),
     diatonic: false,
   };
 }

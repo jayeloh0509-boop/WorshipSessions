@@ -5,8 +5,9 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('filenameFromDisposition', () => {
   it('parses the filename from a Content-Disposition header', () => {
-    expect(filenameFromDisposition('attachment; filename="worshipsessions-export-2026-07-14.zip"', 'x.zip'))
-      .toBe('worshipsessions-export-2026-07-14.zip');
+    expect(filenameFromDisposition('attachment; filename="worshipsessions-export-2026-07-14.zip"', 'x.zip')).toBe(
+      'worshipsessions-export-2026-07-14.zip',
+    );
   });
   it('falls back when header is missing', () => {
     expect(filenameFromDisposition(null, 'fallback.zip')).toBe('fallback.zip');
@@ -33,11 +34,14 @@ describe('exportSongsBlob', () => {
   });
 
   it('throws ApiError on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      json: async () => ({ error: 'Too many requests. Please try again later.' }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({ error: 'Too many requests. Please try again later.' }),
+      }),
+    );
     await expect(exportSongsBlob('tok')).rejects.toMatchObject({ status: 429 });
   });
 });

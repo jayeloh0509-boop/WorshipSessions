@@ -281,16 +281,17 @@ describe('progressions', () => {
   it('renders Nashville progressions into a key', () => {
     expect(renderProgression(['1', '5', '6m', '4'], parseKeyName('G')!)).toEqual(['G', 'D', 'Em', 'C']);
     expect(renderProgression(WORSHIP_PROGRESSIONS_MAJOR[0].tokens, parseKeyName('Bb')!)).toEqual([
-      'Bb', 'F', 'Gm', 'Eb',
+      'Bb',
+      'F',
+      'Gm',
+      'Eb',
     ]);
   });
 });
 
 describe('transformChart plumbing', () => {
   it('only rewrites lines where most tokens map', () => {
-    const out = transformChart('Great is thy faithfulness\nG  C  D', (t) =>
-      parseChordSymbol(t) ? `<${t}>` : null
-    );
+    const out = transformChart('Great is thy faithfulness\nG  C  D', (t) => (parseChordSymbol(t) ? `<${t}>` : null));
     expect(out.split('\n')[0]).toBe('Great is thy faithfulness');
     expect(out.split('\n')[1]).toBe('<G>  <C>  <D>');
   });

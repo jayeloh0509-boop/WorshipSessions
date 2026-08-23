@@ -16,20 +16,27 @@ export function AuthView({ navigate }: AuthViewProps) {
   const [password, setPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
-  const [config, setConfig] = useState<AuthConfig>({ allowRegistration: true, invitesEnabled: false, turnstileSiteKey: null, demoMode: false });
+  const [config, setConfig] = useState<AuthConfig>({
+    allowRegistration: true,
+    invitesEnabled: false,
+    turnstileSiteKey: null,
+    demoMode: false,
+  });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const userRef = useRef<HTMLInputElement>(null);
   const inviteRef = useRef<HTMLInputElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
-      setConfig(cfg);
-      if (cfg.demoMode) {
-        setUsername('demo');
-        setPassword('demopass123');
-      }
-    }).catch(() => {});
+    api<AuthConfig>('GET', '/api/auth/config')
+      .then((cfg) => {
+        setConfig(cfg);
+        if (cfg.demoMode) {
+          setUsername('demo');
+          setPassword('demopass123');
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -44,7 +51,9 @@ export function AuthView({ navigate }: AuthViewProps) {
 
     const scriptId = 'cf-turnstile-script';
     const renderWidget = () => {
-      const w = window as unknown as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; callback: (token: string) => void }) => void } };
+      const w = window as unknown as {
+        turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; callback: (token: string) => void }) => void };
+      };
       if (turnstileRef.current && w.turnstile) {
         while (turnstileRef.current.firstChild) turnstileRef.current.removeChild(turnstileRef.current.firstChild);
         w.turnstile.render(turnstileRef.current, {
@@ -69,26 +78,44 @@ export function AuthView({ navigate }: AuthViewProps) {
   const submit = async () => {
     setError('');
     if (tab === 'invite') {
-      if (!inviteCode || !username || !password) { setError(t('auth.fillAllFields')); return; }
+      if (!inviteCode || !username || !password) {
+        setError(t('auth.fillAllFields'));
+        return;
+      }
       try {
-        const data = await api<AuthResponse>('POST', '/api/auth/redeem-invite', { code: inviteCode, username, password, turnstile_token: turnstileToken });
+        const data = await api<AuthResponse>('POST', '/api/auth/redeem-invite', {
+          code: inviteCode,
+          username,
+          password,
+          turnstile_token: turnstileToken,
+        });
         login(data);
         navigate('browse');
-      } catch (e) { setError((e as Error).message); }
+      } catch (e) {
+        setError((e as Error).message);
+      }
       return;
     }
-    if (!username || !password) { setError(t('auth.fillAllFields')); return; }
+    if (!username || !password) {
+      setError(t('auth.fillAllFields'));
+      return;
+    }
     try {
       const effectiveTab = !config.allowRegistration ? 'login' : tab;
       const endpoint = effectiveTab === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const body = effectiveTab === 'login' ? { username, password } : { username, password, turnstile_token: turnstileToken };
+      const body =
+        effectiveTab === 'login' ? { username, password } : { username, password, turnstile_token: turnstileToken };
       const data = await api<AuthResponse>('POST', endpoint, body);
       login(data);
       navigate('browse');
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter') submit(); };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') submit();
+  };
   const showTabs = config.allowRegistration;
   const showInviteLink = !config.allowRegistration && config.invitesEnabled && tab !== 'invite';
 
@@ -99,37 +126,82 @@ export function AuthView({ navigate }: AuthViewProps) {
         <div className="auth-tagline">{t('auth.tagline')}</div>
         {showTabs && (
           <div className="auth-tabs">
-            <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>{t('auth.signIn')}</button>
-            <button className={`auth-tab${tab !== 'login' ? ' active' : ''}`} onClick={() => setTab('register')}>{t('auth.register')}</button>
+            <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>
+              {t('auth.signIn')}
+            </button>
+            <button className={`auth-tab${tab !== 'login' ? ' active' : ''}`} onClick={() => setTab('register')}>
+              {t('auth.register')}
+            </button>
           </div>
         )}
         {tab === 'invite' && (
           <div className="field">
             <label>{t('auth.inviteCode')}</label>
-            <input type="text" ref={inviteRef} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder={t('auth.inviteCodePlaceholder')} autoComplete="off" onKeyDown={onKeyDown} />
+            <input
+              type="text"
+              ref={inviteRef}
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder={t('auth.inviteCodePlaceholder')}
+              autoComplete="off"
+              onKeyDown={onKeyDown}
+            />
           </div>
         )}
         <div className="field">
           <label>{t('auth.username')}</label>
-          <input type="text" ref={userRef} id="auth-user" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t('auth.usernamePlaceholder')} autoComplete="username" onKeyDown={onKeyDown} />
+          <input
+            type="text"
+            ref={userRef}
+            id="auth-user"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder={t('auth.usernamePlaceholder')}
+            autoComplete="username"
+            onKeyDown={onKeyDown}
+          />
         </div>
         <div className="field">
           <label>{t('auth.password')}</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete={tab === 'login' ? 'current-password' : 'new-password'} onKeyDown={onKeyDown} />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
+            onKeyDown={onKeyDown}
+          />
         </div>
         {config.turnstileSiteKey && tab !== 'login' && <div ref={turnstileRef} style={{ marginTop: 8 }} />}
         <button className="btn btn-full" id="auth-submit" style={{ marginTop: 8 }} onClick={submit}>
-          {tab === 'invite' ? t('auth.createAccount') : (tab === 'login' || !showTabs ? t('auth.signIn') : t('auth.createAccount'))}
+          {tab === 'invite'
+            ? t('auth.createAccount')
+            : tab === 'login' || !showTabs
+              ? t('auth.signIn')
+              : t('auth.createAccount')}
         </button>
         {showInviteLink && (
-          <button className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</button>
+          <button className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>
+            {t('auth.haveInvite')}
+          </button>
         )}
         {tab === 'invite' && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <a href="#" onClick={(e) => { e.preventDefault(); setTab('login'); }} style={{ fontSize: 13, color: 'var(--muted)' }}>{t('auth.backToLogin')}</a>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setTab('login');
+              }}
+              style={{ fontSize: 13, color: 'var(--muted)' }}
+            >
+              {t('auth.backToLogin')}
+            </a>
           </div>
         )}
-        {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</div>}
+        {error && (
+          <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</div>
+        )}
       </div>
     </div>
   );

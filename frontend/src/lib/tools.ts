@@ -200,9 +200,7 @@ export function capoOptions(targetKey: string): CapoOption[] {
   const target = keyIndex(targetKey);
   if (!target) return [];
   const shapes = target.isMinor ? OPEN_SHAPES_MINOR : OPEN_SHAPES_MAJOR;
-  const options = shapes
-    .map((s) => capoForShape(targetKey, s))
-    .filter((o): o is CapoOption => o !== null);
+  const options = shapes.map((s) => capoForShape(targetKey, s)).filter((o): o is CapoOption => o !== null);
   options.sort((a, b) => a.capo - b.capo || shapes.indexOf(a.shape) - shapes.indexOf(b.shape));
   return options;
 }

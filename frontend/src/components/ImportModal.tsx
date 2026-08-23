@@ -62,8 +62,12 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
 
   const start = async () => {
     if (files.length === 0) return;
-    if (!demoMode && files.length > IMPORT_CONFIRM_FILE_COUNT &&
-        !confirm(`You selected ${files.length} files. Import all of them?`)) return;
+    if (
+      !demoMode &&
+      files.length > IMPORT_CONFIRM_FILE_COUNT &&
+      !confirm(`You selected ${files.length} files. Import all of them?`)
+    )
+      return;
 
     setBusy(true);
     try {
@@ -94,11 +98,19 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
   };
 
   return createPortal(
-    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
+    <div
+      className="modal-backdrop"
+      data-overlay
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onClose();
+      }}
+    >
       <div className="ocr-card">
         <div className="view-header" style={{ marginBottom: 16 }}>
           <h3 className="view-title">Import ChordPro files</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={busy}>&#10005;</button>
+          <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={busy}>
+            &#10005;
+          </button>
         </div>
 
         {!summary && (
@@ -120,9 +132,22 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
                 Demo mode: only the first {DEMO_MAX_IMPORT} songs will be imported.
               </div>
             )}
-            {files.length > 0 && <div className="muted-text" style={{ marginBottom: 12 }}>{files.length} file(s) selected</div>}
-            {busy && <div className="muted-text" style={{ marginBottom: 12 }}>Importing {progress} / {total}…</div>}
-            <button className="btn btn-primary" data-testid="import-start" onClick={start} disabled={busy || files.length === 0}>
+            {files.length > 0 && (
+              <div className="muted-text" style={{ marginBottom: 12 }}>
+                {files.length} file(s) selected
+              </div>
+            )}
+            {busy && (
+              <div className="muted-text" style={{ marginBottom: 12 }}>
+                Importing {progress} / {total}…
+              </div>
+            )}
+            <button
+              className="btn btn-primary"
+              data-testid="import-start"
+              onClick={start}
+              disabled={busy || files.length === 0}
+            >
               {busy ? 'Importing…' : 'Import'}
             </button>
           </>
@@ -131,17 +156,24 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
         {summary && (
           <div data-testid="import-summary">
             <p>
-              <strong>{summary.imported}</strong> imported ·{' '}
-              <strong>{summary.skipped.length}</strong> already in your library ·{' '}
-              <strong>{summary.errors.length}</strong> errors
+              <strong>{summary.imported}</strong> imported · <strong>{summary.skipped.length}</strong> already in your
+              library · <strong>{summary.errors.length}</strong> errors
             </p>
             {summary.errors.length > 0 && (
               <details>
                 <summary>Skipped with errors ({summary.errors.length})</summary>
-                <ul>{summary.errors.map((er, i) => <li key={i}>{er.filename} — {er.error}</li>)}</ul>
+                <ul>
+                  {summary.errors.map((er, i) => (
+                    <li key={i}>
+                      {er.filename} — {er.error}
+                    </li>
+                  ))}
+                </ul>
               </details>
             )}
-            <button className="btn" onClick={onClose}>Done</button>
+            <button className="btn" onClick={onClose}>
+              Done
+            </button>
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useDemo } from '../context/DemoContext';
 import { useAuth } from '../context/AuthContext';
 import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
-import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
+import { MAX_PREFERRED_LANGUAGES } from '../lib/constants';
 
 export function SettingsView() {
   const apiCall = useApi();
@@ -15,19 +15,9 @@ export function SettingsView() {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwMsg, setPwMsg] = useState<{ text: string; color: string } | null>(null);
-  const [geminiStatus, setGeminiStatus] = useState<string>('Checking...');
-  const [geminiKey, setGeminiKey] = useState('');
-  const [geminiMsg, setGeminiMsg] = useState<{ text: string; color: string } | null>(null);
   const [preferredLangs, setPreferredLangs] = useState<string[]>([]);
   const [langSearch, setLangSearch] = useState('');
   const [langMsg, setLangMsg] = useState<{ text: string; color: string } | null>(null);
-  const [ocrPrompt, setOcrPrompt] = useState('');
-  const [defaultPrompt, setDefaultPrompt] = useState('');
-  const [hasCustomPrompt, setHasCustomPrompt] = useState(false);
-  const [promptMsg, setPromptMsg] = useState<{ text: string; color: string } | null>(null);
-  const [ocrModel, setOcrModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [modelList, setModelList] = useState<{ id: string; label: string; hint: string }[]>([]);
-  const [modelMsg, setModelMsg] = useState<{ text: string; color: string } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState<{ text: string; color: string } | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -39,93 +29,33 @@ export function SettingsView() {
     } catch {}
   }, [apiCall]);
 
-  const loadGeminiStatus = useCallback(async () => {
-    try {
-      const data = await apiCall<{ hasKey: boolean }>('GET', '/api/settings/gemini-key');
-      setGeminiStatus(data.hasKey ? '✓ Key saved' : 'No key set');
-    } catch { setGeminiStatus('Could not check status'); }
-  }, [apiCall]);
-
-  const loadOcrPrompt = useCallback(async () => {
-    try {
-      const data = await apiCall<{ prompt: string | null; defaultPrompt: string }>('GET', '/api/settings/ocr-prompt');
-      setDefaultPrompt(data.defaultPrompt);
-      if (data.prompt) {
-        setOcrPrompt(data.prompt);
-        setHasCustomPrompt(true);
-      }
-    } catch {}
-  }, [apiCall]);
-
-  const loadOcrModel = useCallback(async () => {
-    try {
-      const data = await apiCall<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model');
-      setOcrModel(data.model);
-      setModelList(data.models);
-    } catch {}
-  }, [apiCall]);
-
-  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); loadOcrModel(); }, [loadGeminiStatus, loadOcrPrompt, loadOcrModel]);
-  useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
+  useEffect(() => {
+    loadPreferredLangs();
+  }, [loadPreferredLangs]);
 
   const changePassword = async () => {
     setPwMsg(null);
-    if (!currentPw || !newPw || !confirmPw) { setPwMsg({ text: 'All fields are required', color: 'var(--danger)' }); return; }
-    if (newPw.length < 6) { setPwMsg({ text: 'New password must be at least 6 characters', color: 'var(--danger)' }); return; }
-    if (newPw !== confirmPw) { setPwMsg({ text: 'New passwords do not match', color: 'var(--danger)' }); return; }
+    if (!currentPw || !newPw || !confirmPw) {
+      setPwMsg({ text: 'All fields are required', color: 'var(--danger)' });
+      return;
+    }
+    if (newPw.length < 6) {
+      setPwMsg({ text: 'New password must be at least 6 characters', color: 'var(--danger)' });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwMsg({ text: 'New passwords do not match', color: 'var(--danger)' });
+      return;
+    }
     try {
       await apiCall('PUT', '/api/auth/password', { current_password: currentPw, new_password: newPw });
       setPwMsg({ text: 'Password changed successfully', color: 'var(--success)' });
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    } catch (e) { setPwMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const saveGeminiKey = async () => {
-    setGeminiMsg(null);
-    if (!geminiKey.trim()) { setGeminiMsg({ text: 'Enter an API key', color: 'var(--danger)' }); return; }
-    try {
-      await apiCall('PUT', '/api/settings/gemini-key', { api_key: geminiKey.trim() });
-      setGeminiMsg({ text: 'Key saved', color: 'var(--success)' });
-      setGeminiKey('');
-      loadGeminiStatus();
-    } catch (e) { setGeminiMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const removeGeminiKey = async () => {
-    try {
-      await apiCall('DELETE', '/api/settings/gemini-key');
-      setGeminiMsg({ text: 'Key removed', color: 'var(--success)' });
-      loadGeminiStatus();
-    } catch (e) { setGeminiMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const saveOcrModel = async (model: string) => {
-    setOcrModel(model);
-    setModelMsg(null);
-    try {
-      await apiCall('PUT', '/api/settings/ocr-model', { model });
-      setModelMsg({ text: 'Default model saved', color: 'var(--success)' });
-    } catch (e) { setModelMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const saveOcrPrompt = async () => {
-    setPromptMsg(null);
-    if (!ocrPrompt.trim()) { setPromptMsg({ text: 'Prompt cannot be empty', color: 'var(--danger)' }); return; }
-    if (ocrPrompt.length > MAX_OCR_PROMPT) { setPromptMsg({ text: `Prompt must be under ${MAX_OCR_PROMPT} characters`, color: 'var(--danger)' }); return; }
-    try {
-      await apiCall('PUT', '/api/settings/ocr-prompt', { prompt: ocrPrompt });
-      setPromptMsg({ text: 'Custom prompt saved', color: 'var(--success)' });
-      setHasCustomPrompt(true);
-    } catch (e) { setPromptMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const resetOcrPrompt = async () => {
-    try {
-      await apiCall('DELETE', '/api/settings/ocr-prompt');
-      setOcrPrompt('');
-      setHasCustomPrompt(false);
-      setPromptMsg({ text: 'Reset to default prompt', color: 'var(--success)' });
-    } catch (e) { setPromptMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (e) {
+      setPwMsg({ text: (e as Error).message, color: 'var(--danger)' });
+    }
   };
 
   const addLang = async (code: string) => {
@@ -136,16 +66,20 @@ export function SettingsView() {
       setPreferredLangs(updated);
       setLangSearch('');
       setLangMsg({ text: 'Saved', color: 'var(--success)' });
-    } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+    } catch (e) {
+      setLangMsg({ text: (e as Error).message, color: 'var(--danger)' });
+    }
   };
 
   const removeLang = async (code: string) => {
-    const updated = preferredLangs.filter(c => c !== code);
+    const updated = preferredLangs.filter((c) => c !== code);
     try {
       await apiCall('PUT', '/api/settings/languages', { languages: updated });
       setPreferredLangs(updated);
       setLangMsg({ text: 'Saved', color: 'var(--success)' });
-    } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+    } catch (e) {
+      setLangMsg({ text: (e as Error).message, color: 'var(--danger)' });
+    }
   };
 
   const handleExport = async () => {
@@ -171,7 +105,9 @@ export function SettingsView() {
 
   return (
     <>
-      <div className="view-header"><h2 className="view-title">Settings</h2></div>
+      <div className="view-header">
+        <h2 className="view-title">Settings</h2>
+      </div>
       <div className="settings-grid">
         <div className="settings-section">
           <h3 className="admin-section-title">Change Password</h3>
@@ -179,11 +115,41 @@ export function SettingsView() {
             <div className="muted-text">Disabled in demo mode</div>
           ) : (
             <div className="auth-card">
-              <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
-              <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
-              <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
-              <button className="btn" onClick={changePassword}>Change Password</button>
-              {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
+              <div className="field">
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  value={currentPw}
+                  onChange={(e) => setCurrentPw(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="field">
+                <label>New Password</label>
+                <input
+                  type="password"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="field">
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <button className="btn" onClick={changePassword}>
+                Change Password
+              </button>
+              {pwMsg && (
+                <div className="field-message" style={{ color: pwMsg.color }}>
+                  {pwMsg.text}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -195,8 +161,13 @@ export function SettingsView() {
           </p>
           <div className="auth-card">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-              {preferredLangs.map(code => (
-                <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
+              {preferredLangs.map((code) => (
+                <span
+                  key={code}
+                  className="badge badge-tag"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => removeLang(code)}
+                >
                   {languageName(code)} ✕
                 </span>
               ))}
@@ -212,12 +183,20 @@ export function SettingsView() {
                 />
                 {langSearch && (
                   <div className="language-picker-dropdown" style={{ position: 'relative', marginTop: 4 }}>
-                    {LANGUAGES
-                      .filter(l => !preferredLangs.includes(l.code) &&
-                        (l.name.toLowerCase().includes(langSearch.toLowerCase()) || l.code.includes(langSearch.toLowerCase())))
+                    {LANGUAGES.filter(
+                      (l) =>
+                        !preferredLangs.includes(l.code) &&
+                        (l.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+                          l.code.includes(langSearch.toLowerCase())),
+                    )
                       .slice(0, 8)
-                      .map(l => (
-                        <button key={l.code} type="button" className="language-picker-option" onClick={() => addLang(l.code)}>
+                      .map((l) => (
+                        <button
+                          key={l.code}
+                          type="button"
+                          className="language-picker-option"
+                          onClick={() => addLang(l.code)}
+                        >
                           {l.name} <span className="language-picker-code">{l.code}</span>
                         </button>
                       ))}
@@ -225,7 +204,11 @@ export function SettingsView() {
                 )}
               </div>
             )}
-            {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
+            {langMsg && (
+              <div className="field-message" style={{ color: langMsg.color }}>
+                {langMsg.text}
+              </div>
+            )}
           </div>
         </div>
 
@@ -238,82 +221,21 @@ export function SettingsView() {
           <div className="auth-card">
             <div className="flex-row" style={{ flexWrap: 'wrap', gap: 16 }}>
               {isAdmin && (
-                <button className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</button>
+                <button className="btn btn-sm" onClick={() => setShowImport(true)}>
+                  Import Songs
+                </button>
               )}
               <button className="btn btn-sm" onClick={handleExport} disabled={exporting}>
                 {exporting ? 'Exporting…' : 'Export Songs'}
               </button>
             </div>
-            {exportMsg && <div className="field-message" style={{ color: exportMsg.color }}>{exportMsg.text}</div>}
-          </div>
-          {showImport && (
-            <ImportModal onClose={() => setShowImport(false)} onDone={() => {}} />
-          )}
-        </div>
-
-        <div className="settings-section">
-          <h3 className="admin-section-title">OCR: API Key</h3>
-          <p className="muted-hint">
-            Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
-          </p>
-          <div className="auth-card">
-            <div className="muted-hint" style={{ marginBottom: 12 }}>{geminiStatus}</div>
-            <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
-            <div className="flex-row">
-              <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
-              <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
-            </div>
-            {geminiMsg && <div className="field-message" style={{ color: geminiMsg.color }}>{geminiMsg.text}</div>}
-          </div>
-        </div>
-
-        <div className="settings-section">
-          <h3 className="admin-section-title">OCR: Model &amp; Prompt</h3>
-          <p className="muted-hint">
-            Choose which Gemini model to use for OCR and customize the extraction prompt. You can also change the model per-extraction in the OCR modal.
-          </p>
-          <div className="auth-card">
-            <div className="field">
-              <label>Model</label>
-              <select
-                value={ocrModel}
-                onChange={(e) => saveOcrModel(e.target.value)}
-                style={{ fontSize: 14, padding: '8px 12px' }}
-              >
-                {modelList.map(m => (
-                  <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
-                ))}
-              </select>
-              {modelMsg && <div className="field-message" style={{ marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
-            </div>
-            <div className="field">
-              <label>Prompt</label>
-              <textarea
-                value={ocrPrompt}
-                onChange={(e) => setOcrPrompt(e.target.value)}
-                placeholder={defaultPrompt}
-                rows={7}
-                maxLength={MAX_OCR_PROMPT}
-                style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
-              />
-              <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
-                {ocrPrompt.length} / {MAX_OCR_PROMPT}
+            {exportMsg && (
+              <div className="field-message" style={{ color: exportMsg.color }}>
+                {exportMsg.text}
               </div>
-            </div>
-            <div className="flex-row" style={{ flexWrap: 'wrap' }}>
-              <button className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</button>
-              {!ocrPrompt && (
-                <button className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
-                  Copy Default
-                </button>
-              )}
-              {hasCustomPrompt && (
-                <button className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</button>
-              )}
-            </div>
-            {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
+            )}
           </div>
+          {showImport && <ImportModal onClose={() => setShowImport(false)} onDone={() => {}} />}
         </div>
       </div>
     </>

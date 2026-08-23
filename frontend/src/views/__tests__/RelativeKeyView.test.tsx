@@ -9,7 +9,7 @@ function renderView(navigate: (view: string) => void = () => {}) {
   return render(
     <ToastProvider>
       <RelativeKeyView navigate={navigate} />
-    </ToastProvider>
+    </ToastProvider>,
   );
 }
 
@@ -21,9 +21,7 @@ describe('RelativeKeyView', () => {
   it('shows the relative minor of a major key with shared notes', async () => {
     renderView();
     await userEvent.selectOptions(screen.getByLabelText('Key'), 'G');
-    expect(
-      screen.getByText(/G major .* E minor/, { selector: '.tool-result-key' })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/G major .* E minor/, { selector: '.tool-result-key' })).toBeInTheDocument();
     expect(screen.getByText('Shared scale notes')).toBeInTheDocument();
     expect(screen.getByText('F#', { selector: '.tool-chip' })).toBeInTheDocument();
     expect(screen.getByText(/6th degree \(vi\)/)).toBeInTheDocument();
@@ -33,9 +31,7 @@ describe('RelativeKeyView', () => {
     renderView();
     await userEvent.selectOptions(screen.getByLabelText('Mode'), 'minor');
     await userEvent.selectOptions(screen.getByLabelText('Key'), 'Am');
-    expect(
-      screen.getByText(/A minor .* C major/, { selector: '.tool-result-key' })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/A minor .* C major/, { selector: '.tool-result-key' })).toBeInTheDocument();
   });
 
   it('offers practical transition guidance', async () => {

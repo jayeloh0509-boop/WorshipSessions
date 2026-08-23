@@ -76,8 +76,8 @@ export function RelativeKeyView({ navigate }: RelativeKeyViewProps) {
               </span>
             </div>
             <p className="tool-alt">
-              {displayName(key.name)} and {displayName(rel.name)} share the same key signature —
-              seven notes, seven chords. Only the note that feels like &ldquo;home&rdquo; changes.
+              {displayName(key.name)} and {displayName(rel.name)} share the same key signature — seven notes, seven
+              chords. Only the note that feels like &ldquo;home&rdquo; changes.
             </p>
 
             <div className="tool-chip-section">
@@ -94,19 +94,18 @@ export function RelativeKeyView({ navigate }: RelativeKeyViewProps) {
             <div className="tool-chip-section">
               <span className="tool-chip-label">Tonic relationship</span>
               <p className="tool-alt">
-                {minorName.replace(/m$/, '')} is the 6th degree (vi) of {majorName} major — three
-                semitones below its tonic. Play the same chords and land on{' '}
-                {minorName.replace(/m$/, '')}m instead of {majorName} to shift the center.
+                {minorName.replace(/m$/, '')} is the 6th degree (vi) of {majorName} major — three semitones below its
+                tonic. Play the same chords and land on {minorName.replace(/m$/, '')}m instead of {majorName} to shift
+                the center.
               </p>
             </div>
 
             <div className="tool-chip-section">
               <span className="tool-chip-label">Using it in a set</span>
               <p className="tool-alt">
-                Because the chords are identical, you can drift between {majorName} major and{' '}
-                {minorName} without a hard modulation: end a brighter song on the vi chord (
-                {minorName}) to set up a reflective one, or resolve a minor progression to{' '}
-                {majorName} to lift the room. The band plays the same shapes throughout.
+                Because the chords are identical, you can drift between {majorName} major and {minorName} without a hard
+                modulation: end a brighter song on the vi chord ({minorName}) to set up a reflective one, or resolve a
+                minor progression to {majorName} to lift the room. The band plays the same shapes throughout.
               </p>
             </div>
 

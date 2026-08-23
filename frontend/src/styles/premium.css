@@ -19,18 +19,27 @@ body {
   color: var(--text);
   letter-spacing: 0.01em;
 }
-.nav-brand .nav-logo svg { opacity: 0.9; }
+.nav-brand .nav-logo svg {
+  opacity: 0.9;
+}
 
 /* -- Headings: editorial serif ---------------------------------- */
-h1, h2, .hero-title, .about-title,
-.song-view-title, .view-title {
+h1,
+h2,
+.hero-title,
+.about-title,
+.song-view-title,
+.view-title {
   font-family: var(--font-serif);
   font-weight: 400;
   letter-spacing: 0.005em;
 }
 
 /* -- Song / setlist cards → hairline rows ----------------------- */
-.song-grid { gap: 0; border-top: 1px solid var(--border); }
+.song-grid {
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
 .song-card,
 .setlist-card {
   background: transparent;
@@ -41,9 +50,13 @@ h1, h2, .hero-title, .about-title,
   transition: padding 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .song-card:hover,
-.setlist-card:hover { background: var(--accent-bg); }
+.setlist-card:hover {
+  background: var(--accent-bg);
+}
 .song-card:active,
-.setlist-card:active { padding-left: 10px; }
+.setlist-card:active {
+  padding-left: 10px;
+}
 .song-card-title {
   font-family: var(--font-serif);
   font-weight: 400;
@@ -57,21 +70,36 @@ h1, h2, .hero-title, .about-title,
     transform: translateY(6px);
     animation: prem-enter 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
-  .song-grid .song-card:nth-child(2) { animation-delay: 0.05s; }
-  .song-grid .song-card:nth-child(3) { animation-delay: 0.10s; }
-  .song-grid .song-card:nth-child(4) { animation-delay: 0.15s; }
-  .song-grid .song-card:nth-child(5) { animation-delay: 0.20s; }
-  .song-grid .song-card:nth-child(6) { animation-delay: 0.25s; }
+  .song-grid .song-card:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+  .song-grid .song-card:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  .song-grid .song-card:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  .song-grid .song-card:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+  .song-grid .song-card:nth-child(6) {
+    animation-delay: 0.25s;
+  }
 }
 @keyframes prem-enter {
-  to { opacity: 1; transform: none; }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* -- Buttons: solid off-white primary, quiet ghosts ------------- */
 .btn {
   font-weight: 500;
   border-radius: 10px;
-  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.15s;
+  transition:
+    transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+    opacity 0.15s;
 }
 .btn:not(.btn-ghost):not(.btn-danger) {
   background: var(--accent);
@@ -79,7 +107,10 @@ h1, h2, .hero-title, .about-title,
   border: none;
   font-weight: 600;
 }
-.btn:active { transform: scale(0.98); opacity: 0.85; }
+.btn:active {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
 .btn-ghost {
   background: none;
   border: 1px solid var(--border);
@@ -122,8 +153,14 @@ h1, h2, .hero-title, .about-title,
   }
 }
 @keyframes prem-unfold {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* -- Chord sheet: content leads --------------------------------- */
@@ -137,8 +174,12 @@ h1, h2, .hero-title, .about-title,
   }
 }
 @keyframes prem-settle {
-  from { opacity: 0.15; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* -- Toasts: quiet card, no pill -------------------------------- */
@@ -150,17 +191,22 @@ h1, h2, .hero-title, .about-title,
 }
 
 /* -- Badges & tags: hairline, lowercase-quiet ------------------- */
-.badge, .tag {
+.badge,
+.tag {
   border: 1px solid var(--border);
   background: none;
   color: var(--muted);
 }
 
 /* -- Inputs ----------------------------------------------------- */
-input, select, textarea {
+input,
+select,
+textarea {
   transition: border-color 0.2s;
 }
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   border-color: var(--accent-alt) !important;
   box-shadow: none !important;
 }
