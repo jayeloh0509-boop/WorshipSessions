@@ -487,6 +487,11 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
 
       // 1. Fix spaces around slashes
       const cleaned = inner.replace(/\s*\/\s*/g, '/');
+      // ChordSheetJS treats a bracketed section heading such as [Intro] as
+      // a chord named "Intro" during transpose. Strip only the brackets so
+      // the heading remains a lyric/comment label instead of being mutated
+      // into "IIntro" (or similar) when the chart key changes.
+      if (SECTION_LABEL_RE.test(cleaned)) return canonicalizeSectionLabel(cleaned);
       // Preserve the source chart's written enharmonic spelling.
       return `[${cleaned}]`;
     },

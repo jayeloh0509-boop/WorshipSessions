@@ -370,6 +370,12 @@ describe('prepareSong', () => {
     expect(chordsOf(song!)).toEqual(['1', '4']);
   });
 
+  it('transposes intro chords written as a bare standalone line', () => {
+    const song = prepareSong('{key: C}\n[Intro]\nC G Am F\n\n[G]verse', 2);
+    expect(song).not.toBeNull();
+    expect(chordsOf(song!)).toEqual(['D', 'A', 'Bm', 'G', 'A']);
+  });
+
   it('transposes compact bracketed bar notation as individual chords', () => {
     const source = `{key: Bb}
 [| Bb//Bb Cm7 Bb/D | Eb2///|]`;
