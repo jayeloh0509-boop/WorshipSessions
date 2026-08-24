@@ -376,14 +376,21 @@ describe('prepareSong', () => {
     expect(chordsOf(song!)).toEqual(['D', 'A', 'Bm', 'G', 'A']);
   });
 
+  it('transposes the compact Intro progression in As You Find Me', () => {
+    const song = prepareSong(
+      `{title: As You Find Me}\n{key: D}\n\nIntro\n[| D / Dsus / | D5 / D2 / | D / Dsus / | D5 / D2 / |]`,
+      2,
+    );
+    expect(song).not.toBeNull();
+    expect(chordsOf(song!)).toEqual(['E', 'Esus', 'E5', 'E2', 'E', 'Esus', 'E5', 'E2']);
+  });
+
   it('transposes compact bracketed bar notation as individual chords', () => {
-    const source = `{key: Bb}
-[| Bb//Bb Cm7 Bb/D | Eb2///|]`;
+    const source = `{key: Bb}\n[| Bb//Bb Cm7 Bb/D | Eb2///|]`;
     const song = prepareSong(source, 2);
 
     expect(chordsOf(song!)).toEqual(['C', 'C', 'Dm7', 'C/E', 'F2']);
-    expect(source).toBe(`{key: Bb}
-[| Bb//Bb Cm7 Bb/D | Eb2///|]`);
+    expect(source).toBe(`{key: Bb}\n[| Bb//Bb Cm7 Bb/D | Eb2///|]`);
   });
 
   it('converts compact bracketed bar notation to Nashville numbers', () => {

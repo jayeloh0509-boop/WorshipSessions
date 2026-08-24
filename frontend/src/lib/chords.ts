@@ -172,7 +172,7 @@ const COMPACT_BAR_ROOT = String.raw`[A-G](?:#|b)?`;
 const COMPACT_BAR_EXTENSION = String.raw`(?:2|4|5|6|7|9|11|13)`;
 const COMPACT_BAR_DECORATION = String.raw`(?:sus[24]|add(?:2|4|6|9|11|13)|no(?:3|5)|[#b](?:5|9|11|13))`;
 const COMPACT_BAR_SUFFIX_RE = new RegExp(
-  String.raw`^(?:(?:maj|min|m|dim|aug)?${COMPACT_BAR_EXTENSION}?|[°ø∆Δ+]${COMPACT_BAR_EXTENSION}?|sus[24]|add(?:2|4|6|9|11|13)|\((?:add|no|sus)?[#b]?(?:2|3|4|5|6|9|11|13)\))(?:${COMPACT_BAR_DECORATION})*$`,
+  String.raw`^(?:(?:maj|min|m|dim|aug)?${COMPACT_BAR_EXTENSION}?|[°ø∆Δ+]${COMPACT_BAR_EXTENSION}?|sus(?:[24])?|add(?:2|4|6|9|11|13)|\((?:add|no|sus)?[#b]?(?:2|3|4|5|6|9|11|13)\))(?:${COMPACT_BAR_DECORATION})*$`,
 );
 const COMPACT_BAR_CHORD_RE = new RegExp(String.raw`^(${COMPACT_BAR_ROOT})([^/]*)(?:\/(${COMPACT_BAR_ROOT}))?$`);
 
@@ -317,6 +317,15 @@ function expandCompactBarGroup(inner: string): string | null {
       }
       // else: still-held N.C. silence — drop the beat marker silently,
       // matching glueBarNotationLine's identical behavior.
+      cursor = end;
+      continue;
+    }
+
+    const compactHold = token.match(/^(.+?)(\/+)$/);
+    if (compactHold && compactHold[1].includes('/') && isCompactBarChord(compactHold[1])) {
+      output += `[${compactHold[1]}]${compactHold[2]}`;
+      hasChord = true;
+      heldNoChord = false;
       cursor = end;
       continue;
     }
