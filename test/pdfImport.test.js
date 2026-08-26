@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pdfTextToChordPro, importPdfBuffer } = require('../lib/pdfImport');
-const { importWorshipTogetherPdf } = require('../lib/worshipTogetherImport');
+const { importWorshipTogetherPdf, convertWorshipTogetherText } = require('../lib/worshipTogetherImport');
 
 const SAMPLE = `Amazing Grace
 John Newton
@@ -66,6 +66,50 @@ test('pdfTextToChordPro accepts bar-delimited chord lines and extended chords', 
   assert.match(result.content, /\[Bb2\].*\[F\/A\].*\[Gm7\].*\[Ebmaj7\]/);
   const renderedLine = result.content.split('\n').find((line) => line.includes('[Bb2]'));
   assert.equal(renderedLine.replace(/\[[^\]]+\]/g, ''), 'Sing a new song to the Lord');
+});
+
+test('supports original-key headers, copyright preambles, and bar notation', () => {
+  const parsed = convertWorshipTogetherText(`CCLI #7147007
+The Blessing (Peace Album)
+Original Key: G | BPM: 65 | 4/4
+Written by Kari Jobe, Cody Carnes
+Intro
+G / / / | C / / / | G/B / / / | D / / /
+Verse 1
+[G]The Lord bless you
+`);
+  assert.equal(parsed.title, 'The Blessing (Peace Album)');
+  assert.match(parsed.content, /\{key: G\}/);
+  assert.match(parsed.content, /\{tempo: 65\}/);
+  assert.match(parsed.content, /\[G\].*\[C\].*\[G\/B\].*\[D\]/);
+  assert.doesNotMatch(parsed.content, /CCLI|All Rights Reserved|Written by/);
+});
+
+test('supports dot-spaced chord-over-lyric layouts', () => {
+  const parsed = convertWorshipTogetherText(`Copyright © Test
+I Am Not Alone
+Kari Jobe
+E • 68 bpm • 4/4
+Verse.1
+C#m..................A.........F#m
+When.I.walk.through.deep.waters
+............................C#m..B..C#m
+I.know.that.You.will.be.with.me
+`);
+  assert.equal(parsed.title, 'I Am Not Alone');
+  assert.equal(parsed.key, 'E');
+  assert.match(parsed.content, /^Verse 1$/m);
+  assert.match(parsed.content, /\[C#m\] \[A\] \[F#m\]/);
+  assert.match(parsed.content, /When I walk through deep waters/);
+  assert.match(parsed.content, /\[C#m\] \[B\] \[C#m\]/);
+  assert.match(parsed.content, /I know that You will be with me/);
+});
+
+test('supports parenthesized and extended chord symbols', () => {
+  const input = `Nothing Else\nCody Carnes\nKey: G\n\nIntro\nAm7(4) C2 G Gsus G\nI'm caught up in Your presence\n(G2/B) Am7(4) C2\nI just want to sit here at Your feet\n`;
+  const parsed = pdfTextToChordPro(input);
+  assert.match(parsed.content, /\[Am7\(4\)\].*\[C2\].*\[G\].*\[Gsus\].*\[G\]/);
+  assert.match(parsed.content, /I?\[G2\/B\].*\[Am7\(4\)\].*\[C2\]/);
 });
 
 test('importPdfBuffer extracts the real text-PDF fixture through discovered pdftotext', async () => {
