@@ -1,4 +1,5 @@
 @echo off
-rem Launch WorshipSessions on http://127.0.0.1:3001 (config in .env)
-rem Runs node hidden/detached so a Scheduled Task can fire-and-forget this at logon.
-powershell -NoProfile -WindowStyle Hidden -Command "Start-Process -FilePath 'node' -ArgumentList 'server.js' -WorkingDirectory 'C:\Users\jayel\WorshipSessions' -WindowStyle Hidden"
+rem Run the supervised WorshipSessions launcher for the Windows Scheduled Task.
+rem The PowerShell process stays attached to the task and restarts Node after a crash.
+cd /d "C:\Users\jayel\WorshipSessions"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Users\jayel\WorshipSessions\scripts\run-worshipsessions.ps1"
