@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { textChartToChordPro } from '../lib/import';
+import { EditorPreview } from './EditorPreview';
+import { canonicalizeSectionLabel, isSectionLabel } from '../lib/chords';
 
 interface OcrModalProps {
   onResult: (text: string, language?: string | null, method?: string) => void;
@@ -26,14 +28,13 @@ function extractDirective(content: string, name: string): string {
 }
 
 function chartReview(content: string) {
-  const sectionPattern =
-    /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Tag|Instrumental|Refrain|Ending)(?:\s+\d+|\s+\(\d+X\))?$/i;
   const sections = [
     ...new Set(
       content
         .split('\n')
         .map((line) => line.trim())
-        .filter((line) => sectionPattern.test(line)),
+        .filter(isSectionLabel)
+        .map(canonicalizeSectionLabel),
     ),
   ];
   const chords = content.match(/\[(?!Verse|Chorus|Bridge|Intro|Outro|Interlude|Tag|Instrumental)[A-G][^\]]*\]/gi) || [];
@@ -59,6 +60,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
   const [resultText, setResultText] = useState('');
   const [resultMethod, setResultMethod] = useState<string | null>(null);
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
+  const [reviewMode, setReviewMode] = useState<'edit' | 'preview'>('edit');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +72,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
     setIsTextImport(textFile);
     setResultText('');
     setResultMethod(null);
+    setReviewMode('edit');
     setChatHistory([]);
     if (textFile) {
       setPreview(file.name);
@@ -151,6 +154,12 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
   const hasCorrections = chatHistory.filter((m) => m.role === 'user').length > 0;
   const canExtract = !!preview;
   const review = chartReview(resultText);
+  const reviewWarnings = [
+    !review.title ? 'Title was not detected' : '',
+    !review.key ? 'Key was not detected' : '',
+    !review.sections.length ? 'No recognizable song sections were found' : '',
+    !review.chordCount ? 'No chords were detected' : '',
+  ].filter(Boolean);
 
   const importLabel = processing
     ? isPdf
@@ -306,12 +315,42 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
                 <strong>{review.sections.length ? review.sections.join(' · ') : 'Review needed'}</strong>
               </div>
             </div>
-            <textarea
-              className="ocr-result"
-              aria-label="Review and edit chart"
-              value={resultText}
-              onChange={(event) => setResultText(event.target.value)}
-            />
+            {reviewWarnings.length > 0 && (
+              <div className="wt-review-warnings" role="status" aria-label="Import warnings">
+                <strong>Check before continuing</strong>
+                <ul>
+                  {reviewWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="wt-review-switch" role="group" aria-label="Import review view">
+              <button
+                className={`btn btn-sm ${reviewMode === 'edit' ? '' : 'btn-ghost'}`}
+                onClick={() => setReviewMode('edit')}
+              >
+                Edit chart
+              </button>
+              <button
+                className={`btn btn-sm ${reviewMode === 'preview' ? '' : 'btn-ghost'}`}
+                onClick={() => setReviewMode('preview')}
+              >
+                Preview chart
+              </button>
+            </div>
+            {reviewMode === 'edit' ? (
+              <textarea
+                className="ocr-result"
+                aria-label="Review and edit chart"
+                value={resultText}
+                onChange={(event) => setResultText(event.target.value)}
+              />
+            ) : (
+              <div className="wt-rendered-preview" aria-label="Rendered chart preview">
+                <EditorPreview content={resultText} debounceMs={0} outputId="import-review-chord-output" />
+              </div>
+            )}
             <p className="muted-text wt-review-help">
               Check section names and chord placement. Nothing is saved until you continue to the editor and save.
             </p>

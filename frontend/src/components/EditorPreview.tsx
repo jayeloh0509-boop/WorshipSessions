@@ -8,9 +8,10 @@ interface EditorPreviewProps {
   content: string;
   debounceMs?: number;
   forceRender?: number;
+  outputId?: string;
 }
 
-export function EditorPreview({ content, debounceMs = 300, forceRender }: EditorPreviewProps) {
+export function EditorPreview({ content, debounceMs = 300, forceRender, outputId }: EditorPreviewProps) {
   const [debouncedContent, setDebouncedContent] = useState(content);
   const [transpose, setTranspose] = useState(0);
   const [nashville, setNashville] = useState(false);
@@ -87,7 +88,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
         )}
       </div>
       {currentKey && <KeyPicker currentKey={currentKey} onPickKey={handlePickKey} visible={keyPickerVisible} />}
-      <ChordSheet html={html} />
+      <ChordSheet html={html} outputId={outputId} />
     </div>
   );
 }

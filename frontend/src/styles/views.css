@@ -2350,9 +2350,49 @@
 }
 
 .wt-review-help {
-  margin: 7px 0 0;
+  margin: 9px 2px 0;
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.5;
+}
+
+.wt-review-warnings {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--warning, #d89000) 40%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--warning, #d89000) 9%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+}
+
+.wt-review-warnings strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.wt-review-warnings ul {
+  margin: 0;
+  padding-left: 19px;
+  color: var(--muted);
+}
+
+.wt-review-switch {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+
+.wt-rendered-preview {
+  min-height: 280px;
+  max-height: min(52vh, 560px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.wt-rendered-preview .editor-preview {
+  min-height: 280px;
 }
 
 @media (max-width: 640px) {

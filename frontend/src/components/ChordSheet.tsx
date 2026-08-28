@@ -7,9 +7,17 @@ interface ChordSheetProps {
   fontSize?: number;
   autoFit?: boolean; // Kept for class naming if needed
   tone?: 'default' | 'paper' | 'dark';
+  outputId?: string;
 }
 
-export function ChordSheet({ html, twoCol, fontSize, autoFit, tone = 'default' }: ChordSheetProps) {
+export function ChordSheet({
+  html,
+  twoCol,
+  fontSize,
+  autoFit,
+  tone = 'default',
+  outputId = 'chord-output',
+}: ChordSheetProps) {
   // Manual/Legacy Scaling Logic
   const manualScale = fontScaleValue(fontSize || 0);
 
@@ -34,7 +42,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit, tone = 'default' }
 
   return (
     <div className={cls} style={style}>
-      <div id="chord-output" dangerouslySetInnerHTML={{ __html: html }} />
+      <div id={outputId} className="chord-output" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   );
 }

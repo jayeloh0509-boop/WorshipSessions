@@ -36,7 +36,7 @@
 /* ------------------------------------------ */
 
 @media (min-width: 640px) {
-  .chord-sheet-wrap.two-col > #chord-output {
+  .chord-sheet-wrap.two-col > .chord-output {
     column-count: 2;
     column-gap: 56px;
     column-rule: 1px solid var(--border);
@@ -318,7 +318,7 @@
   pointer-events: none;
 }
 
-.chord-sheet-paper #chord-output {
+.chord-sheet-paper .chord-output {
   position: relative;
   z-index: 1;
 }
@@ -398,7 +398,7 @@
   line-height: 1.45;
 }
 
-.chord-sheet-paper.two-col > #chord-output {
+.chord-sheet-paper.two-col > .chord-output {
   column-gap: clamp(28px, 5vw, 64px);
   column-rule: 1px solid rgba(91, 77, 54, 0.16);
 }

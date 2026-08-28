@@ -88,7 +88,7 @@ Intro
 [Eb] [Bb/D]
 Verse 1
 [Eb]God, I live to worship You
-Chorus
+Half-Chorus
 [Ab2]Fall like rain`,
           language: 'en',
           method: 'worship-together-text',
@@ -102,7 +102,7 @@ Chorus
 
     const review = await screen.findByLabelText(/review and edit chart/i);
     expect(screen.getByLabelText('Import summary')).toHaveTextContent('Fall Like Rain');
-    expect(screen.getByLabelText('Import summary')).toHaveTextContent('Intro · Verse 1 · Chorus');
+    expect(screen.getByLabelText('Import summary')).toHaveTextContent('Intro · Verse 1 · Half-Chorus');
     expect(review).not.toHaveAttribute('readonly');
     fireEvent.change(review, { target: { value: '{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric' } });
     fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
@@ -144,6 +144,42 @@ Chorus
     // The review/summary panel used to be gated to WT/text imports only — it
     // should now show for every import method, including vision.
     expect(await screen.findByLabelText('Import summary')).toHaveTextContent('Test');
+  });
+
+  it('flags incomplete imports and lets the user inspect a rendered preview before continuing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          content: `{title: Needs Review}\n\nThese lyrics lost their chord line`,
+          language: 'en',
+          method: 'local',
+        }),
+      }),
+    );
+
+    render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, new File(['%PDF-test'], 'chart.pdf', { type: 'application/pdf' }));
+    fireEvent.click(screen.getByRole('button', { name: /convert pdf to editable chart/i }));
+
+    const warnings = await screen.findByLabelText('Import warnings');
+    expect(warnings).toHaveTextContent('Key was not detected');
+    expect(warnings).toHaveTextContent('No recognizable song sections were found');
+    expect(warnings).toHaveTextContent('No chords were detected');
+
+    fireEvent.click(screen.getByRole('button', { name: /preview chart/i }));
+    expect(await screen.findByLabelText('Rendered chart preview')).toHaveTextContent(
+      'These lyrics lost their chord line',
+    );
+    expect(document.querySelectorAll('#chord-output')).toHaveLength(0);
+    expect(document.querySelectorAll('#import-review-chord-output')).toHaveLength(1);
+    expect(screen.queryByLabelText(/review and edit chart/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /edit chart/i }));
+    expect(screen.getByLabelText(/review and edit chart/i)).toBeInTheDocument();
   });
 
   it('shows an error instead of success when the server returns an empty chart', async () => {
