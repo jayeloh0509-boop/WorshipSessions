@@ -105,6 +105,7 @@ Half-Chorus
     expect(screen.getByLabelText('Import summary')).toHaveTextContent('Intro · Verse 1 · Half-Chorus');
     expect(review).not.toHaveAttribute('readonly');
     fireEvent.change(review, { target: { value: '{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /understand this import/i }));
     fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
     expect(onResult).toHaveBeenCalledWith('{title: Fixed}\n\nVerse 1\n[Eb]Edited lyric', 'en', 'worship-together-text');
   });

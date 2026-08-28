@@ -61,6 +61,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
   const [resultMethod, setResultMethod] = useState<string | null>(null);
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [reviewMode, setReviewMode] = useState<'edit' | 'preview'>('edit');
+  const [warningsAcknowledged, setWarningsAcknowledged] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +74,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
     setResultText('');
     setResultMethod(null);
     setReviewMode('edit');
+    setWarningsAcknowledged(false);
     setChatHistory([]);
     if (textFile) {
       setPreview(file.name);
@@ -277,6 +279,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
 
             <label
               className="muted-text flex-align-center"
+              htmlFor="import-review-text"
               style={{
                 fontSize: 12,
                 fontWeight: 500,
@@ -323,28 +326,42 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
                     <li key={warning}>{warning}</li>
                   ))}
                 </ul>
+                <label className="wt-review-acknowledge">
+                  <input
+                    type="checkbox"
+                    checked={warningsAcknowledged}
+                    onChange={(event) => setWarningsAcknowledged(event.target.checked)}
+                  />
+                  I understand this import may need correction
+                </label>
               </div>
             )}
             <div className="wt-review-switch" role="group" aria-label="Import review view">
               <button
                 className={`btn btn-sm ${reviewMode === 'edit' ? '' : 'btn-ghost'}`}
                 onClick={() => setReviewMode('edit')}
+                aria-pressed={reviewMode === 'edit'}
               >
                 Edit chart
               </button>
               <button
                 className={`btn btn-sm ${reviewMode === 'preview' ? '' : 'btn-ghost'}`}
                 onClick={() => setReviewMode('preview')}
+                aria-pressed={reviewMode === 'preview'}
               >
                 Preview chart
               </button>
             </div>
             {reviewMode === 'edit' ? (
               <textarea
+                id="import-review-text"
                 className="ocr-result"
                 aria-label="Review and edit chart"
                 value={resultText}
-                onChange={(event) => setResultText(event.target.value)}
+                onChange={(event) => {
+                  setResultText(event.target.value);
+                  setWarningsAcknowledged(false);
+                }}
               />
             ) : (
               <div className="wt-rendered-preview" aria-label="Rendered chart preview">
@@ -361,7 +378,7 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
             )}
 
             <div className="flex-row" style={{ marginTop: 12 }}>
-              <button className="btn" onClick={useResult}>
+              <button className="btn" onClick={useResult} disabled={reviewWarnings.length > 0 && !warningsAcknowledged}>
                 Import into editor
               </button>
               <button className="btn btn-ghost" onClick={onClose}>
