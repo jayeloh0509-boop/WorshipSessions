@@ -1159,20 +1159,62 @@
 .live-mode-scroll-dock {
   position: fixed;
   z-index: 130;
-  right: 50%;
+  right: 14px;
   bottom: 22px;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: min(360px, calc(100vw - 28px));
+  width: auto;
+  padding: 0;
+  transform: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  backdrop-filter: none;
+}
+
+.live-mode-scroll-dock.expanded {
+  left: 14px;
+  right: 14px;
+  bottom: 22px;
+  width: auto;
   padding: 8px;
-  transform: translateX(50%);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
   background: rgba(20, 20, 20, 0.96);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
-  color: #fff;
   backdrop-filter: blur(16px);
+}
+
+.live-mode-scroll-compact {
+  min-height: 42px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(20, 20, 20, 0.96);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3);
+  touch-action: manipulation;
+}
+
+.live-mode-scroll-compact span {
+  color: #ff7a18;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.live-mode-scroll-compact i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #56d364;
 }
 
 .live-mode-scroll-play,

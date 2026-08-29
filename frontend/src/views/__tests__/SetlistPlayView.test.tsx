@@ -162,16 +162,19 @@ describe('SetlistPlayView', () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
 
-    const start = await screen.findByRole('button', { name: /start auto-scroll/i });
-    expect(screen.getByRole('toolbar', { name: /auto-scroll controls/i })).toHaveClass('live-mode-scroll-dock');
+    expect(screen.getByRole('button', { name: /show auto-scroll controls/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /show auto-scroll controls/i }));
+    expect(screen.getByRole('button', { name: /hide auto-scroll controls/i })).toBeInTheDocument();
     const slider = screen.getByRole('slider', { name: /auto-scroll speed/i });
     expect(slider).toHaveAttribute('min', '1');
     expect(slider).toHaveAttribute('max', '10');
     fireEvent.change(slider, { target: { value: '5' } });
     expect(slider).toHaveValue('5');
     expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('5');
+    fireEvent.click(screen.getByRole('button', { name: /hide auto-scroll controls/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show auto-scroll controls/i }));
+    const start = await screen.findByRole('button', { name: /start auto-scroll/i });
     fireEvent.click(start);
-    expect(screen.getByRole('button', { name: /pause auto-scroll/i })).toHaveAttribute('aria-pressed', 'true');
 
     const faster = screen.getByRole('button', { name: /increase auto-scroll speed/i });
     fireEvent.click(faster);
@@ -205,7 +208,8 @@ describe('SetlistPlayView', () => {
 
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /start auto-scroll/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /show auto-scroll controls/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start auto-scroll/i }));
     fireEvent.click(screen.getByRole('button', { name: /next song/i }));
 
     expect(next).toHaveBeenCalledOnce();
