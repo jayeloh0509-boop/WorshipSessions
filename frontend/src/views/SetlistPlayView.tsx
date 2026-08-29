@@ -371,42 +371,50 @@ export function SetlistPlayView({
               {entry.bpm ? ` · ${entry.bpm} bpm` : ''}
             </span>
           </div>
-          <div className="live-mode-autoscroll" aria-label="Auto-scroll controls">
-            <div className="live-mode-scroll-heading">
-              <span className="live-mode-scroll-label">AUTO-SCROLL</span>
-              <span className="live-mode-scroll-progress" aria-label={`Scroll progress ${autoScroll.progress}%`}>
-                {autoScroll.progress}%
-              </span>
-            </div>
-            <button
-              type="button"
-              className="live-mode-scroll-toggle"
-              onClick={autoScroll.toggle}
-              aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
-              aria-pressed={autoScroll.running}
-            >
-              <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
-              {autoScroll.running ? 'Pause' : 'Start'}
-            </button>
-            <label className="live-mode-speed-control">
-              <span>Speed {autoScroll.speed}</span>
-              <input
-                type="range"
-                min="1"
-                max="5"
-                step="1"
-                value={autoScroll.speed}
-                onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
-                aria-label="Auto-scroll speed"
-              />
-            </label>
-          </div>
           <span
             className={`live-mode-awake${liveMode.wakeLockActive ? ' active' : ''}`}
             title={liveMode.wakeLockActive ? 'Screen wake lock active' : 'Screen wake lock unavailable'}
           >
             {liveMode.wakeLockActive ? 'AWAKE' : 'WAKE?'}
           </span>
+        </div>
+      )}
+
+      {liveMode.active && (
+        <div className="live-mode-scroll-dock" role="toolbar" aria-label="Auto-scroll controls">
+          <button
+            type="button"
+            className="live-mode-speed-step"
+            onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
+            disabled={autoScroll.speed <= 1}
+            aria-label="Decrease auto-scroll speed"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className="live-mode-scroll-play"
+            onClick={autoScroll.toggle}
+            aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
+            aria-pressed={autoScroll.running}
+          >
+            <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
+          </button>
+          <div className="live-mode-scroll-status" aria-live="polite">
+            <strong>{autoScroll.running ? 'Auto-scroll on' : 'Auto-scroll'}</strong>
+            <span>
+              Speed {autoScroll.speed} · {autoScroll.progress}%
+            </span>
+          </div>
+          <button
+            type="button"
+            className="live-mode-speed-step"
+            onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
+            disabled={autoScroll.speed >= 5}
+            aria-label="Increase auto-scroll speed"
+          >
+            +
+          </button>
         </div>
       )}
 

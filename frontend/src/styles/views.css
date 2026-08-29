@@ -1140,104 +1140,86 @@
   color: var(--accent);
 }
 
-.live-mode-autoscroll {
+.live-mode-scroll-dock {
+  position: fixed;
+  z-index: 130;
+  right: 50%;
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(360px, calc(100vw - 28px));
+  padding: 8px;
+  transform: translateX(50%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(20, 20, 20, 0.96);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+  color: #fff;
+  backdrop-filter: blur(16px);
+}
+
+.live-mode-scroll-play,
+.live-mode-speed-step {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  color: #fff;
+}
+
+.live-mode-scroll-play {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f05a2a;
+  font-size: 18px;
+}
+
+.live-mode-scroll-play:hover:not(:disabled) {
+  background: #ff7043;
+}
+
+.live-mode-speed-step {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 23px;
+}
+
+.live-mode-speed-step:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.live-mode-speed-step:disabled {
+  opacity: 0.3;
+}
+
+.live-mode-scroll-status {
+  min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  min-width: 220px;
-  padding: 10px 12px;
-  border: 1px solid rgba(208, 168, 93, 0.3);
-  border-radius: 12px;
-  background: rgba(15, 18, 14, 0.72);
-}
-
-.live-mode-scroll-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-}
-
-.live-mode-scroll-progress {
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
-}
-
-.live-mode-scroll-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  border: 1px solid var(--accent);
-  border-radius: 9px;
-  background: var(--accent);
-  color: #111;
-  font-weight: 800;
-}
-
-.live-mode-scroll-toggle:hover:not(:disabled) {
-  background: #e7bf73;
-}
-
-.live-mode-speed-control {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 11px;
-}
-
-.live-mode-speed-control input[type='range'] {
-  width: 110px;
-  accent-color: var(--accent);
-}
-
-.live-mode-autoscroll button {
-  min-width: 70px;
-  min-height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.live-mode-autoscroll button.active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #111;
-}
-
-.live-mode-autoscroll label {
-  display: grid;
   gap: 2px;
-  min-width: 112px;
-  color: rgba(255, 255, 255, 0.76);
+  text-align: left;
+}
+
+.live-mode-scroll-status strong {
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.live-mode-scroll-status span {
+  color: rgba(255, 255, 255, 0.64);
   font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.live-mode-autoscroll input[type='range'] {
-  width: 112px;
-  accent-color: var(--accent);
-}
-
-.live-mode-scroll-progress {
-  min-width: 34px;
-  color: rgba(255, 255, 255, 0.76);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  text-align: right;
+}
+
+.live-mode .setlist-nav {
+  padding-bottom: 92px;
 }
 
 .live-mode .chord-sheet-wrap {
@@ -1327,55 +1309,18 @@
     order: -1;
     flex: 1 1 calc(100% - 110px);
   }
-
-  .live-mode-autoscroll {
-    order: 3;
-    width: 100%;
-    min-width: 0;
-    justify-content: center;
-  }
-
-  .live-mode-autoscroll label {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .live-mode-autoscroll input[type='range'] {
-    width: 100%;
-    min-width: 72px;
-  }
-}
-
-@media (max-width: 360px) {
-  .live-mode-autoscroll {
-    gap: 6px;
-  }
-
-  .live-mode-autoscroll button {
-    min-width: 64px;
-  }
-
-  .live-mode-scroll-progress {
-    min-width: 30px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-mode-autoscroll button,
-  .live-mode-autoscroll input {
+  .live-mode-scroll-dock,
+  .live-mode-scroll-dock button {
     transition: none;
   }
 }
 
 @media (max-width: 720px) {
-  .live-mode-autoscroll {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .live-mode-speed-control input[type='range'] {
-    flex: 1 1 auto;
-    min-width: 72px;
+  .live-mode-scroll-dock {
+    bottom: 12px;
   }
 
   .live-mode .chord-sheet-wrap {
