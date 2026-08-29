@@ -9,6 +9,7 @@ import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
 import { useLiveMode } from '../hooks/useLiveMode';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
@@ -45,6 +46,8 @@ export function SetlistPlayView({
   const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const liveMode = useLiveMode(containerRef);
+  const autoScroll = useAutoScroll(liveMode.active);
+  const pauseAutoScroll = autoScroll.pause;
 
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -205,10 +208,12 @@ export function SetlistPlayView({
     () => ({
       ArrowLeft: (e: KeyboardEvent) => {
         e.preventDefault();
+        autoScroll.pause();
         prev();
       },
       ArrowRight: (e: KeyboardEvent) => {
         e.preventDefault();
+        autoScroll.pause();
         next();
       },
       ArrowUp: (e: KeyboardEvent) => {
@@ -218,6 +223,11 @@ export function SetlistPlayView({
       ArrowDown: (e: KeyboardEvent) => {
         e.preventDefault();
         transpose(-1);
+      },
+      ' ': (e: KeyboardEvent) => {
+        if (!liveMode.active) return;
+        e.preventDefault();
+        autoScroll.toggle();
       },
       n: () => {
         if (entry) toggleEntryNum(!entry.nashville);
@@ -232,10 +242,15 @@ export function SetlistPlayView({
         else exit();
       },
     }),
-    [prev, next, transpose, entry, toggleEntryNum, openEditor, editing, exit],
+    [prev, next, transpose, entry, toggleEntryNum, openEditor, editing, exit, liveMode.active, autoScroll],
   );
 
   useKeyboardShortcuts(shortcuts, !!setlist);
+
+  useEffect(() => {
+    pauseAutoScroll();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [index, pauseAutoScroll]);
 
   const resetFont = () => {
     fontScale.resetFontSize();
@@ -356,6 +371,32 @@ export function SetlistPlayView({
               {entry.bpm ? ` · ${entry.bpm} bpm` : ''}
             </span>
           </div>
+          <div className="live-mode-autoscroll" aria-label="Auto-scroll controls">
+            <button
+              type="button"
+              className={autoScroll.running ? 'active' : ''}
+              onClick={autoScroll.toggle}
+              aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
+              aria-pressed={autoScroll.running}
+            >
+              {autoScroll.running ? 'PAUSE' : 'SCROLL'}
+            </button>
+            <label>
+              <span>Speed {autoScroll.speed}</span>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={autoScroll.speed}
+                onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
+                aria-label="Auto-scroll speed"
+              />
+            </label>
+            <span className="live-mode-scroll-progress" aria-label={`Scroll progress ${autoScroll.progress}%`}>
+              {autoScroll.progress}%
+            </span>
+          </div>
           <span
             className={`live-mode-awake${liveMode.wakeLockActive ? ' active' : ''}`}
             title={liveMode.wakeLockActive ? 'Screen wake lock active' : 'Screen wake lock unavailable'}
@@ -468,7 +509,15 @@ export function SetlistPlayView({
 
       {liveMode.active && (
         <div className="live-mode-navigation" aria-label="Live song navigation">
-          <button type="button" onClick={prev} disabled={index === 0} aria-label="Previous song">
+          <button
+            type="button"
+            onClick={() => {
+              autoScroll.pause();
+              prev();
+            }}
+            disabled={index === 0}
+            aria-label="Previous song"
+          >
             ‹
           </button>
           <button
@@ -479,7 +528,15 @@ export function SetlistPlayView({
           >
             EXIT
           </button>
-          <button type="button" onClick={next} disabled={index === total - 1} aria-label="Next song">
+          <button
+            type="button"
+            onClick={() => {
+              autoScroll.pause();
+              next();
+            }}
+            disabled={index === total - 1}
+            aria-label="Next song"
+          >
             ›
           </button>
         </div>

@@ -38,17 +38,18 @@ vi.mock('../../hooks/useSwipe', () => ({
   useSwipe: vi.fn(),
 }));
 
-vi.mock('../../hooks/useKeyboardShortcuts', () => ({
-  useKeyboardShortcuts: vi.fn(),
-}));
-
 describe('SetlistPlayView', () => {
   const navigate = vi.fn();
   const mockUpdateEntry = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.scrollTo = vi.fn();
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 2000 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     localStorage.removeItem('worshipsessions-live-mode');
+    localStorage.removeItem('worshipsessions-autoscroll-speed');
     (useSetlistPlayer as Mock).mockReturnValue({
       setlist: {
         id: 1,
@@ -142,6 +143,57 @@ describe('SetlistPlayView', () => {
     fireEvent.click(await screen.findByRole('button', { name: /next song/i }));
 
     expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('starts, pauses, and persists Live Mode auto-scroll controls', async () => {
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
+    });
+
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+
+    const start = await screen.findByRole('button', { name: /start auto-scroll/i });
+    fireEvent.click(start);
+    expect(screen.getByRole('button', { name: /pause auto-scroll/i })).toHaveAttribute('aria-pressed', 'true');
+
+    const speed = screen.getByRole('slider', { name: /auto-scroll speed/i });
+    fireEvent.change(speed, { target: { value: '3' } });
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('3');
+
+    fireEvent.keyDown(document, { key: ' ' });
+    expect(screen.getByRole('button', { name: /start auto-scroll/i })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('pauses auto-scroll when changing songs', async () => {
+    const next = vi.fn();
+    (useSetlistPlayer as Mock).mockReturnValue({
+      setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1 }, { entry_id: 2 }] },
+      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+      index: 0,
+      total: 2,
+      goTo: vi.fn(),
+      prev: vi.fn(),
+      next,
+      exit: vi.fn(),
+      updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
+    });
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
+    });
+
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /start auto-scroll/i }));
+    fireEvent.click(screen.getByRole('button', { name: /next song/i }));
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: /start auto-scroll/i })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('shows song and transition notes during playback', () => {

@@ -1140,6 +1140,54 @@
   color: var(--accent);
 }
 
+.live-mode-autoscroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.live-mode-autoscroll button {
+  min-width: 70px;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.live-mode-autoscroll button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #111;
+}
+
+.live-mode-autoscroll label {
+  display: grid;
+  gap: 2px;
+  min-width: 112px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.live-mode-autoscroll input[type='range'] {
+  width: 112px;
+  accent-color: var(--accent);
+}
+
+.live-mode-scroll-progress {
+  min-width: 34px;
+  color: rgba(255, 255, 255, 0.76);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  text-align: right;
+}
+
 .live-mode .chord-sheet-wrap {
   flex: 1;
   background: #070907;
@@ -1217,6 +1265,22 @@
 
   .live-mode-awake {
     font-size: 9px;
+  }
+
+  .live-mode-topbar {
+    flex-wrap: wrap;
+  }
+
+  .live-mode-song-info {
+    order: -1;
+    flex: 1 1 calc(100% - 110px);
+  }
+
+  .live-mode-autoscroll {
+    order: 3;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
   }
 
   .live-mode .chord-sheet-wrap {
