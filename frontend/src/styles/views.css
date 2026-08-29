@@ -1142,9 +1142,61 @@
 
 .live-mode-autoscroll {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid rgba(208, 168, 93, 0.3);
+  border-radius: 12px;
+  background: rgba(15, 18, 14, 0.72);
+}
+
+.live-mode-scroll-heading {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 260px;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.live-mode-scroll-progress {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.live-mode-scroll-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: var(--accent);
+  color: #111;
+  font-weight: 800;
+}
+
+.live-mode-scroll-toggle:hover:not(:disabled) {
+  background: #e7bf73;
+}
+
+.live-mode-speed-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.live-mode-speed-control input[type='range'] {
+  width: 110px;
+  accent-color: var(--accent);
 }
 
 .live-mode-autoscroll button {
@@ -1316,6 +1368,16 @@
 }
 
 @media (max-width: 720px) {
+  .live-mode-autoscroll {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .live-mode-speed-control input[type='range'] {
+    flex: 1 1 auto;
+    min-width: 72px;
+  }
+
   .live-mode .chord-sheet-wrap {
     padding-left: 12px;
     padding-right: 12px;

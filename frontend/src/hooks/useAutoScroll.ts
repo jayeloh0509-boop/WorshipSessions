@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 const STORAGE_KEY = 'worshipsessions-autoscroll-speed';
 const MIN_SPEED = 1;
@@ -15,7 +15,7 @@ function loadSpeed(): number {
   }
 }
 
-export function useAutoScroll(enabled: boolean) {
+export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement | null> = { current: null }) {
   const [running, setRunning] = useState(false);
   const [speed, setSpeedState] = useState(loadSpeed);
   const [progress, setProgress] = useState(0);
@@ -30,22 +30,24 @@ export function useAutoScroll(enabled: boolean) {
   }, []);
 
   const start = useCallback(() => {
-    if (enabled) setRunning(true);
-  }, [enabled]);
+    if (!enabled) return;
+    const element = scrollRef.current;
+    if (!element) return;
+    setRunning(true);
+  }, [enabled, scrollRef]);
 
   const toggle = useCallback(() => {
-    if (!enabled) return;
-    setRunning((current) => !current);
-    lastTimeRef.current = null;
-  }, [enabled]);
+    if (running) pause();
+    else start();
+  }, [pause, running, start]);
 
   const setSpeed = useCallback((value: number) => {
-    const next = Math.min(MAX_SPEED, Math.max(MIN_SPEED, Math.round(value)));
-    setSpeedState(next);
+    const safeValue = Math.min(MAX_SPEED, Math.max(MIN_SPEED, Math.round(value)));
+    setSpeedState(safeValue);
     try {
-      localStorage.setItem(STORAGE_KEY, String(next));
+      localStorage.setItem(STORAGE_KEY, String(safeValue));
     } catch {
-      // Storage may be unavailable in private or restricted browser contexts.
+      // Live Mode remains usable when storage is unavailable.
     }
   }, []);
 
@@ -54,19 +56,23 @@ export function useAutoScroll(enabled: boolean) {
   }, [enabled, pause]);
 
   useEffect(() => {
-    if (!running || !enabled) return;
+    if (!enabled || !running) return;
 
-    const tick = (time: number) => {
-      const last = lastTimeRef.current ?? time;
-      const elapsed = Math.min(100, time - last);
-      lastTimeRef.current = time;
-      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      const nextTop = Math.min(maxScroll, window.scrollY + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
-      window.scrollTo({ top: nextTop, behavior: 'auto' });
-      setProgress(maxScroll > 0 ? Math.round((nextTop / maxScroll) * 100) : 100);
+    const tick = (now: number) => {
+      const element = scrollRef.current;
+      if (!element) {
+        pause();
+        return;
+      }
+      const previous = lastTimeRef.current ?? now;
+      const elapsed = Math.min(100, now - previous);
+      lastTimeRef.current = now;
+      const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
+      const nextTop = Math.min(maxScroll, element.scrollTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
+      element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {
-        setRunning(false);
-        lastTimeRef.current = null;
+        pause();
+        setProgress(100);
         return;
       }
       frameRef.current = requestAnimationFrame(tick);
@@ -78,40 +84,34 @@ export function useAutoScroll(enabled: boolean) {
       frameRef.current = null;
       lastTimeRef.current = null;
     };
-  }, [enabled, running, speed]);
+  }, [enabled, pause, running, scrollRef, speed]);
 
   useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
     const pauseForUserInput = (event: Event) => {
       if (!running) return;
-      if (
-        event instanceof KeyboardEvent &&
-        !['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)
-      ) {
-        return;
-      }
+      if (event instanceof KeyboardEvent && !['PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) return;
       pause();
     };
-    window.addEventListener('wheel', pauseForUserInput, { passive: true });
-    window.addEventListener('touchstart', pauseForUserInput, { passive: true });
-    window.addEventListener('pointerdown', pauseForUserInput, { passive: true });
-    document.addEventListener('keydown', pauseForUserInput);
-    return () => {
-      window.removeEventListener('wheel', pauseForUserInput);
-      window.removeEventListener('touchstart', pauseForUserInput);
-      window.removeEventListener('pointerdown', pauseForUserInput);
-      document.removeEventListener('keydown', pauseForUserInput);
-    };
-  }, [pause, running]);
-
-  useEffect(() => {
     const updateProgress = () => {
-      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      setProgress(maxScroll > 0 ? Math.round((window.scrollY / maxScroll) * 100) : 100);
+      const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
+      setProgress(maxScroll > 0 ? Math.round((element.scrollTop / maxScroll) * 100) : 100);
     };
+
+    element.addEventListener('wheel', pauseForUserInput, { passive: true });
+    element.addEventListener('touchstart', pauseForUserInput, { passive: true });
+    document.addEventListener('keydown', pauseForUserInput);
+    element.addEventListener('scroll', updateProgress, { passive: true });
     updateProgress();
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    return () => window.removeEventListener('scroll', updateProgress);
-  }, []);
+    return () => {
+      element.removeEventListener('wheel', pauseForUserInput);
+      element.removeEventListener('touchstart', pauseForUserInput);
+      document.removeEventListener('keydown', pauseForUserInput);
+      element.removeEventListener('scroll', updateProgress);
+    };
+  }, [pause, running, scrollRef]);
 
   return { running, speed, progress, start, pause, toggle, setSpeed };
 }

@@ -39,22 +39,27 @@ describe('useAutoScroll', () => {
       }),
     );
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const scrollTo = vi.fn((options?: ScrollToOptions | number, y?: number) => {
-      const top = typeof options === 'number' ? y : options?.top;
-      Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: top ?? 0 });
-    });
+    const scrollTo = vi.fn();
     window.scrollTo = scrollTo as typeof window.scrollTo;
 
-    const { result, rerender } = renderHook(({ enabled }) => useAutoScroll(enabled), {
+    const scrollElement = document.createElement('div');
+    Object.defineProperties(scrollElement, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 800 },
+      scrollTop: { configurable: true, writable: true, value: 0 },
+    });
+    const scrollRef = { current: scrollElement };
+    const { result, rerender } = renderHook(({ enabled }) => useAutoScroll(enabled, scrollRef), {
       initialProps: { enabled: true },
     });
     act(() => result.current.start());
-    act(() => frame?.(100));
+    expect(result.current.running).toBe(true);
+    act(() => frame?.(0));
     act(() => frame?.(1100));
-    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
+    expect(scrollElement.scrollTop).toBeGreaterThan(0);
     expect(result.current.running).toBe(true);
 
-    act(() => window.dispatchEvent(new WheelEvent('wheel')));
+    act(() => scrollElement.dispatchEvent(new WheelEvent('wheel')));
     expect(result.current.running).toBe(false);
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
 

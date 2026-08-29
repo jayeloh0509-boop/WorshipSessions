@@ -46,7 +46,7 @@ export function SetlistPlayView({
   const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const liveMode = useLiveMode(containerRef);
-  const autoScroll = useAutoScroll(liveMode.active);
+  const autoScroll = useAutoScroll(liveMode.active, containerRef);
   const pauseAutoScroll = autoScroll.pause;
 
   const [editing, setEditing] = useState(false);
@@ -372,16 +372,23 @@ export function SetlistPlayView({
             </span>
           </div>
           <div className="live-mode-autoscroll" aria-label="Auto-scroll controls">
+            <div className="live-mode-scroll-heading">
+              <span className="live-mode-scroll-label">AUTO-SCROLL</span>
+              <span className="live-mode-scroll-progress" aria-label={`Scroll progress ${autoScroll.progress}%`}>
+                {autoScroll.progress}%
+              </span>
+            </div>
             <button
               type="button"
-              className={autoScroll.running ? 'active' : ''}
+              className="live-mode-scroll-toggle"
               onClick={autoScroll.toggle}
               aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
               aria-pressed={autoScroll.running}
             >
-              {autoScroll.running ? 'PAUSE' : 'SCROLL'}
+              <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
+              {autoScroll.running ? 'Pause' : 'Start'}
             </button>
-            <label>
+            <label className="live-mode-speed-control">
               <span>Speed {autoScroll.speed}</span>
               <input
                 type="range"
@@ -393,9 +400,6 @@ export function SetlistPlayView({
                 aria-label="Auto-scroll speed"
               />
             </label>
-            <span className="live-mode-scroll-progress" aria-label={`Scroll progress ${autoScroll.progress}%`}>
-              {autoScroll.progress}%
-            </span>
           </div>
           <span
             className={`live-mode-awake${liveMode.wakeLockActive ? ' active' : ''}`}
