@@ -75,7 +75,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       if (maxScroll === 0) {
         lastTimeRef.current = now;
         retryTimer = window.setTimeout(() => {
-          frameRef.current = requestAnimationFrame(tick);
+          if (lastTimeRef.current !== null) frameRef.current = requestAnimationFrame(tick);
         }, 100);
         return;
       }
