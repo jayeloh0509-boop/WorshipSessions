@@ -1238,8 +1238,22 @@
   padding-bottom: 92px;
 }
 
-.live-mode .chord-sheet-wrap {
-  flex: 1;
+.live-mode-chart-viewport {
+  min-height: 0;
+}
+
+.live-mode-chart-viewport.active {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.live-mode-chart-viewport.active .chord-sheet-wrap {
+  min-height: max-content;
   background: #070907;
   color: #f7f7f1;
   padding: clamp(20px, 4vw, 48px) clamp(18px, 7vw, 112px) calc(124px + env(safe-area-inset-bottom));

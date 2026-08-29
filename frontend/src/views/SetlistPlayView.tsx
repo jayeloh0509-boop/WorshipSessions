@@ -45,8 +45,9 @@ export function SetlistPlayView({
   const { t } = useI18n();
   const toast = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const chartScrollRef = useRef<HTMLDivElement>(null);
   const liveMode = useLiveMode(containerRef);
-  const autoScroll = useAutoScroll(liveMode.active, containerRef);
+  const autoScroll = useAutoScroll(liveMode.active, chartScrollRef);
   const pauseAutoScroll = autoScroll.pause;
 
   const [editing, setEditing] = useState(false);
@@ -249,7 +250,7 @@ export function SetlistPlayView({
 
   useEffect(() => {
     pauseAutoScroll();
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    if (chartScrollRef.current) chartScrollRef.current.scrollTop = 0;
   }, [index, pauseAutoScroll]);
 
   const resetFont = () => {
@@ -534,7 +535,13 @@ export function SetlistPlayView({
               </div>
             </div>
           ) : (
-            <ChordSheet html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} autoFit={autoFitActive} />
+            <div
+              ref={chartScrollRef}
+              className={`live-mode-chart-viewport${liveMode.active ? ' active' : ''}`}
+              data-testid="live-mode-chart-viewport"
+            >
+              <ChordSheet html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} autoFit={autoFitActive} />
+            </div>
           )}
         </>
       )}
