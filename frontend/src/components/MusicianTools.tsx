@@ -36,13 +36,31 @@ export function MusicianTools({ chords, bpm, simplified, onSimplifiedChange }: M
 
   useEffect(() => setTempo(clampTempo(bpm || 80)), [bpm]);
 
+  const stopMetronome = async () => {
+    setMetronome(false);
+    const audio = audioRef.current;
+    audioRef.current = null;
+    if (audio && audio.state !== 'closed') await audio.close().catch(() => {});
+  };
+
+  const toggleMetronome = async () => {
+    if (metronome) {
+      await stopMetronome();
+      return;
+    }
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return;
+    const audio = audioRef.current || new AudioCtor();
+    audioRef.current = audio;
+    if (audio.state === 'suspended') await audio.resume().catch(() => {});
+    setMetronome(true);
+  };
+
   useEffect(() => {
     if (!metronome) return;
     const tick = () => {
-      const AudioCtor = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtor) return;
-      const audio = audioRef.current || new AudioCtor();
-      audioRef.current = audio;
+      const audio = audioRef.current;
+      if (!audio || audio.state !== 'running') return;
       const oscillator = audio.createOscillator();
       const gain = audio.createGain();
       oscillator.frequency.value = 880;
@@ -69,7 +87,7 @@ export function MusicianTools({ chords, bpm, simplified, onSimplifiedChange }: M
         <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           <span>▦</span> Chords
         </button>
-        <button type="button" aria-pressed={metronome} onClick={() => setMetronome((value) => !value)}>
+        <button type="button" aria-pressed={metronome} onClick={() => void toggleMetronome()}>
           <span>♩</span> Metronome
         </button>
       </div>

@@ -1,15 +1,22 @@
 const CHORD_TOKEN = /\[([^\]]+)\]/g;
+const CHORD_NAME =
+  /^[A-G](?:#|b)?(?:(?:m|min|minor|maj|dim|aug|sus|add|no|°|ø|Δ|∆|\+)?[\d#b()+°øΔ∆-]*)?(?:\/[A-G](?:#|b)?)?$/i;
+
+function isChordName(value: string): boolean {
+  return CHORD_NAME.test(value.trim());
+}
 
 export function simplifyChordName(chord: string): string {
-  if (/^(N\.C\.|NC)$/i.test(chord.trim())) return chord;
-  return chord
+  const trimmed = chord.trim();
+  if (!isChordName(trimmed) || /^(N\.C\.|NC)$/i.test(trimmed)) return chord;
+  return trimmed
     .split('/')
     .map((part, index) => {
       const match = part.trim().match(/^([A-G](?:#|b)?)(.*)$/);
       if (!match) return part.trim();
       if (index > 0) return match[1];
       const quality = match[2];
-      return `${match[1]}${/^m(?!aj)/i.test(quality) ? 'm' : ''}`;
+      return `${match[1]}${/^(?:m(?!aj)|min|minor)/i.test(quality) ? 'm' : ''}`;
     })
     .join('/');
 }
