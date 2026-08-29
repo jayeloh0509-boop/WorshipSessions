@@ -81,6 +81,29 @@ export function useAutoScroll(enabled: boolean) {
   }, [enabled, running, speed]);
 
   useEffect(() => {
+    const pauseForUserInput = (event: Event) => {
+      if (!running) return;
+      if (
+        event instanceof KeyboardEvent &&
+        !['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)
+      ) {
+        return;
+      }
+      pause();
+    };
+    window.addEventListener('wheel', pauseForUserInput, { passive: true });
+    window.addEventListener('touchstart', pauseForUserInput, { passive: true });
+    window.addEventListener('pointerdown', pauseForUserInput, { passive: true });
+    document.addEventListener('keydown', pauseForUserInput);
+    return () => {
+      window.removeEventListener('wheel', pauseForUserInput);
+      window.removeEventListener('touchstart', pauseForUserInput);
+      window.removeEventListener('pointerdown', pauseForUserInput);
+      document.removeEventListener('keydown', pauseForUserInput);
+    };
+  }, [pause, running]);
+
+  useEffect(() => {
     const updateProgress = () => {
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       setProgress(maxScroll > 0 ? Math.round((window.scrollY / maxScroll) * 100) : 100);

@@ -54,6 +54,11 @@ describe('useAutoScroll', () => {
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
     expect(result.current.running).toBe(true);
 
+    act(() => window.dispatchEvent(new WheelEvent('wheel')));
+    expect(result.current.running).toBe(false);
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
+
+    act(() => result.current.start());
     act(() => result.current.pause());
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
     expect(result.current.running).toBe(false);

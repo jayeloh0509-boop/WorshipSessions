@@ -1283,6 +1283,39 @@
     justify-content: center;
   }
 
+  .live-mode-autoscroll label {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .live-mode-autoscroll input[type='range'] {
+    width: 100%;
+    min-width: 72px;
+  }
+}
+
+@media (max-width: 360px) {
+  .live-mode-autoscroll {
+    gap: 6px;
+  }
+
+  .live-mode-autoscroll button {
+    min-width: 64px;
+  }
+
+  .live-mode-scroll-progress {
+    min-width: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-mode-autoscroll button,
+  .live-mode-autoscroll input {
+    transition: none;
+  }
+}
+
+@media (max-width: 720px) {
   .live-mode .chord-sheet-wrap {
     padding-left: 12px;
     padding-right: 12px;
