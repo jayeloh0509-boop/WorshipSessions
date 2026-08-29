@@ -62,6 +62,39 @@ describe('useAutoScroll', () => {
     vi.useRealTimers();
   });
 
+  it('accumulates sub-pixel movement at the slowest speed on browsers that round scrollTop', () => {
+    vi.useFakeTimers();
+    localStorage.setItem('worshipsessions-autoscroll-speed', '1');
+    const now = vi.spyOn(performance, 'now');
+    let time = 0;
+    now.mockImplementation(() => time);
+    let roundedTop = 0;
+    const scrollElement = document.createElement('div');
+    Object.defineProperties(scrollElement, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 800 },
+      scrollTop: {
+        configurable: true,
+        get: () => roundedTop,
+        set: (value: number) => {
+          roundedTop = Math.floor(value);
+        },
+      },
+    });
+    const { result } = renderHook(() => useAutoScroll(true, { current: scrollElement }));
+
+    act(() => result.current.start());
+    for (let tick = 1; tick <= 10; tick += 1) {
+      time = tick * 16;
+      act(() => vi.advanceTimersByTime(16));
+    }
+
+    expect(scrollElement.scrollTop).toBeGreaterThan(0);
+    act(() => result.current.pause());
+    now.mockRestore();
+    vi.useRealTimers();
+  });
+
   it('scrolls continuously with a timer, cancels promptly, and pauses when disabled', () => {
     vi.useFakeTimers();
     const now = vi.spyOn(performance, 'now');

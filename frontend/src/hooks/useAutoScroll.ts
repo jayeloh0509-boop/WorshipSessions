@@ -21,12 +21,14 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
+  const preciseTopRef = useRef<number | null>(null);
 
   const pause = useCallback(() => {
     if (timerRef.current !== null) window.clearInterval(timerRef.current);
     timerRef.current = null;
     setRunning(false);
     lastTimeRef.current = null;
+    preciseTopRef.current = null;
   }, []);
 
   const start = useCallback(() => {
@@ -34,8 +36,9 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     const element = scrollRef.current;
     if (!element) return;
     // A chart can be taller than the container even when the browser reports
-    // zero metrics during the first render. Start anyway; the RAF will measure
-    // the real scroll owner on the next frame.
+    // zero metrics during the first render. Start anyway; the timer will measure
+    // the real scroll owner on its next tick.
+    preciseTopRef.current = element.scrollTop;
     setRunning(true);
   }, [enabled, scrollRef]);
 
@@ -75,7 +78,9 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
       if (maxScroll === 0) return;
 
-      const nextTop = Math.min(maxScroll, element.scrollTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
+      const baseTop = preciseTopRef.current ?? element.scrollTop;
+      const nextTop = Math.min(maxScroll, baseTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
+      preciseTopRef.current = nextTop;
       element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {
         pause();
