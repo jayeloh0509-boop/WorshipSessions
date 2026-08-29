@@ -153,6 +153,7 @@ describe('SetlistPlayView', () => {
   });
 
   it('starts, pauses, and persists Live Mode auto-scroll controls', async () => {
+    localStorage.removeItem('worshipsessions-autoscroll-speed');
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,
       value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
@@ -163,18 +164,19 @@ describe('SetlistPlayView', () => {
 
     const start = await screen.findByRole('button', { name: /start auto-scroll/i });
     expect(screen.getByRole('toolbar', { name: /auto-scroll controls/i })).toHaveClass('live-mode-scroll-dock');
-    const slower = screen.getByRole('button', { name: /decrease auto-scroll speed/i });
-    expect(slower).toBeEnabled();
-    fireEvent.click(slower);
-    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('2');
-    expect(slower).toBeEnabled();
+    const slider = screen.getByRole('slider', { name: /auto-scroll speed/i });
+    expect(slider).toHaveAttribute('min', '1');
+    expect(slider).toHaveAttribute('max', '10');
+    fireEvent.change(slider, { target: { value: '5' } });
+    expect(slider).toHaveValue('5');
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('5');
     fireEvent.click(start);
     expect(screen.getByRole('button', { name: /pause auto-scroll/i })).toHaveAttribute('aria-pressed', 'true');
 
     const faster = screen.getByRole('button', { name: /increase auto-scroll speed/i });
     fireEvent.click(faster);
     fireEvent.click(faster);
-    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('4');
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('7');
 
     fireEvent.keyDown(document, { key: ' ' });
     expect(screen.getByRole('button', { name: /start auto-scroll/i })).toHaveAttribute('aria-pressed', 'false');

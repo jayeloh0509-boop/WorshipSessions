@@ -421,9 +421,21 @@ export function SetlistPlayView({
           </button>
           <div className="live-mode-scroll-status" aria-live="polite">
             <strong>{autoScroll.running ? 'Auto-scroll on' : 'Auto-scroll'}</strong>
-            <span>
-              Speed {autoScroll.speed} · {autoScroll.progress}%
-            </span>
+            <label className="live-mode-speed-slider-label" htmlFor="live-mode-speed-slider">
+              Speed <output>{autoScroll.speed}</output>
+            </label>
+            <input
+              id="live-mode-speed-slider"
+              className="live-mode-speed-slider"
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={autoScroll.speed}
+              onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
+              aria-label="Auto-scroll speed"
+            />
+            <span>{autoScroll.progress}%</span>
           </div>
           <button
             type="button"
