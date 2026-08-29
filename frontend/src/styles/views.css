@@ -1095,15 +1095,31 @@
   backdrop-filter: blur(12px);
 }
 
-.live-mode-reveal {
-  border: 1px solid rgba(255, 255, 255, 0.22);
+.live-mode-exit-persistent {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 126, 99, 0.7);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  color: #f5f5ef;
-  padding: 8px 11px;
-  font-size: 12px;
-  font-weight: 700;
+  background: rgba(126, 34, 24, 0.72);
+  color: #fff;
+  font: inherit;
+  font-weight: 750;
   cursor: pointer;
+}
+
+.live-mode-exit-persistent > :first-child {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.live-mode-exit-persistent:hover,
+.live-mode-exit-persistent:focus-visible {
+  background: rgba(172, 48, 31, 0.92);
+  outline: 3px solid rgba(255, 160, 118, 0.28);
+  outline-offset: 2px;
 }
 
 .live-mode-song-info {
@@ -1285,6 +1301,12 @@
 @media (max-width: 600px) {
   .live-mode-topbar {
     gap: 8px;
+  }
+
+  .live-mode-exit-persistent {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
   }
 
   .live-mode-reveal {

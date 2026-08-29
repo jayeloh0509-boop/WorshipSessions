@@ -357,6 +357,15 @@ export function SetlistPlayView({
       {liveMode.active && (
         <div className="live-mode-topbar">
           <button
+            className="live-mode-exit-persistent"
+            type="button"
+            onClick={() => void liveMode.stop()}
+            aria-label="Exit Live Mode"
+          >
+            <span aria-hidden="true">×</span>
+            <span>Exit</span>
+          </button>
+          <button
             className="live-mode-reveal"
             type="button"
             onClick={liveMode.controlsVisible ? liveMode.hideControls : liveMode.showControls}
