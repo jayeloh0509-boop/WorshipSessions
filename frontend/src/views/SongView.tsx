@@ -13,7 +13,9 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
+import { MusicianTools } from '../components/MusicianTools';
 import { renderChordPro, songHasKey, autoFit, isSectionLabel } from '../lib/chords';
+import { extractChordNames, simplifyChordPro } from '../lib/musician-tools';
 import { languageName } from '../lib/languages';
 import { getTransposeDelta } from '../lib/keys';
 import type { Song, SongVersion, Correction } from '../types';
@@ -141,12 +143,17 @@ export function SongView({ songId, navigate }: SongViewProps) {
     };
   }, [content, chord.transpose, chord.nashville, preferences.autoFit, preferenceId, scheduleAutoFit, cancelAutoFit]);
 
+  const displayContent = useMemo(
+    () => (preferences.simplified ? simplifyChordPro(content) : content),
+    [content, preferences.simplified],
+  );
   const renderedHtml = useMemo(
-    () => renderChordPro(content, chord.transpose, chord.nashville),
-    [content, chord.transpose, chord.nashville],
+    () => renderChordPro(displayContent, chord.transpose, chord.nashville),
+    [displayContent, chord.transpose, chord.nashville],
   );
 
   const roadmap = useMemo(() => extractRoadmap(content), [content]);
+  const songChords = useMemo(() => extractChordNames(displayContent), [displayContent]);
 
   const jumpToSection = (section: string) => {
     const wanted = section.toLowerCase();
@@ -352,6 +359,31 @@ export function SongView({ songId, navigate }: SongViewProps) {
       </div>
 
       <div className="song-reading-controls" aria-label="Chart reading controls">
+        <div className="ug-reader-tabs" aria-label="Chart display modes">
+          <button
+            type="button"
+            className={!preferences.nashville ? 'active' : ''}
+            aria-pressed={!preferences.nashville}
+            onClick={() => {
+              chord.toggleNashville(false);
+              updateReadingPreferences({ nashville: false });
+            }}
+          >
+            Chords
+          </button>
+          <button
+            type="button"
+            className={preferences.nashville ? 'active' : ''}
+            aria-pressed={preferences.nashville}
+            onClick={() => {
+              const nashville = !preferences.nashville;
+              chord.toggleNashville(nashville);
+              updateReadingPreferences({ nashville });
+            }}
+          >
+            Numbers
+          </button>
+        </div>
         <Toolbar
           currentKey={chord.currentKey}
           nashville={preferences.nashville}
@@ -397,6 +429,13 @@ export function SongView({ songId, navigate }: SongViewProps) {
           }
         />
       </div>
+
+      <MusicianTools
+        chords={songChords}
+        bpm={song.bpm}
+        simplified={preferences.simplified}
+        onSimplifiedChange={(simplified) => updateReadingPreferences({ simplified })}
+      />
 
       {roadmap.length > 0 && (
         <nav className="song-roadmap" aria-label="Song sections">

@@ -1,0 +1,231 @@
+/* Ultimate Guitar-inspired musician workspace (interaction model, original styling). */
+.ug-reader-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.ug-reader-tabs button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ug-reader-tabs button.active,
+.ug-reader-tabs button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.ug-musician-tools {
+  width: min(1120px, calc(100% - 32px));
+  margin: 14px auto 10px;
+}
+
+.ug-quick-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.ug-quick-tools button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ug-quick-tools button:hover,
+.ug-quick-tools button[aria-pressed='true'],
+.ug-quick-tools button[aria-expanded='true'] {
+  border-color: #f05a2a;
+  color: #f05a2a;
+}
+
+.ug-quick-tools button span {
+  font-size: 18px;
+}
+
+.ug-metronome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #202020;
+  color: #fff;
+}
+
+.ug-metronome button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 20px;
+}
+
+.ug-metronome-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f05a2a;
+  box-shadow: 0 0 0 5px rgba(240, 90, 42, 0.18);
+}
+
+.ug-chord-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.ug-chord-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 118px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.ug-chord-card > strong {
+  color: #f05a2a;
+  font-size: 17px;
+}
+
+.ug-fretboard {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  align-items: start;
+  padding-top: 16px;
+  border-top: 3px solid currentColor;
+}
+
+.ug-string {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 55px;
+  border-left: 1px solid currentColor;
+}
+
+.ug-string:last-child {
+  border-right: 1px solid currentColor;
+}
+
+.ug-string::before,
+.ug-string::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(128, 128, 128, 0.45);
+}
+
+.ug-string::before {
+  top: 18px;
+}
+
+.ug-string::after {
+  top: 36px;
+}
+
+.ug-string i {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #202020;
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.ug-string i.open,
+.ug-string i.muted {
+  position: absolute;
+  top: -17px;
+  background: transparent;
+  color: currentColor;
+  font-weight: 800;
+}
+
+.ug-shape-unavailable {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.song-reading-controls {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 8px 0;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.song-reading-controls .transpose-bar {
+  flex: 1 1 auto;
+}
+
+.chart-reading-surface .chord-sheet .chord {
+  color: #f05a2a !important;
+}
+
+@media (max-width: 720px) {
+  .song-reading-controls {
+    width: 100%;
+    padding: 8px 12px;
+    overflow-x: auto;
+  }
+
+  .ug-musician-tools {
+    width: calc(100% - 24px);
+  }
+
+  .ug-chord-library {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

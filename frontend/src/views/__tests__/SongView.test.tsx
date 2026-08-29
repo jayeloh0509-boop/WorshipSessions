@@ -69,6 +69,18 @@ vi.mock('../../components/Toolbar', () => ({
 vi.mock('../../components/ChordSheet', () => ({
   ChordSheet: ({ tone }: { tone?: string }) => <div data-testid="chart-surface" data-tone={tone} />,
 }));
+vi.mock('../../components/MusicianTools', () => ({
+  MusicianTools: (props: {
+    chords: string[];
+    bpm?: number | null;
+    simplified: boolean;
+    onSimplifiedChange: (value: boolean) => void;
+  }) => (
+    <div data-testid="musician-tools" data-chords={props.chords.join(',')} data-bpm={props.bpm}>
+      <button aria-label="test simplify" onClick={() => props.onSimplifiedChange(!props.simplified)} />
+    </div>
+  ),
+}));
 vi.mock('../../components/Loading', () => ({ Loading: () => <div>Loading</div> }));
 vi.mock('../../components/AddToSetlistModal', () => ({ AddToSetlistModal: () => null }));
 
@@ -107,6 +119,15 @@ describe('SongView chord-reading workspace', () => {
     expect(screen.getByText('63 BPM', { selector: '.song-view-stat' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Song actions' })).toBeInTheDocument();
     expect(screen.getByTestId('reading-controls')).toBeInTheDocument();
+    expect(screen.getByLabelText('Chart display modes')).toHaveTextContent('ChordsNumbers');
+    expect(screen.getByTestId('musician-tools')).toHaveAttribute('data-chords', 'Ab');
+    expect(screen.getByTestId('musician-tools')).toHaveAttribute('data-bpm', '63');
+    fireEvent.click(screen.getByRole('button', { name: 'test simplify' }));
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('cv_song_reading_preferences_v1') || '{}')).toMatchObject({
+        7: { simplified: true },
+      });
+    });
     expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'paper');
     expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
     expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();

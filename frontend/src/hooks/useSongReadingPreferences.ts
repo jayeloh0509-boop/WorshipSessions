@@ -17,6 +17,7 @@ function withDefaults(stored: SongReadingPreferences, defaults: ReadingDefaults)
     twoCol: stored.twoCol ?? defaults.twoCol,
     chartTone: stored.chartTone ?? defaults.chartTone,
     autoFit: stored.autoFit ?? false,
+    simplified: stored.simplified ?? false,
   };
 }
 

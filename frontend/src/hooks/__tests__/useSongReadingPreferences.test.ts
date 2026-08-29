@@ -74,6 +74,7 @@ describe('useSongReadingPreferences', () => {
       twoCol: true,
       chartTone: 'paper',
       autoFit: false,
+      simplified: false,
     });
     expect(localStorage.getItem('cv_song_reading_preferences_v1')).toBe('{}');
   });

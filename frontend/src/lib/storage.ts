@@ -8,6 +8,7 @@ export type SongReadingPreferences = {
   twoCol?: boolean;
   chartTone?: 'paper' | 'dark';
   autoFit?: boolean;
+  simplified?: boolean;
 };
 
 const KEYS = {
@@ -87,6 +88,7 @@ export function sanitizeSongReadingPreferences(value: unknown): SongReadingPrefe
   if (typeof raw.twoCol === 'boolean') result.twoCol = raw.twoCol;
   if (raw.chartTone === 'paper' || raw.chartTone === 'dark') result.chartTone = raw.chartTone;
   if (typeof raw.autoFit === 'boolean') result.autoFit = raw.autoFit;
+  if (typeof raw.simplified === 'boolean') result.simplified = raw.simplified;
   if (result.nashville) result.transpose = 0;
   return result;
 }
