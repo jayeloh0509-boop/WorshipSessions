@@ -105,6 +105,7 @@ describe('SetlistPlayView', () => {
     expect(screen.getByTestId('setlist-play-container')).toHaveStyle('overflow: hidden');
     expect(screen.getByRole('button', { name: /show controls/i })).toBeInTheDocument();
     const exits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
+    expect(exits).toHaveLength(1);
     expect(exits[0]).toBeVisible();
     fireEvent.click(exits[0]);
     await waitFor(() => expect(screen.getByRole('button', { name: /start live mode/i })).toBeInTheDocument());

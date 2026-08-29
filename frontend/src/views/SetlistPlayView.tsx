@@ -348,14 +348,16 @@ export function SetlistPlayView({
         </div>
 
         <div className="setlist-play-header-right">
-          <button
-            className={`live-mode-button${liveMode.active ? ' active' : ''}`}
-            type="button"
-            onClick={() => void (liveMode.active ? liveMode.stop() : liveMode.start())}
-            aria-label={liveMode.active ? 'Exit Live Mode' : 'Start Live Mode'}
-          >
-            {liveMode.active ? 'EXIT LIVE' : 'LIVE'}
-          </button>
+          {!liveMode.active && (
+            <button
+              className="live-mode-button"
+              type="button"
+              onClick={() => void liveMode.start()}
+              aria-label="Start Live Mode"
+            >
+              LIVE
+            </button>
+          )}
           {entry.bpm && <span className="badge badge-bpm">{entry.bpm} bpm</span>}
           {!hideYt && entry.youtube_url && (
             <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">
@@ -367,15 +369,6 @@ export function SetlistPlayView({
 
       {liveMode.active && (
         <div className="live-mode-topbar">
-          <button
-            className="live-mode-exit-persistent"
-            type="button"
-            onClick={() => void liveMode.stop()}
-            aria-label="Exit Live Mode"
-          >
-            <span aria-hidden="true">×</span>
-            <span>Exit</span>
-          </button>
           <button
             className="live-mode-reveal"
             type="button"
