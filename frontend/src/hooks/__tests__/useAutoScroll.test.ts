@@ -15,9 +15,9 @@ describe('useAutoScroll', () => {
     const { result } = renderHook(() => useAutoScroll(true));
     expect(result.current.speed).toBe(4);
 
-    act(() => result.current.setSpeed(9));
-    expect(result.current.speed).toBe(5);
-    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('5');
+    act(() => result.current.setSpeed(14));
+    expect(result.current.speed).toBe(10);
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('10');
   });
 
   it('falls back when reading storage is blocked', () => {
@@ -25,7 +25,7 @@ describe('useAutoScroll', () => {
       throw new DOMException('blocked', 'SecurityError');
     });
     const { result } = renderHook(() => useAutoScroll(true));
-    expect(result.current.speed).toBe(2);
+    expect(result.current.speed).toBe(3);
     getItem.mockRestore();
   });
 

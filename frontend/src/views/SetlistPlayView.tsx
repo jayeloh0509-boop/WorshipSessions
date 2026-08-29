@@ -429,7 +429,7 @@ export function SetlistPlayView({
             type="button"
             className="live-mode-speed-step"
             onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
-            disabled={autoScroll.speed >= 5}
+            disabled={autoScroll.speed >= 10}
             aria-label="Increase auto-scroll speed"
           >
             +

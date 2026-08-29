@@ -164,18 +164,17 @@ describe('SetlistPlayView', () => {
     const start = await screen.findByRole('button', { name: /start auto-scroll/i });
     expect(screen.getByRole('toolbar', { name: /auto-scroll controls/i })).toHaveClass('live-mode-scroll-dock');
     const slower = screen.getByRole('button', { name: /decrease auto-scroll speed/i });
-    const faster = screen.getByRole('button', { name: /increase auto-scroll speed/i });
     expect(slower).toBeEnabled();
-    expect(faster).toBeEnabled();
     fireEvent.click(slower);
-    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('1');
-    expect(slower).toBeDisabled();
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('2');
+    expect(slower).toBeEnabled();
     fireEvent.click(start);
     expect(screen.getByRole('button', { name: /pause auto-scroll/i })).toHaveAttribute('aria-pressed', 'true');
 
+    const faster = screen.getByRole('button', { name: /increase auto-scroll speed/i });
     fireEvent.click(faster);
     fireEvent.click(faster);
-    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('3');
+    expect(localStorage.getItem('worshipsessions-autoscroll-speed')).toBe('4');
 
     fireEvent.keyDown(document, { key: ' ' });
     expect(screen.getByRole('button', { name: /start auto-scroll/i })).toHaveAttribute('aria-pressed', 'false');

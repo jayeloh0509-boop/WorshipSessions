@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 const STORAGE_KEY = 'worshipsessions-autoscroll-speed';
 const MIN_SPEED = 1;
-const MAX_SPEED = 5;
-const DEFAULT_SPEED = 2;
-const PIXELS_PER_SECOND = [0, 18, 32, 50, 72, 100];
+const MAX_SPEED = 10;
+const DEFAULT_SPEED = 3;
+const PIXELS_PER_SECOND = [0, 8, 14, 22, 32, 45, 62, 82, 108, 140, 180];
 
 function loadSpeed(): number {
   try {
@@ -83,10 +83,9 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       }
     };
 
-    // Use a short timer rather than relying on RAF. Mobile browsers may throttle
-    // RAF for scrollable elements while touch scrolling/compositor scrolling is active.
-    lastTimeRef.current = performance.now();
-    timerRef.current = window.setInterval(tick, 50);
+    // A 16 ms timer keeps movement visually smooth on phones without relying on
+    // requestAnimationFrame, which some mobile browsers throttle while idle.
+    timerRef.current = window.setInterval(tick, 16);
     tick();
 
     return () => {
