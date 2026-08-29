@@ -102,6 +102,7 @@ describe('SetlistPlayView', () => {
     expect(screen.getByTestId('setlist-play-container')).toHaveClass('live-mode');
     const viewport = screen.getByTestId('live-mode-chart-viewport');
     expect(viewport).toHaveClass('active');
+    expect(screen.getByTestId('setlist-play-container')).toHaveStyle('overflow: hidden');
     expect(screen.getByRole('button', { name: /show controls/i })).toBeInTheDocument();
     const exits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
     expect(exits[0]).toBeVisible();

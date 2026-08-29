@@ -312,9 +312,7 @@ export function SetlistPlayView({
           ? {
               height: '100dvh',
               minHeight: 0,
-              overflowY: 'auto',
-              overscrollBehaviorY: 'contain',
-              WebkitOverflowScrolling: 'touch',
+              overflow: 'hidden',
             }
           : {}),
       }}
