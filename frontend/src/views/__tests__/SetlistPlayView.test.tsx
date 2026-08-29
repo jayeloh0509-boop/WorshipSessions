@@ -100,6 +100,7 @@ describe('SetlistPlayView', () => {
 
     await waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
     expect(screen.getByTestId('setlist-play-container')).toHaveClass('live-mode');
+    expect(screen.getByTestId('setlist-play-container')).toHaveStyle({ overflowY: 'auto', maxHeight: '100dvh' });
     expect(screen.getByRole('button', { name: /show controls/i })).toBeInTheDocument();
     const exits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
     expect(exits[0]).toBeVisible();

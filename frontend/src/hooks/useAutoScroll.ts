@@ -33,6 +33,9 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     if (!enabled) return;
     const element = scrollRef.current;
     if (!element) return;
+    // A chart can be taller than the container even when the browser reports
+    // zero metrics during the first render. Start anyway; the RAF will measure
+    // the real scroll owner on the next frame.
     setRunning(true);
   }, [enabled, scrollRef]);
 
@@ -58,6 +61,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
   useEffect(() => {
     if (!enabled || !running) return;
 
+    let retryTimer: number | null = null;
     const tick = (now: number) => {
       const element = scrollRef.current;
       if (!element) {
@@ -68,6 +72,13 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       const elapsed = Math.min(100, now - previous);
       lastTimeRef.current = now;
       const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
+      if (maxScroll === 0) {
+        lastTimeRef.current = now;
+        retryTimer = window.setTimeout(() => {
+          frameRef.current = requestAnimationFrame(tick);
+        }, 100);
+        return;
+      }
       const nextTop = Math.min(maxScroll, element.scrollTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
       element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {
@@ -81,6 +92,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     frameRef.current = requestAnimationFrame(tick);
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
       frameRef.current = null;
       lastTimeRef.current = null;
     };

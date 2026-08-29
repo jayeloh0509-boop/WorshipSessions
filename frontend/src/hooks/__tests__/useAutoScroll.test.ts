@@ -29,6 +29,39 @@ describe('useAutoScroll', () => {
     getItem.mockRestore();
   });
 
+  it('keeps running until late layout metrics reveal a scrollable chart', () => {
+    vi.useFakeTimers();
+    let frame: FrameRequestCallback | undefined;
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        frame = callback;
+        return 2;
+      }),
+    );
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    let scrollHeight = 800;
+    const scrollElement = document.createElement('div');
+    Object.defineProperties(scrollElement, {
+      scrollHeight: { configurable: true, get: () => scrollHeight },
+      clientHeight: { configurable: true, value: 800 },
+      scrollTop: { configurable: true, writable: true, value: 0 },
+    });
+    const { result } = renderHook(() => useAutoScroll(true, { current: scrollElement }));
+
+    act(() => result.current.start());
+    act(() => frame?.(0));
+    expect(result.current.running).toBe(true);
+
+    scrollHeight = 2000;
+    act(() => vi.advanceTimersByTime(100));
+    act(() => frame?.(1100));
+    expect(scrollElement.scrollTop).toBeGreaterThan(0);
+    act(() => result.current.pause());
+    vi.useRealTimers();
+  });
+
   it('scrolls on animation frames, cancels promptly, and pauses when disabled', () => {
     let frame: FrameRequestCallback | undefined;
     vi.stubGlobal(

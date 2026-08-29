@@ -306,6 +306,9 @@ export function SetlistPlayView({
       ref={containerRef}
       data-testid="setlist-play-container"
       className={`setlist-play-container${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}`}
+      style={{
+        ...(liveMode.active ? { overflowY: 'auto', maxHeight: '100dvh' } : {}),
+      }}
     >
       <div className="setlist-play-header">
         <div className="setlist-play-header-left">
