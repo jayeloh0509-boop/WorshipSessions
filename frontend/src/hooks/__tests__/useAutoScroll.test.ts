@@ -62,19 +62,11 @@ describe('useAutoScroll', () => {
     vi.useRealTimers();
   });
 
-  it('scrolls on animation frames, cancels promptly, and pauses when disabled', () => {
-    let frame: FrameRequestCallback | undefined;
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((callback: FrameRequestCallback) => {
-        frame = callback;
-        return 1;
-      }),
-    );
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const scrollTo = vi.fn();
-    window.scrollTo = scrollTo as typeof window.scrollTo;
-
+  it('scrolls continuously with a timer, cancels promptly, and pauses when disabled', () => {
+    vi.useFakeTimers();
+    const now = vi.spyOn(performance, 'now');
+    let time = 0;
+    now.mockImplementation(() => time);
     const scrollElement = document.createElement('div');
     Object.defineProperties(scrollElement, {
       scrollHeight: { configurable: true, value: 2000 },
@@ -87,22 +79,22 @@ describe('useAutoScroll', () => {
     });
     act(() => result.current.start());
     expect(result.current.running).toBe(true);
-    act(() => frame?.(0));
-    act(() => frame?.(1100));
+    time = 1000;
+    act(() => vi.advanceTimersByTime(50));
     expect(scrollElement.scrollTop).toBeGreaterThan(0);
     expect(result.current.running).toBe(true);
 
     act(() => scrollElement.dispatchEvent(new WheelEvent('wheel')));
     expect(result.current.running).toBe(false);
-    expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
 
     act(() => result.current.start());
     act(() => result.current.pause());
-    expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
     expect(result.current.running).toBe(false);
 
     act(() => result.current.start());
     rerender({ enabled: false });
     expect(result.current.running).toBe(false);
+    now.mockRestore();
+    vi.useRealTimers();
   });
 });

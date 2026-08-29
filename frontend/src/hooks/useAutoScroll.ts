@@ -4,7 +4,7 @@ const STORAGE_KEY = 'worshipsessions-autoscroll-speed';
 const MIN_SPEED = 1;
 const MAX_SPEED = 5;
 const DEFAULT_SPEED = 2;
-const PIXELS_PER_SECOND = [0, 10, 18, 28, 40, 54];
+const PIXELS_PER_SECOND = [0, 18, 32, 50, 72, 100];
 
 function loadSpeed(): number {
   try {
@@ -19,12 +19,12 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
   const [running, setRunning] = useState(false);
   const [speed, setSpeedState] = useState(loadSpeed);
   const [progress, setProgress] = useState(0);
-  const frameRef = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
 
   const pause = useCallback(() => {
-    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    frameRef.current = null;
+    if (timerRef.current !== null) window.clearInterval(timerRef.current);
+    timerRef.current = null;
     setRunning(false);
     lastTimeRef.current = null;
   }, []);
@@ -61,39 +61,37 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
   useEffect(() => {
     if (!enabled || !running) return;
 
-    let retryTimer: number | null = null;
-    const tick = (now: number) => {
+    const tick = () => {
       const element = scrollRef.current;
       if (!element) {
         pause();
         return;
       }
+
+      const now = performance.now();
       const previous = lastTimeRef.current ?? now;
-      const elapsed = Math.min(100, now - previous);
+      const elapsed = Math.min(100, Math.max(0, now - previous));
       lastTimeRef.current = now;
       const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
-      if (maxScroll === 0) {
-        lastTimeRef.current = now;
-        retryTimer = window.setTimeout(() => {
-          if (lastTimeRef.current !== null) frameRef.current = requestAnimationFrame(tick);
-        }, 100);
-        return;
-      }
+      if (maxScroll === 0) return;
+
       const nextTop = Math.min(maxScroll, element.scrollTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
       element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {
         pause();
         setProgress(100);
-        return;
       }
-      frameRef.current = requestAnimationFrame(tick);
     };
 
-    frameRef.current = requestAnimationFrame(tick);
+    // Use a short timer rather than relying on RAF. Mobile browsers may throttle
+    // RAF for scrollable elements while touch scrolling/compositor scrolling is active.
+    lastTimeRef.current = performance.now();
+    timerRef.current = window.setInterval(tick, 50);
+    tick();
+
     return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-      if (retryTimer !== null) window.clearTimeout(retryTimer);
-      frameRef.current = null;
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+      timerRef.current = null;
       lastTimeRef.current = null;
     };
   }, [enabled, pause, running, scrollRef, speed]);
