@@ -1459,7 +1459,7 @@
   bottom: max(12px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: grid;
-  grid-template-columns: 58px auto 58px;
+  grid-template-columns: repeat(4, minmax(50px, 1fr));
   align-items: center;
   gap: 7px;
   padding: 6px;
@@ -1473,11 +1473,25 @@
 .live-mode-navigation button {
   min-height: 40px;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
-  font-size: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 22px;
   cursor: pointer;
+}
+
+.live-mode-navigation button small {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.live-mode-navigation button:hover:not(:disabled),
+.live-mode-navigation button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .live-mode-navigation button:disabled {
@@ -1485,13 +1499,15 @@
   cursor: default;
 }
 
+.live-mode-navigation .live-mode-nav-scroll.active {
+  color: #ff8a3d;
+}
+
 .live-mode-navigation .live-mode-exit {
-  min-width: 64px;
-  padding: 0 14px;
-  color: #bfc5bb;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  min-width: 0;
+  padding: 0 5px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 20px;
 }
 
 @media (max-width: 600px) {
