@@ -87,10 +87,16 @@ export function BrowseView({ navigate }: BrowseViewProps) {
     <>
       {showHero ? (
         <div className="hero">
+          <div className="hero-kicker">WORSHIP WORKSPACE</div>
           <div className="hero-title">&#9833; WorshipSessions</div>
-          <div className="hero-tagline">{t('hero.tagline')}</div>
-          <div className="hero-cta">{t('hero.cta')}</div>
-          <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div className="hero-tagline">Charts, Keys, Setlists.</div>
+          <div className="hero-cta">Organize your music, prepare your team, and stay focused while you lead.</div>
+          <div className="hero-features" aria-label="WorshipSessions features">
+            <span>♪ Clear chord charts</span>
+            <span>◈ Simple setlists</span>
+            <span>▣ Focused Live Mode</span>
+          </div>
+          <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button className="btn" onClick={() => navigate('auth')}>
               {t('auth.signIn')}
             </button>

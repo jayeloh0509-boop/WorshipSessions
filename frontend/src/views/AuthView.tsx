@@ -122,8 +122,20 @@ export function AuthView({ navigate }: AuthViewProps) {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-logo">{t('auth.logo')}</div>
-        <div className="auth-tagline">{t('auth.tagline')}</div>
+        <div className="auth-brand-block">
+          <div className="auth-logo">{t('auth.logo')}</div>
+          <div className="auth-tagline">Charts, Keys, Setlists.</div>
+          <p className="auth-brand-copy">Keep every chart clear, every key ready, and every setlist close at hand.</p>
+          <div className="auth-feature-list" aria-label="WorshipSessions features">
+            <span>♪ Chord charts</span>
+            <span>◈ Setlists</span>
+            <span>▣ Live Mode</span>
+          </div>
+        </div>
+        <div className="auth-form-heading">
+          <h1>{tab === 'login' ? 'Welcome back' : tab === 'invite' ? 'Join your workspace' : 'Create your account'}</h1>
+          <p>{tab === 'login' ? 'Sign in to continue rehearsing.' : 'Set up your worship workspace in a moment.'}</p>
+        </div>
         {showTabs && (
           <div className="auth-tabs">
             <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>
