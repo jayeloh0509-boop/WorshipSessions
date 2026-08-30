@@ -76,7 +76,7 @@
   flex-direction: column;
   vertical-align: top;
   flex-shrink: 0;
-  margin-right: 1px;
+  margin-right: 0;
 }
 
 /* Bar-notation / instrumental rows (Intro, Interlude, etc.) are a run of
