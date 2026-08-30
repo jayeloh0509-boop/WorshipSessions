@@ -9,6 +9,7 @@ import { useTwoCol } from '../hooks/useTwoCol';
 import { useChartTone } from '../hooks/useChartTone';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSongReadingPreferences } from '../hooks/useSongReadingPreferences';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
@@ -93,6 +94,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
   const autoFitTimer = useRef<number | null>(null);
+  const chartScrollRef = useRef<HTMLElement>(null);
+  const autoScroll = useAutoScroll(false, chartScrollRef);
 
   const scheduleAutoFit = useCallback(() => {
     if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
@@ -447,7 +450,30 @@ export function SongView({ songId, navigate }: SongViewProps) {
         </nav>
       )}
 
-      <section className="chart-reading-surface" aria-label="Chord chart">
+      <div className="song-autoscroll" role="group" aria-label="Song auto-scroll">
+        <button
+          type="button"
+          className={`song-autoscroll-toggle${autoScroll.running ? ' active' : ''}`}
+          onClick={autoScroll.toggle}
+          aria-label={autoScroll.running ? 'Pause song auto-scroll' : 'Start song auto-scroll'}
+          aria-pressed={autoScroll.running}
+        >
+          <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
+          {autoScroll.running ? 'Pause' : 'Auto-scroll'}
+        </button>
+        <label className="song-autoscroll-speed">
+          Speed
+          <select value={autoScroll.speed} onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((speed) => (
+              <option key={speed} value={speed}>
+                {speed}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <section className="chart-reading-surface" aria-label="Chord chart" ref={chartScrollRef}>
         <ChordSheet
           html={renderedHtml}
           twoCol={autoFitResult?.twoCol ?? preferences.twoCol}
