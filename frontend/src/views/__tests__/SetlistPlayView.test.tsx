@@ -103,7 +103,7 @@ describe('SetlistPlayView', () => {
     const viewport = screen.getByTestId('live-mode-chart-viewport');
     expect(viewport).toHaveClass('active');
     expect(screen.getByTestId('setlist-play-container')).toHaveStyle('overflow: hidden');
-    expect(screen.getByRole('button', { name: /show controls/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /show chart controls/i })).toBeInTheDocument();
     const exits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
     expect(exits).toHaveLength(1);
     expect(exits[0]).toBeVisible();
@@ -119,9 +119,9 @@ describe('SetlistPlayView', () => {
 
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /show controls/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /show chart controls/i }));
 
-    expect(screen.getByRole('button', { name: /hide controls/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /hide chart controls/i })).toBeInTheDocument();
     expect(screen.getByTitle(/Auto-fit for this screen/)).toBeInTheDocument();
   });
 

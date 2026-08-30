@@ -370,11 +370,16 @@ export function SetlistPlayView({
       {liveMode.active && (
         <div className="live-mode-topbar">
           <button
-            className="live-mode-reveal"
+            className={`live-mode-reveal${liveMode.controlsVisible ? ' open' : ''}`}
             type="button"
             onClick={liveMode.controlsVisible ? liveMode.hideControls : liveMode.showControls}
+            aria-expanded={liveMode.controlsVisible}
+            aria-label={liveMode.controlsVisible ? 'Hide chart controls' : 'Show chart controls'}
           >
-            {liveMode.controlsVisible ? 'Hide controls' : 'Show controls'}
+            <span className="live-mode-reveal-icon" aria-hidden="true">
+              {liveMode.controlsVisible ? '⌃' : '⌄'}
+            </span>
+            <span>{liveMode.controlsVisible ? 'Hide' : 'Controls'}</span>
           </button>
           <div className="live-mode-song-info">
             <strong>{entry.title}</strong>

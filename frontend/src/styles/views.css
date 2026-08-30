@@ -1079,23 +1079,36 @@
   display: none;
 }
 
-.live-mode-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 80;
-  min-height: 48px;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+.live-mode-reveal {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: calc(5px + env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 5px
-    max(10px, env(safe-area-inset-left));
-  background: rgba(7, 9, 7, 0.96);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(12px);
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.live-mode-exit-persistent {
+.live-mode-reveal:hover,
+.live-mode-reveal:focus-visible,
+.live-mode-reveal.open {
+  color: #ff9a52;
+  border-color: rgba(255, 122, 24, 0.45);
+  background: rgba(255, 122, 24, 0.08);
+}
+
+.live-mode-reveal-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.live-mode-song-info {
   display: inline-flex;
   align-items: center;
   gap: 7px;
