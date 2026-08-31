@@ -1,4 +1,7 @@
-/* -- Demo Banner -------------------------- */
+.nav-desktop-rail {
+  display: none;
+}
+
 .demo-banner {
   background: var(--accent);
   color: #fff;
@@ -305,11 +308,35 @@
 
 @media (min-width: 960px) {
   #nav {
-    position: fixed;
-    left: 0;
-    right: auto;
-    width: var(--nav-width);
+    width: 72px;
+    padding: 0;
+    justify-content: center;
     border-right: 1px solid var(--border);
+  }
+  .nav-brand {
+    display: none;
+  }
+  .nav-desktop-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 76px;
+  }
+  .nav-desktop-rail button {
+    width: 48px;
+    height: 48px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.35rem;
+    cursor: pointer;
+  }
+  .nav-desktop-rail button:hover,
+  .nav-desktop-rail button.active {
+    border-color: var(--border);
+    background: var(--panel);
+    color: var(--accent);
   }
   .nav-drawer-trigger,
   .nav-drawer-backdrop,
@@ -317,15 +344,24 @@
     display: none;
   }
   .nav-drawer {
-    top: 54px;
+    top: 0;
+    left: 72px;
     width: var(--nav-width);
-    transform: none;
-    visibility: visible;
-    box-shadow: none;
+    transform: translateX(-12px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
     background: var(--nav-bg);
   }
+  .nav-drawer.open {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
   .nav-drawer-header {
-    display: none;
+    display: flex;
   }
   .nav-drawer-items {
     padding: 18px 12px 12px;

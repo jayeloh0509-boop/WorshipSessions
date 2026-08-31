@@ -45,9 +45,9 @@ body {
 
 @media (min-width: 960px) {
   #app.app-with-nav {
-    margin-left: var(--nav-width);
+    margin-left: 72px;
     margin-right: 0;
-    max-width: calc(100vw - var(--nav-width));
+    max-width: calc(100vw - 72px);
     padding: 40px clamp(32px, 5vw, 72px);
   }
 }

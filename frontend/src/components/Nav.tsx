@@ -40,11 +40,17 @@ export function Nav({ view, navigate }: NavProps) {
     return () => media.removeEventListener('change', sync);
   }, []);
 
+  const openDrawer = useCallback(() => setOpen(true), []);
+  const openToolsDrawer = useCallback(() => {
+    setToolsOpen(true);
+    setOpen(true);
+  }, []);
+
   const close = useCallback(() => setOpen(false), []);
 
   // Escape closes; Tab is trapped inside the drawer while it is open
   useEffect(() => {
-    if (!open || desktop) return;
+    if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpen(false);
@@ -153,10 +159,36 @@ export function Nav({ view, navigate }: NavProps) {
         aria-controls="nav-drawer"
         aria-label="Open navigation menu"
         title="Menu"
-        onClick={() => setOpen(true)}
+        onClick={openDrawer}
       >
         &#9776;
       </button>
+      <div className="nav-desktop-rail" aria-label="Primary navigation">
+        <button
+          className={songsActive ? 'active' : ''}
+          onClick={() => go('browse')}
+          aria-label="Library"
+          title="Library"
+        >
+          <span aria-hidden="true">♫</span>
+        </button>
+        <button
+          className={onToolsPage ? 'active' : ''}
+          onClick={openToolsDrawer}
+          aria-label="Music tools"
+          title="Music tools"
+        >
+          <span aria-hidden="true">♭</span>
+        </button>
+        <button
+          className={['auth', 'admin', 'settings'].includes(view) ? 'active' : ''}
+          onClick={openDrawer}
+          aria-label="Account"
+          title="Account"
+        >
+          <span aria-hidden="true">●</span>
+        </button>
+      </div>
       {/* Portaled to <body>: #nav's backdrop-filter makes it the containing
           block for fixed descendants, which clips the drawer to the nav bar. */}
       {createPortal(
@@ -165,11 +197,11 @@ export function Nav({ view, navigate }: NavProps) {
           <div
             ref={drawerRef}
             id="nav-drawer"
-            className={`nav-drawer${open || desktop ? ' open' : ''}`}
-            role={desktop ? 'navigation' : 'dialog'}
-            aria-modal={desktop ? undefined : 'true'}
+            className={`nav-drawer${open ? ' open' : ''}`}
+            role="dialog"
+            aria-modal="true"
             aria-label="Navigation menu"
-            inert={!desktop && !open}
+            inert={!open}
           >
             <div className="nav-drawer-header">
               <span className="nav-drawer-title">Menu</span>
