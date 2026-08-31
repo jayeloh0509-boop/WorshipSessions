@@ -31,16 +31,25 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     preciseTopRef.current = null;
   }, []);
 
+  const getScrollOwner = useCallback((): HTMLElement | null => {
+    const chart = scrollRef.current;
+    if (!chart) return null;
+    const chartMaxScroll = Math.max(0, chart.scrollHeight - chart.clientHeight);
+    if (chartMaxScroll > 0) return chart;
+    const page = document.scrollingElement;
+    return page && page.scrollHeight > page.clientHeight ? (page as HTMLElement) : chart;
+  }, [scrollRef]);
+
   const start = useCallback(() => {
     if (!enabled) return;
-    const element = scrollRef.current;
+    const element = getScrollOwner();
     if (!element) return;
     // A chart can be taller than the container even when the browser reports
     // zero metrics during the first render. Start anyway; the timer will measure
     // the real scroll owner on its next tick.
     preciseTopRef.current = element.scrollTop;
     setRunning(true);
-  }, [enabled, scrollRef]);
+  }, [enabled, getScrollOwner]);
 
   const toggle = useCallback(() => {
     if (running) pause();
@@ -65,7 +74,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     if (!enabled || !running) return;
 
     const tick = () => {
-      const element = scrollRef.current;
+      const element = getScrollOwner();
       if (!element) {
         pause();
         return;
@@ -98,7 +107,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       timerRef.current = null;
       lastTimeRef.current = null;
     };
-  }, [enabled, pause, running, scrollRef, speed]);
+  }, [enabled, getScrollOwner, pause, running, speed]);
 
   useEffect(() => {
     const element = scrollRef.current;

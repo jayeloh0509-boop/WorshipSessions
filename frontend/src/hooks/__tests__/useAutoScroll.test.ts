@@ -62,6 +62,29 @@ describe('useAutoScroll', () => {
     vi.useRealTimers();
   });
 
+  it('falls back to the page scroll owner when the chart wrapper is not scrollable', () => {
+    vi.useFakeTimers();
+    const chart = document.createElement('div');
+    Object.defineProperties(chart, {
+      scrollHeight: { value: 500 },
+      clientHeight: { value: 500 },
+      scrollTop: { configurable: true, writable: true, value: 0 },
+    });
+    const page = document.documentElement;
+    Object.defineProperty(document, 'scrollingElement', { configurable: true, value: page });
+    Object.defineProperties(page, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 800 },
+      scrollTop: { configurable: true, writable: true, value: 0 },
+    });
+    const { result } = renderHook(() => useAutoScroll(true, { current: chart }));
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(1000));
+    expect(page.scrollTop).toBeGreaterThan(0);
+    act(() => result.current.pause());
+    vi.useRealTimers();
+  });
+
   it('accumulates sub-pixel movement at the slowest speed on browsers that round scrollTop', () => {
     vi.useFakeTimers();
     localStorage.setItem('worshipsessions-autoscroll-speed', '1');
