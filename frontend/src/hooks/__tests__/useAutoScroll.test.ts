@@ -25,7 +25,7 @@ describe('useAutoScroll', () => {
       throw new DOMException('blocked', 'SecurityError');
     });
     const { result } = renderHook(() => useAutoScroll(true));
-    expect(result.current.speed).toBe(3);
+    expect(result.current.speed).toBe(0.5);
     getItem.mockRestore();
   });
 

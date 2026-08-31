@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 const STORAGE_KEY = 'worshipsessions-autoscroll-speed';
-const MIN_SPEED = 1;
-const DEFAULT_SPEED = 3;
-const SPEEDS = [0, 4, 7, 10, 14, 18, 22, 28, 34, 42, 50];
+const MIN_SPEED = 0.1;
+const DEFAULT_SPEED = 0.5;
+const PIXELS_PER_SECOND_AT_1X = 10;
+
+function clampSpeed(value: number, maxSpeed: number): number {
+  const clamped = Math.min(maxSpeed, Math.max(MIN_SPEED, value));
+  return Math.round(clamped * 10) / 10;
+}
 
 function loadSpeed(maxSpeed: number): number {
   try {
     const parsed = Number(localStorage.getItem(STORAGE_KEY));
-    return Number.isInteger(parsed) && parsed >= MIN_SPEED && parsed <= maxSpeed
-      ? parsed
-      : Math.min(DEFAULT_SPEED, maxSpeed);
+    return Number.isFinite(parsed) ? clampSpeed(parsed, maxSpeed) : clampSpeed(DEFAULT_SPEED, maxSpeed);
   } catch {
-    return Math.min(DEFAULT_SPEED, maxSpeed);
+    return clampSpeed(DEFAULT_SPEED, maxSpeed);
   }
 }
 
@@ -21,7 +24,7 @@ export function useAutoScroll(
   scrollRef: RefObject<HTMLElement | null> = { current: null },
   maxSpeed = 10,
 ) {
-  const safeMaxSpeed = Math.min(10, Math.max(1, maxSpeed));
+  const safeMaxSpeed = Math.min(10, Math.max(MIN_SPEED, maxSpeed));
   const [running, setRunning] = useState(false);
   const [speed, setSpeedState] = useState(() => loadSpeed(safeMaxSpeed));
   const [progress, setProgress] = useState(0);
@@ -64,7 +67,7 @@ export function useAutoScroll(
 
   const setSpeed = useCallback(
     (value: number) => {
-      const safeValue = Math.min(safeMaxSpeed, Math.max(MIN_SPEED, Math.round(value)));
+      const safeValue = clampSpeed(value, safeMaxSpeed);
       setSpeedState(safeValue);
       try {
         localStorage.setItem(STORAGE_KEY, String(safeValue));
@@ -97,7 +100,7 @@ export function useAutoScroll(
       if (maxScroll === 0) return;
 
       const baseTop = preciseTopRef.current ?? element.scrollTop;
-      const nextTop = Math.min(maxScroll, baseTop + (SPEEDS[speed] * elapsed) / 1000);
+      const nextTop = Math.min(maxScroll, baseTop + (PIXELS_PER_SECOND_AT_1X * speed * elapsed) / 1000);
       preciseTopRef.current = nextTop;
       element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {

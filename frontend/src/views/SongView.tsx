@@ -95,7 +95,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
   const autoFitTimer = useRef<number | null>(null);
   const chartScrollRef = useRef<HTMLElement>(null);
-  const autoScroll = useAutoScroll(true, chartScrollRef, 3);
+  const autoScroll = useAutoScroll(true, chartScrollRef, 1.5);
 
   const scheduleAutoFit = useCallback(() => {
     if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
@@ -464,17 +464,17 @@ export function SongView({ songId, navigate }: SongViewProps) {
         <div className="song-autoscroll-speed" role="group" aria-label="Auto-scroll speed">
           <button
             type="button"
-            onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
-            disabled={autoScroll.speed <= 1}
+            onClick={() => autoScroll.setSpeed(autoScroll.speed - 0.1)}
+            disabled={autoScroll.speed <= 0.1}
             aria-label="Decrease auto-scroll speed"
           >
             −
           </button>
-          <span aria-live="polite">Speed {autoScroll.speed}</span>
+          <span aria-live="polite">{autoScroll.speed.toFixed(1)}×</span>
           <button
             type="button"
-            onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
-            disabled={autoScroll.speed >= 3}
+            onClick={() => autoScroll.setSpeed(autoScroll.speed + 0.1)}
+            disabled={autoScroll.speed >= 1.5}
             aria-label="Increase auto-scroll speed"
           >
             +
