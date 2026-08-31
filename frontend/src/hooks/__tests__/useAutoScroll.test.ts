@@ -107,7 +107,7 @@ describe('useAutoScroll', () => {
     const { result } = renderHook(() => useAutoScroll(true, { current: scrollElement }));
 
     act(() => result.current.start());
-    for (let tick = 1; tick <= 10; tick += 1) {
+    for (let tick = 1; tick <= 100; tick += 1) {
       time = tick * 16;
       act(() => vi.advanceTimersByTime(16));
     }

@@ -3363,15 +3363,34 @@
   color: var(--muted);
   font-size: 0.85rem;
 }
-.song-autoscroll-speed select {
-  padding: 0 8px;
+.song-autoscroll-speed button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.song-autoscroll-speed button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.song-autoscroll-speed span {
+  min-width: 58px;
+  text-align: center;
 }
 
 .chart-reading-surface {
   max-height: min(72vh, 900px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 @media (max-width: 560px) {

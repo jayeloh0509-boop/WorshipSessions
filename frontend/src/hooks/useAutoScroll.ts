@@ -2,22 +2,28 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 const STORAGE_KEY = 'worshipsessions-autoscroll-speed';
 const MIN_SPEED = 1;
-const MAX_SPEED = 10;
 const DEFAULT_SPEED = 3;
-const PIXELS_PER_SECOND = [0, 8, 14, 22, 32, 45, 62, 82, 108, 140, 180];
+const SPEEDS = [0, 4, 7, 10, 14, 18, 22, 28, 34, 42, 50];
 
-function loadSpeed(): number {
+function loadSpeed(maxSpeed: number): number {
   try {
     const parsed = Number(localStorage.getItem(STORAGE_KEY));
-    return Number.isInteger(parsed) && parsed >= MIN_SPEED && parsed <= MAX_SPEED ? parsed : DEFAULT_SPEED;
+    return Number.isInteger(parsed) && parsed >= MIN_SPEED && parsed <= maxSpeed
+      ? parsed
+      : Math.min(DEFAULT_SPEED, maxSpeed);
   } catch {
-    return DEFAULT_SPEED;
+    return Math.min(DEFAULT_SPEED, maxSpeed);
   }
 }
 
-export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement | null> = { current: null }) {
+export function useAutoScroll(
+  enabled: boolean,
+  scrollRef: RefObject<HTMLElement | null> = { current: null },
+  maxSpeed = 10,
+) {
+  const safeMaxSpeed = Math.min(10, Math.max(1, maxSpeed));
   const [running, setRunning] = useState(false);
-  const [speed, setSpeedState] = useState(loadSpeed);
+  const [speed, setSpeedState] = useState(() => loadSpeed(safeMaxSpeed));
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -56,15 +62,18 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
     else start();
   }, [pause, running, start]);
 
-  const setSpeed = useCallback((value: number) => {
-    const safeValue = Math.min(MAX_SPEED, Math.max(MIN_SPEED, Math.round(value)));
-    setSpeedState(safeValue);
-    try {
-      localStorage.setItem(STORAGE_KEY, String(safeValue));
-    } catch {
-      // Live Mode remains usable when storage is unavailable.
-    }
-  }, []);
+  const setSpeed = useCallback(
+    (value: number) => {
+      const safeValue = Math.min(safeMaxSpeed, Math.max(MIN_SPEED, Math.round(value)));
+      setSpeedState(safeValue);
+      try {
+        localStorage.setItem(STORAGE_KEY, String(safeValue));
+      } catch {
+        // Live Mode remains usable when storage is unavailable.
+      }
+    },
+    [safeMaxSpeed],
+  );
 
   useEffect(() => {
     if (!enabled) pause();
@@ -88,7 +97,7 @@ export function useAutoScroll(enabled: boolean, scrollRef: RefObject<HTMLElement
       if (maxScroll === 0) return;
 
       const baseTop = preciseTopRef.current ?? element.scrollTop;
-      const nextTop = Math.min(maxScroll, baseTop + (PIXELS_PER_SECOND[speed] * elapsed) / 1000);
+      const nextTop = Math.min(maxScroll, baseTop + (SPEEDS[speed] * elapsed) / 1000);
       preciseTopRef.current = nextTop;
       element.scrollTop = nextTop;
       if (nextTop >= maxScroll) {

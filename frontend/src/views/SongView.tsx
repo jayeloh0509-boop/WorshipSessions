@@ -95,7 +95,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
   const autoFitTimer = useRef<number | null>(null);
   const chartScrollRef = useRef<HTMLElement>(null);
-  const autoScroll = useAutoScroll(true, chartScrollRef);
+  const autoScroll = useAutoScroll(true, chartScrollRef, 3);
 
   const scheduleAutoFit = useCallback(() => {
     if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
@@ -461,16 +461,25 @@ export function SongView({ songId, navigate }: SongViewProps) {
           <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
           {autoScroll.running ? 'Pause' : 'Auto-scroll'}
         </button>
-        <label className="song-autoscroll-speed">
-          Speed
-          <select value={autoScroll.speed} onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((speed) => (
-              <option key={speed} value={speed}>
-                {speed}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="song-autoscroll-speed" role="group" aria-label="Auto-scroll speed">
+          <button
+            type="button"
+            onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
+            disabled={autoScroll.speed <= 1}
+            aria-label="Decrease auto-scroll speed"
+          >
+            −
+          </button>
+          <span aria-live="polite">Speed {autoScroll.speed}</span>
+          <button
+            type="button"
+            onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
+            disabled={autoScroll.speed >= 3}
+            aria-label="Increase auto-scroll speed"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <section className="chart-reading-surface" aria-label="Chord chart" ref={chartScrollRef}>
