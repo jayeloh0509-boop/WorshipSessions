@@ -3330,6 +3330,40 @@
   justify-content: center;
 }
 
+.song-controls-toggle {
+  display: block;
+  margin: 8px 0 6px auto;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  color: var(--muted);
+  padding: 0 11px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.song-controls-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.song-controls-panel {
+  padding: 4px 0 2px;
+  animation: song-controls-reveal 140ms ease-out;
+}
+
+@keyframes song-controls-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .song-autoscroll {
   display: flex;
   align-items: center;
