@@ -118,8 +118,8 @@
   min-height: 1.2em;
   display: block;
   white-space: pre;
-  letter-spacing: 0.03em;
-  padding-right: 0.4ch;
+  letter-spacing: 0;
+  padding-right: 0;
   margin-bottom: 3px;
 }
 
