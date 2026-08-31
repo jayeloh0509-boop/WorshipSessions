@@ -1,19 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
- * Determines if the layout should default to two columns based on screen size and orientation.
- * Defaults to 2 columns on desktop (>=1024px) or landscape tablets (>=768px in landscape).
+ * Single-column is the default reading layout on every screen.
+ * Users can explicitly switch to two columns with the layout control.
  */
 function getLayoutDefault(): boolean {
-  if (typeof window === 'undefined') return false;
-
-  const isDesktop = window.innerWidth >= 1024;
-  const isLandscapeTablet =
-    window.innerWidth >= 768 &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(orientation: landscape)').matches;
-
-  return isDesktop || isLandscapeTablet;
+  return false;
 }
 
 export function useTwoCol() {
