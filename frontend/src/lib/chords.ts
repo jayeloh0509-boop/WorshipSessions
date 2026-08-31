@@ -822,11 +822,12 @@ class ResponsiveHtmlFormatter {
         // can keep it tight against its neighbor instead of giving it the
         // same generous gap as an actual chord chip.
         const isPunctColumn = !currentChord && (BAR_PUNCTUATION_RE.test(chunk) || SEPARATOR_TOKEN_RE.test(chunk));
+        const isBarColumn = !currentChord && /^\|+$/.test(chunk);
         const columnClass = isPunctColumn ? 'column column-punct' : 'column';
+        const barAttribute = isBarColumn ? ' data-bar="true"' : '';
 
-        const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
         const lyricText = escHtml(chunk);
-        return `<span class="${columnClass}">${chords}<span class="lyrics">${lyricText}</span></span>`;
+        return `<span class="${columnClass}"${barAttribute}><span class="chord">${escHtml(currentChord)}</span><span class="lyrics">${lyricText}</span></span>`;
       })
       .join('');
   }
