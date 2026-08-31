@@ -95,24 +95,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
   const autoFitTimer = useRef<number | null>(null);
   const chartScrollRef = useRef<HTMLElement>(null);
-  const [controlsOpen, setControlsOpen] = useState(() => {
-    try {
-      return localStorage.getItem('worshipsessions-song-controls-open') === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const toggleControls = useCallback(() => {
-    setControlsOpen((open) => {
-      const next = !open;
-      try {
-        localStorage.setItem('worshipsessions-song-controls-open', String(next));
-      } catch {
-        // Controls remain usable when storage is unavailable.
-      }
-      return next;
-    });
-  }, []);
   const autoScroll = useAutoScroll(true, chartScrollRef, 1.5);
 
   const scheduleAutoFit = useCallback(() => {
@@ -379,89 +361,77 @@ export function SongView({ songId, navigate }: SongViewProps) {
         </div>
       </div>
 
-      <button
-        type="button"
-        className={`song-controls-toggle${controlsOpen ? ' active' : ''}`}
-        aria-expanded={controlsOpen}
-        aria-controls="song-controls-panel"
-        aria-label={controlsOpen ? 'Hide chart controls' : 'Show chart controls'}
-        onClick={toggleControls}
-      >
-        {controlsOpen ? '⌃ Hide controls' : '⌄ Controls'}
-      </button>
-      {controlsOpen && (
-        <div id="song-controls-panel" className="song-controls-panel">
-          <div className="ug-reader-tabs" aria-label="Chart display modes">
-            <button
-              type="button"
-              className={!preferences.nashville ? 'active' : ''}
-              aria-pressed={!preferences.nashville}
-              onClick={() => {
-                chord.toggleNashville(false);
-                updateReadingPreferences({ nashville: false });
-              }}
-            >
-              Chords
-            </button>
-            <button
-              type="button"
-              className={preferences.nashville ? 'active' : ''}
-              aria-pressed={preferences.nashville}
-              onClick={() => {
-                const nashville = !preferences.nashville;
-                chord.toggleNashville(nashville);
-                updateReadingPreferences({ nashville });
-              }}
-            >
-              Numbers
-            </button>
-          </div>
-          <Toolbar
-            currentKey={chord.currentKey}
-            nashville={preferences.nashville}
-            nashvilleDisabled={!songHasKey(content, chord.transpose)}
-            onNashvilleChange={(nashville) => updateReadingPreferences({ nashville })}
-            twoCol={preferences.twoCol}
-            onTwoColToggle={() => {
-              cancelAutoFit();
-              updateReadingPreferences({ twoCol: !preferences.twoCol, autoFit: false });
+      <div className="song-reading-controls" aria-label="Chart reading controls">
+        <div className="ug-reader-tabs" aria-label="Chart display modes">
+          <button
+            type="button"
+            className={!preferences.nashville ? 'active' : ''}
+            aria-pressed={!preferences.nashville}
+            onClick={() => {
+              chord.toggleNashville(false);
+              updateReadingPreferences({ nashville: false });
             }}
-            fontSize={preferences.fontSize}
-            onFontChange={(delta) => {
-              cancelAutoFit();
-              updateReadingPreferences({ fontSize: preferences.fontSize + delta, autoFit: false });
+          >
+            Chords
+          </button>
+          <button
+            type="button"
+            className={preferences.nashville ? 'active' : ''}
+            aria-pressed={preferences.nashville}
+            onClick={() => {
+              const nashville = !preferences.nashville;
+              chord.toggleNashville(nashville);
+              updateReadingPreferences({ nashville });
             }}
-            onReset={() => {
-              chord.setTranspose(0);
-              chord.setNashville(false);
-              cancelAutoFit();
-              resetReadingPreferences();
-            }}
-            onPickKey={(key) => {
-              const delta = getTransposeDelta(chord.currentKey, key);
-              chord.pickKey(key);
-              updateReadingPreferences({ transpose: chord.transpose + delta, nashville: false });
-            }}
-            onAutoFit={handleAutoFit}
-            autoFitActive={preferences.autoFit}
-            onExportPdf={handleExportPdf}
-            renderKey={songId}
-            compactKey
-            chartTone={preferences.chartTone}
-            onChartToneChange={() =>
-              updateReadingPreferences({ chartTone: preferences.chartTone === 'paper' ? 'dark' : 'paper' })
-            }
-            resetDisabled={
-              preferences.transpose === 0 &&
-              !preferences.nashville &&
-              preferences.fontSize === fontScale.fontSize &&
-              preferences.twoCol === twoColState.twoCol &&
-              preferences.chartTone === chartTone.tone &&
-              !preferences.autoFit
-            }
-          />
+          >
+            Numbers
+          </button>
         </div>
-      )}
+        <Toolbar
+          currentKey={chord.currentKey}
+          nashville={preferences.nashville}
+          nashvilleDisabled={!songHasKey(content, chord.transpose)}
+          onNashvilleChange={(nashville) => updateReadingPreferences({ nashville })}
+          twoCol={preferences.twoCol}
+          onTwoColToggle={() => {
+            cancelAutoFit();
+            updateReadingPreferences({ twoCol: !preferences.twoCol, autoFit: false });
+          }}
+          fontSize={preferences.fontSize}
+          onFontChange={(delta) => {
+            cancelAutoFit();
+            updateReadingPreferences({ fontSize: preferences.fontSize + delta, autoFit: false });
+          }}
+          onReset={() => {
+            chord.setTranspose(0);
+            chord.setNashville(false);
+            cancelAutoFit();
+            resetReadingPreferences();
+          }}
+          onPickKey={(key) => {
+            const delta = getTransposeDelta(chord.currentKey, key);
+            chord.pickKey(key);
+            updateReadingPreferences({ transpose: chord.transpose + delta, nashville: false });
+          }}
+          onAutoFit={handleAutoFit}
+          autoFitActive={preferences.autoFit}
+          onExportPdf={handleExportPdf}
+          renderKey={songId}
+          compactKey
+          chartTone={preferences.chartTone}
+          onChartToneChange={() =>
+            updateReadingPreferences({ chartTone: preferences.chartTone === 'paper' ? 'dark' : 'paper' })
+          }
+          resetDisabled={
+            preferences.transpose === 0 &&
+            !preferences.nashville &&
+            preferences.fontSize === fontScale.fontSize &&
+            preferences.twoCol === twoColState.twoCol &&
+            preferences.chartTone === chartTone.tone &&
+            !preferences.autoFit
+          }
+        />
+      </div>
 
       <MusicianTools
         chords={songChords}

@@ -118,7 +118,6 @@ describe('SongView chord-reading workspace', () => {
     expect(screen.getByText('Ab', { selector: '.song-view-key-value' })).toBeInTheDocument();
     expect(screen.getByText('63 BPM', { selector: '.song-view-stat' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Song actions' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Show chart controls' }));
     expect(screen.getByTestId('reading-controls')).toBeInTheDocument();
     expect(screen.getByLabelText('Chart display modes')).toHaveTextContent('ChordsNumbers');
     expect(screen.getByTestId('musician-tools')).toHaveAttribute('data-chords', 'Ab');
