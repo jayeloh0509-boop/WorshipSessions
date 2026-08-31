@@ -130,6 +130,7 @@ describe('SongView chord-reading workspace', () => {
     });
     expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'paper');
     expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
+    expect(screen.getByRole('button', { name: 'Start song auto-scroll' })).toBeInTheDocument();
     expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Song sections' })).toBeInTheDocument();
 

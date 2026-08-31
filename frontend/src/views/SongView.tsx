@@ -95,7 +95,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [autoFitResult, setAutoFitResult] = useState<{ fontSize: number; twoCol: boolean } | null>(null);
   const autoFitTimer = useRef<number | null>(null);
   const chartScrollRef = useRef<HTMLElement>(null);
-  const autoScroll = useAutoScroll(false, chartScrollRef);
+  const autoScroll = useAutoScroll(true, chartScrollRef);
 
   const scheduleAutoFit = useCallback(() => {
     if (autoFitTimer.current != null) window.clearTimeout(autoFitTimer.current);
