@@ -13,8 +13,25 @@ type WakeLockCapableNavigator = Navigator & {
   };
 };
 
+function readPersistedActive(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistActive(active: boolean): void {
+  try {
+    if (active) localStorage.setItem(STORAGE_KEY, '1');
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Live Mode remains usable when browser storage is unavailable.
+  }
+}
+
 export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
-  const [active, setActive] = useState(() => localStorage.getItem(STORAGE_KEY) === '1');
+  const [active, setActive] = useState(readPersistedActive);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const wakeLockRef = useRef<WakeLockHandle | null>(null);
@@ -53,7 +70,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   const start = useCallback(async () => {
     setActive(true);
     setControlsVisible(false);
-    localStorage.setItem(STORAGE_KEY, '1');
+    persistActive(true);
     await requestWakeLock();
     const target = targetRef.current;
     if (target?.requestFullscreen && !document.fullscreenElement) {
@@ -68,7 +85,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   const stop = useCallback(async () => {
     setActive(false);
     setControlsVisible(false);
-    localStorage.removeItem(STORAGE_KEY);
+    persistActive(false);
     await releaseWakeLock();
     if (document.fullscreenElement && document.exitFullscreen) {
       try {

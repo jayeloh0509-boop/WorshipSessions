@@ -328,7 +328,7 @@ export function SetlistPlayView({
           : {}),
       }}
     >
-      <div className="setlist-play-header">
+      <div className="setlist-play-header" aria-hidden={liveMode.active || undefined}>
         <div className="setlist-play-header-left">
           <button className="btn-exit" onClick={exit}>
             &#8592; {t('setlist.exit').toUpperCase()}
@@ -340,6 +340,8 @@ export function SetlistPlayView({
             className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`}
             onClick={index > 0 ? prev : undefined}
             title="Previous Song"
+            aria-label="Previous song"
+            disabled={index === 0}
           >
             &lt;
           </button>
@@ -352,6 +354,8 @@ export function SetlistPlayView({
             className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`}
             onClick={index < total - 1 ? next : undefined}
             title="Next Song"
+            aria-label="Next song"
+            disabled={index === total - 1}
           >
             &gt;
           </button>
@@ -571,7 +575,7 @@ export function SetlistPlayView({
       )}
 
       {liveMode.active && (
-        <div className="live-mode-navigation" aria-label="Live song navigation">
+        <nav className="live-mode-navigation" aria-label="Live song navigation">
           <button
             type="button"
             onClick={() => {
@@ -615,7 +619,7 @@ export function SetlistPlayView({
             <span aria-hidden="true">×</span>
             <small>Exit</small>
           </button>
-        </div>
+        </nav>
       )}
     </div>
   );

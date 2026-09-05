@@ -26,6 +26,13 @@ export function useAutoScroll(
 ) {
   const safeMaxSpeed = Math.min(10, Math.max(MIN_SPEED, maxSpeed));
   const [running, setRunning] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      return false;
+    }
+  });
   const [speed, setSpeedState] = useState(() => loadSpeed(safeMaxSpeed));
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<number | null>(null);
@@ -50,7 +57,7 @@ export function useAutoScroll(
   }, [scrollRef]);
 
   const start = useCallback(() => {
-    if (!enabled) return;
+    if (!enabled || reducedMotion) return;
     const element = getScrollOwner();
     if (!element) return;
     // A chart can be taller than the container even when the browser reports
@@ -58,7 +65,7 @@ export function useAutoScroll(
     // the real scroll owner on its next tick.
     preciseTopRef.current = element.scrollTop;
     setRunning(true);
-  }, [enabled, getScrollOwner]);
+  }, [enabled, getScrollOwner, reducedMotion]);
 
   const toggle = useCallback(() => {
     if (running) pause();
@@ -81,6 +88,18 @@ export function useAutoScroll(
   useEffect(() => {
     if (!enabled) pause();
   }, [enabled, pause]);
+
+  useEffect(() => {
+    try {
+      const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const update = () => setReducedMotion(media.matches);
+      update();
+      media.addEventListener?.('change', update);
+      return () => media.removeEventListener?.('change', update);
+    } catch {
+      return undefined;
+    }
+  }, []);
 
   useEffect(() => {
     if (!enabled || !running) return;
