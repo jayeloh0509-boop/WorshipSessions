@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
@@ -248,5 +248,118 @@ describe('SetlistPlayView', () => {
     expect(screen.getByRole('complementary', { name: /song preparation notes/i })).toHaveTextContent(
       'Hold the final chord into prayer.',
     );
+  });
+
+  describe('song queue', () => {
+    it('shows current and next labels for the queued songs', () => {
+      render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+
+      const queue = screen.getByRole('list', { name: /song queue/i });
+      const items = within(queue).getAllByRole('button');
+      expect(items).toHaveLength(2);
+      expect(within(items[0]).getByText('Now')).toBeInTheDocument();
+      expect(within(items[1]).getByText('Next')).toBeInTheDocument();
+    });
+
+    it('navigates to the selected song and pauses auto-scroll', () => {
+      const goTo = vi.fn();
+      (useSetlistPlayer as Mock).mockReturnValue({
+        setlist: {
+          id: 1,
+          title: 'Test Setlist',
+          entries: [
+            { entry_id: 1, title: 'Song 1', content: 'C G' },
+            { entry_id: 2, title: 'Song 2', content: 'D A' },
+          ],
+        },
+        entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+        index: 0,
+        total: 2,
+        goTo,
+        prev: vi.fn(),
+        next: vi.fn(),
+        exit: vi.fn(),
+        updateEntry: mockUpdateEntry,
+        isModified: false,
+        saveOnline: vi.fn(),
+        saveLocal: vi.fn(),
+      });
+
+      render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+      fireEvent.click(screen.getByTitle('Song 2'));
+
+      expect(goTo).toHaveBeenCalledWith(1);
+    });
+
+    it('does not re-navigate when the already-current song is clicked', () => {
+      const goTo = vi.fn();
+      (useSetlistPlayer as Mock).mockReturnValue({
+        setlist: {
+          id: 1,
+          title: 'Test Setlist',
+          entries: [
+            { entry_id: 1, title: 'Song 1', content: 'C G' },
+            { entry_id: 2, title: 'Song 2', content: 'D A' },
+          ],
+        },
+        entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+        index: 0,
+        total: 2,
+        goTo,
+        prev: vi.fn(),
+        next: vi.fn(),
+        exit: vi.fn(),
+        updateEntry: mockUpdateEntry,
+        isModified: false,
+        saveOnline: vi.fn(),
+        saveLocal: vi.fn(),
+      });
+
+      render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+      fireEvent.click(screen.getByTitle('Song 1'));
+
+      expect(goTo).not.toHaveBeenCalled();
+    });
+
+    it('hides the queue for a single-song setlist', () => {
+      (useSetlistPlayer as Mock).mockReturnValue({
+        setlist: {
+          id: 1,
+          title: 'Test Setlist',
+          entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }],
+        },
+        entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+        index: 0,
+        total: 1,
+        goTo: vi.fn(),
+        prev: vi.fn(),
+        next: vi.fn(),
+        exit: vi.fn(),
+        updateEntry: mockUpdateEntry,
+        isModified: false,
+        saveOnline: vi.fn(),
+        saveLocal: vi.fn(),
+      });
+
+      render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+
+      expect(screen.queryByRole('list', { name: /song queue/i })).not.toBeInTheDocument();
+    });
+
+    it('hides the queue in Live Mode until chart controls are revealed', async () => {
+      Object.defineProperty(navigator, 'wakeLock', {
+        configurable: true,
+        value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
+      });
+
+      render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+      expect(screen.getByRole('list', { name: /song queue/i })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+      expect(screen.queryByRole('list', { name: /song queue/i })).not.toBeInTheDocument();
+
+      fireEvent.click(await screen.findByRole('button', { name: /show chart controls/i }));
+      expect(screen.getByRole('list', { name: /song queue/i })).toBeInTheDocument();
+    });
   });
 });

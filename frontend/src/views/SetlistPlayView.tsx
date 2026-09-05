@@ -13,6 +13,7 @@ import { useAutoScroll } from '../hooks/useAutoScroll';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
+import { SongQueue } from '../components/SongQueue';
 import { Loading } from '../components/Loading';
 import {
   renderChordPro,
@@ -63,7 +64,7 @@ export function SetlistPlayView({
   const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } =
+  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } =
     useSetlistPlayer({
       setlistId,
       isLocal: _isLocal,
@@ -201,6 +202,15 @@ export function SetlistPlayView({
       toast((e as Error).message, 'error');
     }
   };
+
+  const selectSong = useCallback(
+    (targetIndex: number) => {
+      if (targetIndex === index) return;
+      pauseAutoScroll();
+      goTo(targetIndex);
+    },
+    [index, pauseAutoScroll, goTo],
+  );
 
   // Swipe
   useSwipe({ onNext: next, onPrev: prev, enabled: !editing && !!setlist, containerRef });
@@ -366,6 +376,10 @@ export function SetlistPlayView({
           )}
         </div>
       </div>
+
+      {(!liveMode.active || liveMode.controlsVisible) && setlist && (
+        <SongQueue entries={setlist.entries} currentIndex={index} onSelect={selectSong} />
+      )}
 
       {liveMode.active && (
         <div className="live-mode-topbar">
