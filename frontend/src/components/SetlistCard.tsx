@@ -6,10 +6,11 @@ interface SetlistCardProps {
   onClick: () => void;
   onPrepare?: () => void;
   onPlay?: () => void;
+  onDuplicate?: () => void;
   showUsername?: boolean;
 }
 
-export function SetlistCard({ setlist, onClick, onPrepare, onPlay, showUsername }: SetlistCardProps) {
+export function SetlistCard({ setlist, onClick, onPrepare, onPlay, onDuplicate, showUsername }: SetlistCardProps) {
   const { t } = useI18n();
   const date = setlist.event_date || (setlist.updated_at ? new Date(setlist.updated_at).toLocaleDateString() : '');
   const songLabel = `${setlist.song_count} ${setlist.song_count !== 1 ? t('admin.songPlural', 'songs') : t('admin.song', 'song')}`;
@@ -40,6 +41,18 @@ export function SetlistCard({ setlist, onClick, onPrepare, onPlay, showUsername 
             }}
           >
             Prepare
+          </button>
+        )}
+        {onDuplicate && (
+          <button
+            className="btn btn-ghost btn-sm"
+            aria-label={`Duplicate ${setlist.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+          >
+            Duplicate
           </button>
         )}
         {onPlay && setlist.song_count > 0 && (

@@ -116,6 +116,26 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
     }
   };
 
+  const duplicateCloud = async (id: number | string, name: string) => {
+    try {
+      const result = await apiCall<{ id: number }>('POST', `/api/setlists/${id}/duplicate`, { name: `${name} Copy` });
+      toast('Setlist duplicated', 'success');
+      await load(query, dateFrom, dateTo, page);
+      navigate('setlist-edit', { id: String(result.id) });
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+
+  const duplicateLocal = (id: string, name: string) => {
+    const copy = ls.duplicate(id, `${name} Copy`);
+    if (!copy) {
+      toast('Max 50 setlists', 'error');
+      return;
+    }
+    toast('Setlist duplicated', 'success');
+  };
+
   const handleClear = () => {
     setQuery('');
     if (activeTab === 'local') {
@@ -240,6 +260,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                   setlist={sl}
                   onClick={() => navigate('setlist-edit', { id: String(sl.id) })}
                   onPrepare={() => navigate('setlist-edit', { id: String(sl.id) })}
+                  onDuplicate={() => void duplicateCloud(sl.id, sl.name)}
                   onPlay={() => navigate('setlist-play', { id: String(sl.id) })}
                 />
               ))
@@ -259,6 +280,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
                 }}
                 onClick={() => navigate('setlist-edit', { id: sl.id })}
                 onPrepare={() => navigate('setlist-edit', { id: sl.id })}
+                onDuplicate={() => duplicateLocal(sl.id, sl.name)}
                 onPlay={() => navigate('setlist-play', { id: sl.id, local: '1' })}
               />
             ))

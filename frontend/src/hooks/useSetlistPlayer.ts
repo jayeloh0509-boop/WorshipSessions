@@ -30,9 +30,30 @@ export function useSetlistPlayer({
   const toast = useToast();
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
-  const [index, setIndex] = useState(initialIndex || 0);
+  const [index, setIndex] = useState(() => {
+    const requested = typeof initialIndex === 'number' ? initialIndex : 0;
+    try {
+      const saved = Number(localStorage.getItem(`worshipsessions-setlist-position:${String(setlistId)}`));
+      return Number.isFinite(saved) && saved >= 0 ? saved : requested;
+    } catch {
+      return requested;
+    }
+  });
 
   const [savedTransposes, setSavedTransposes] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!setlist) return;
+    setIndex((current) => Math.min(Math.max(0, current), Math.max(0, setlist.entries.length - 1)));
+  }, [setlist]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`worshipsessions-setlist-position:${String(setlistId)}`, String(index));
+    } catch {
+      // Position persistence is best-effort.
+    }
+  }, [index, setlistId]);
 
   useEffect(() => {
     if (isLocal) {

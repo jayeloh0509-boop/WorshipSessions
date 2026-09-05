@@ -13,11 +13,38 @@ export function useLocalSetlists() {
   const create = useCallback((name: string): LocalSetlist | null => {
     const all = getLocalSetlists();
     if (all.length >= MAX_LOCAL_SETLISTS) return null;
-    const sl: LocalSetlist = { id: 'local_' + Date.now(), name, entries: [] };
+    const sl: LocalSetlist = { id: 'local_' + Date.now(), name, entries: [], rehearsal_notes: '' };
     all.push(sl);
     saveLocalSetlists(all);
     setSetlists(all);
     return sl;
+  }, []);
+
+  const duplicate = useCallback((id: string, name?: string): LocalSetlist | null => {
+    const all = getLocalSetlists();
+    if (all.length >= MAX_LOCAL_SETLISTS) return null;
+    const source = all.find((s) => s.id === id);
+    if (!source) return null;
+    const copy: LocalSetlist = {
+      ...source,
+      id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      name: name?.trim() || `${source.name} Copy`,
+      entries: source.entries.map((entry) => ({ ...entry })),
+      rehearsal_notes: source.rehearsal_notes || '',
+    };
+    all.push(copy);
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+    return copy;
+  }, []);
+
+  const updateRehearsalNotes = useCallback((id: string, notes: string) => {
+    const all = getLocalSetlists();
+    const sl = all.find((s) => s.id === id);
+    if (!sl) return;
+    sl.rehearsal_notes = notes.slice(0, 2000);
+    saveLocalSetlists(all);
+    setSetlists([...all]);
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -97,6 +124,8 @@ export function useLocalSetlists() {
     setlists,
     refresh,
     create,
+    duplicate,
+    updateRehearsalNotes,
     remove,
     rename,
     getOne,

@@ -34,6 +34,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   const [active, setActive] = useState(readPersistedActive);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
+  const [fullscreenActive, setFullscreenActive] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement);
   const wakeLockRef = useRef<WakeLockHandle | null>(null);
 
   const requestWakeLock = useCallback(async () => {
@@ -96,6 +97,23 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
     }
   }, [releaseWakeLock]);
 
+  const toggleFullscreen = useCallback(async () => {
+    const target = targetRef.current;
+    if (!target?.requestFullscreen && !document.fullscreenElement) return;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen?.();
+      else await target?.requestFullscreen?.();
+    } catch {
+      // Fullscreen is optional and may require a fresh user gesture.
+    }
+  }, [targetRef]);
+
+  useEffect(() => {
+    const update = () => setFullscreenActive(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', update);
+    return () => document.removeEventListener('fullscreenchange', update);
+  }, []);
+
   useEffect(() => {
     if (!active) return;
     void requestWakeLock();
@@ -117,6 +135,8 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
     active,
     controlsVisible,
     wakeLockActive,
+    fullscreenActive,
+    toggleFullscreen,
     start,
     stop,
     showControls: () => setControlsVisible(true),

@@ -29,6 +29,7 @@ export interface Setlist {
   name: string;
   visibility: string;
   event_date: string | null;
+  rehearsal_notes?: string;
   user_id?: number;
   song_count?: number;
   username?: string;
@@ -64,6 +65,7 @@ export interface LocalSetlist {
   id: string;
   name: string;
   entries: LocalSetlistEntry[];
+  rehearsal_notes?: string;
 }
 
 export interface SetlistPreferences {

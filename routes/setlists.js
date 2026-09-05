@@ -32,12 +32,28 @@ function createSetlistsRouter() {
   });
 
   router.post('/setlists', requireAuth, (req, res) => {
-    const { name, visibility, event_date } = req.body;
+    const { name, visibility, event_date, rehearsal_notes } = req.body;
     const validationError = validateSetlistInput(name, event_date);
     if (validationError) return res.status(400).json({ error: validationError });
+    if (rehearsal_notes !== undefined && (typeof rehearsal_notes !== 'string' || rehearsal_notes.length > LIMITS.MAX_SETLIST_NOTE)) {
+      return res.status(400).json({ error: `Rehearsal notes too long (max ${LIMITS.MAX_SETLIST_NOTE} characters)` });
+    }
     const vis = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
-    const result = Setlist.create(req.user.id, name.trim(), vis, event_date || null);
+    const result = Setlist.create(req.user.id, name.trim(), vis, event_date || null, rehearsal_notes?.trim() || '');
     res.json({ id: result.lastInsertRowid, name: name.trim() });
+  });
+
+  router.post('/setlists/:id/duplicate', requireAuth, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid setlist ID' });
+    const source = Setlist.findById(id, req.user.id);
+    if (!source) return res.status(404).json({ error: 'Setlist not found' });
+    const requestedName = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const name = requestedName || `${source.name} Copy`;
+    const validationError = validateSetlistInput(name, source.event_date);
+    if (validationError) return res.status(400).json({ error: validationError });
+    const result = Setlist.duplicate(id, req.user.id, name);
+    res.status(201).json(result);
   });
 
   router.get('/setlists/public', requireAuth, (req, res) => {
@@ -126,9 +142,12 @@ function createSetlistsRouter() {
   router.put('/setlists/:id', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid setlist ID' });
-    const { name, visibility, event_date } = req.body;
+    const { name, visibility, event_date, rehearsal_notes } = req.body;
     const validationError = validateSetlistInput(name, event_date);
     if (validationError) return res.status(400).json({ error: validationError });
+    if (rehearsal_notes !== undefined && (typeof rehearsal_notes !== 'string' || rehearsal_notes.length > LIMITS.MAX_SETLIST_NOTE)) {
+      return res.status(400).json({ error: `Rehearsal notes too long (max ${LIMITS.MAX_SETLIST_NOTE} characters)` });
+    }
     const vis = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
     const result = Setlist.update(
       id,
@@ -136,6 +155,7 @@ function createSetlistsRouter() {
       name.trim(),
       vis,
       event_date !== undefined ? event_date || null : null,
+      rehearsal_notes === undefined ? '' : rehearsal_notes.trim(),
     );
     if (!result.changes) return res.status(404).json({ error: 'Setlist not found' });
     res.json({ success: true });

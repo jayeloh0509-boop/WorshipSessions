@@ -407,12 +407,14 @@ export function SetlistPlayView({
               {entry.bpm ? ` · ${entry.bpm} bpm` : ''}
             </span>
           </div>
-          <span
-            className={`live-mode-awake${liveMode.wakeLockActive ? ' active' : ''}`}
-            title={liveMode.wakeLockActive ? 'Screen wake lock active' : 'Screen wake lock unavailable'}
+          <button
+            type="button"
+            className="live-mode-fullscreen"
+            onClick={() => void liveMode.toggleFullscreen()}
+            aria-label={liveMode.fullscreenActive ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
-            {liveMode.wakeLockActive ? 'AWAKE' : 'WAKE?'}
-          </span>
+            {liveMode.fullscreenActive ? '⛶ Exit' : '⛶ Fullscreen'}
+          </button>
         </div>
       )}
 

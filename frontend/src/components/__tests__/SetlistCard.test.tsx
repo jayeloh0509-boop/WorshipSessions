@@ -26,4 +26,12 @@ describe('SetlistCard preparation row', () => {
     expect(screen.getByRole('button', { name: 'Prepare Sunday Morning' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play Sunday Morning' })).toBeInTheDocument();
   });
+
+  it('offers a separate duplicate action', () => {
+    const onDuplicate = vi.fn();
+    render(<SetlistCard setlist={setlist} onClick={vi.fn()} onDuplicate={onDuplicate} />);
+
+    screen.getByRole('button', { name: 'Duplicate Sunday Morning' }).click();
+    expect(onDuplicate).toHaveBeenCalledOnce();
+  });
 });

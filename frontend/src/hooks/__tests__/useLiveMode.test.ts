@@ -54,4 +54,14 @@ describe('useLiveMode', () => {
     expect(result.current.active).toBe(true);
     await waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
   });
+
+  it('lets the user explicitly re-enter fullscreen', async () => {
+    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    const targetRef = createRef<HTMLElement>();
+    targetRef.current = { requestFullscreen } as unknown as HTMLElement;
+    const { result } = renderHook(() => useLiveMode(targetRef));
+
+    await act(async () => result.current.toggleFullscreen());
+    expect(requestFullscreen).toHaveBeenCalledOnce();
+  });
 });

@@ -32,11 +32,13 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     removeEntry: lsRemoveEntry,
     addEntry: lsAddEntry,
     updateEntry: lsUpdateEntry,
+    updateRehearsalNotes: lsUpdateRehearsalNotes,
     reorderEntries: lsReorderEntries,
   } = useLocalSetlists();
 
   const isLocal = typeof setlistId === 'string' && setlistId.startsWith('local_');
   const [setlist, setSetlist] = useState<Setlist | null>(null);
+  const [rehearsalNotes, setRehearsalNotes] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -54,8 +56,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         isLocal: true,
         visibility: 'private',
         event_date: null,
+        rehearsal_notes: sl.rehearsal_notes || '',
       };
       setSetlist(formatted);
+      setRehearsalNotes(sl.rehearsal_notes || '');
       location.hash = `#setlist/${setlistId}`;
       return;
     }
@@ -76,6 +80,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
       }
       setSetlist(sl);
+      setRehearsalNotes(sl.rehearsal_notes || '');
       location.hash = `#setlist/${setlistId}`;
     } catch (e) {
       toast((e as Error).message, 'error');
@@ -130,13 +135,21 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     if (isLocal) {
       if (nameInput.length > 200) return;
       rename(String(setlistId), nameInput);
-      setSetlist((prev) => (prev ? { ...prev, name: nameInput } : prev));
+      lsUpdateRehearsalNotes(String(setlistId), rehearsalNotes);
+      setSetlist((prev) => (prev ? { ...prev, name: nameInput, rehearsal_notes: rehearsalNotes } : prev));
     } else {
       const vis = (document.getElementById('setlist-visibility') as HTMLInputElement)?.checked ? 'public' : 'private';
       const date = (document.getElementById('setlist-date') as HTMLInputElement)?.value || '';
       try {
-        await apiCall('PUT', `/api/setlists/${setlistId}`, { name: nameInput, visibility: vis, event_date: date });
-        setSetlist((prev) => (prev ? { ...prev, name: nameInput, visibility: vis, event_date: date } : prev));
+        await apiCall('PUT', `/api/setlists/${setlistId}`, {
+          name: nameInput,
+          visibility: vis,
+          event_date: date,
+          rehearsal_notes: rehearsalNotes,
+        });
+        setSetlist((prev) =>
+          prev ? { ...prev, name: nameInput, visibility: vis, event_date: date, rehearsal_notes: rehearsalNotes } : prev,
+        );
       } catch (e) {
         toast((e as Error).message, 'error');
       }
@@ -294,6 +307,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         isLocal: true,
         visibility: 'private',
         event_date: null,
+        rehearsal_notes: sl.rehearsal_notes || '',
       };
       navigate('setlist-play', {
         id: String(setlistId),
@@ -374,7 +388,24 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         </div>
         <div className="setlist-meta-row">
           {isLocal ? (
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Local Setlist (Saved in Browser)</span>
+            <>
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>Local Setlist (Saved in Browser)</span>
+              {isEditable && (
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', marginTop: 12 }}>
+                  <span style={{ color: 'var(--muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Rehearsal notes
+                  </span>
+                  <textarea
+                    value={rehearsalNotes}
+                    maxLength={2000}
+                    rows={3}
+                    placeholder="Overall arrangement, service cues, or team reminders"
+                    onChange={(event) => setRehearsalNotes(event.target.value)}
+                    onBlur={() => void saveMeta()}
+                  />
+                </label>
+              )}
+            </>
           ) : !isEditable ? (
             <>
               {setlist.username && <span style={{ fontSize: 13, color: 'var(--muted)' }}>By @{setlist.username}</span>}
@@ -403,6 +434,19 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
                   {t('setlist.date')}
                 </span>
                 <input type="date" id="setlist-date" defaultValue={setlist.event_date || ''} onChange={saveMeta} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', marginTop: 12 }}>
+                <span style={{ color: 'var(--muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Rehearsal notes
+                </span>
+                <textarea
+                  value={rehearsalNotes}
+                  maxLength={2000}
+                  rows={3}
+                  placeholder="Overall arrangement, service cues, or team reminders"
+                  onChange={(event) => setRehearsalNotes(event.target.value)}
+                  onBlur={() => void saveMeta()}
+                />
               </label>
             </>
           )}
