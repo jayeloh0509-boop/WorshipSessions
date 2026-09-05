@@ -142,6 +142,8 @@ function createSetlistsRouter() {
   router.put('/setlists/:id', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid setlist ID' });
+    const source = Setlist.findById(id, req.user.id);
+    if (!source) return res.status(404).json({ error: 'Setlist not found' });
     const { name, visibility, event_date, rehearsal_notes } = req.body;
     const validationError = validateSetlistInput(name, event_date);
     if (validationError) return res.status(400).json({ error: validationError });
