@@ -312,14 +312,15 @@ export function useSetlistPlayer({
 
       try {
         if (setlist.isLocal) {
-          const local = getLocalSetlists().find((candidate) => candidate.id === String(setlist.id));
+          const allLocal = getLocalSetlists();
+          const local = allLocal.find((candidate) => candidate.id === String(setlist.id));
           if (!local) return;
           const targetIds = new Set(targets.map(({ candidate }) => String(candidate.entry_id)));
           local.entries = local.entries.filter((candidate, position) => {
             const entry = setlist.entries[position];
             return !entry?.is_missing || !targetIds.has(String(entry.entry_id));
           });
-          saveLocalSetlists(getLocalSetlists().map((candidate) => (candidate.id === local.id ? local : candidate)));
+          saveLocalSetlists(allLocal);
         } else {
           for (const { candidate } of targets) {
             await apiCall('DELETE', `/api/setlists/${setlistId}/entries/${candidate.entry_id}`);
