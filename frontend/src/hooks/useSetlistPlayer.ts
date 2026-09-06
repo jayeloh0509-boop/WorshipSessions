@@ -180,7 +180,7 @@ export function useSetlistPlayer({
         cacheSetlist(sl.id, sl);
       } catch (e) {
         const cached = getCachedSetlist<Setlist>(setlistId);
-        if (cached && cached.entries?.length) {
+        if (cached && Array.isArray(cached.entries)) {
           setSetlist({ ...cached, isStale: true } as Setlist);
           toast('Offline: showing the last loaded setlist', 'info');
         } else {

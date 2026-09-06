@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSetlistPlayer } from '../useSetlistPlayer';
-import { getSetlistOverrides, saveSetlistOverride } from '../../lib/storage';
+import { getCachedSetlist, getSetlistOverrides, saveSetlistOverride } from '../../lib/storage';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 
 const mockApiCall = vi.fn();
@@ -31,6 +31,7 @@ vi.mock('../../lib/storage', () => ({
 describe('useSetlistPlayer Hook', () => {
   const navigate = vi.fn();
   const mockGetOverrides = getSetlistOverrides as Mock;
+  const mockGetCachedSetlist = getCachedSetlist as Mock;
   const mockSaveOverride = saveSetlistOverride as Mock;
 
   const mockSetlist = {
@@ -129,6 +130,17 @@ describe('useSetlistPlayer Hook', () => {
     await waitFor(() => expect(result.current.setlist).not.toBeNull());
     await waitFor(() => expect(result.current.index).toBe(0));
     expect(localStorage.getItem('worshipsessions-setlist-position:42')).toBe('0');
+  });
+
+  it('uses a cached empty setlist during a failed reload', async () => {
+    mockApiCall.mockRejectedValue(new Error('offline'));
+    mockGetCachedSetlist.mockReturnValue({ ...mockSetlist, entries: [] });
+
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate }));
+
+    await waitFor(() => expect(result.current.setlist?.isStale).toBe(true));
+    expect(result.current.total).toBe(0);
+    expect(mockToast).toHaveBeenCalledWith('Offline: showing the last loaded setlist', 'info');
   });
 
   it('reloads the setlist when connectivity returns', async () => {
