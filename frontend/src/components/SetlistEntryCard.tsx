@@ -50,6 +50,7 @@ export function SetlistEntryCard({
     transition_rehearsed: !!entry.transition_rehearsed,
     chart_verified: !!entry.chart_verified,
   });
+  const checklistCount = Object.values(checklist).filter(Boolean).length;
 
   useEffect(() => {
     setPerformanceKey(entry.performance_key || keyDisplay || '');
@@ -112,6 +113,7 @@ export function SetlistEntryCard({
             )}
             {entry.artist ? `${entry.artist} · ` : ''}
             {entry.performance_key ? `Performance key ${entry.performance_key}` : keyDisplay}
+            {isEditable && <span className={`setlist-preparation-progress${checklistCount === 4 ? ' complete' : ''}`} title="Preparation checklist progress"> · {checklistCount}/4 prepared</span>}
           </div>
           {(entry.song_notes || entry.transition_notes) && (
             <div className="setlist-preparation-summary">

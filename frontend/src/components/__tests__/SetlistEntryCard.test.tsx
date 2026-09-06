@@ -39,6 +39,7 @@ describe('SetlistEntryCard preparation', () => {
     );
 
     expect(screen.getByText(/Performance key Ab/i)).toBeInTheDocument();
+    expect(screen.getByText(/0\/4 prepared/i)).toBeInTheDocument();
     expect(screen.getByText(/Keys intro/i)).toBeInTheDocument();
     expect(screen.getByText(/Hold the final pad/i)).toBeInTheDocument();
 
