@@ -101,6 +101,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   const {
     items: reorderedEntries,
+    setItems: setReorderedEntries,
     dragProps,
     handleProps,
     draggedIdx,
@@ -241,6 +242,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     if (target < 0 || target >= reorderedEntries.length) return;
     const entries = [...reorderedEntries];
     [entries[idx], entries[target]] = [entries[target], entries[idx]];
+    setReorderedEntries(entries);
     setSetlist((prev) => (prev ? { ...prev, entries } : prev));
     if (isLocal) {
       lsReorderEntries(String(setlistId), entries.map((entry) => ({ ...entry })));
