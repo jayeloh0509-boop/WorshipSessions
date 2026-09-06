@@ -415,6 +415,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   if (!setlist) return <Loading />;
 
+  const preparedCount = reorderedEntries.filter((entry) =>
+    entry.arrangement_confirmed && entry.key_confirmed && entry.transition_rehearsed && entry.chart_verified,
+  ).length;
+
   return (
     <>
       <div className="song-view-header">
@@ -461,6 +465,12 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
             />
           )}
         </div>
+        {isEditable && setlist.entries.length > 0 && (
+          <div className="setlist-preparation-overview" role="status" aria-label="Setlist preparation progress">
+            <strong>Preparation</strong>
+            <span>{preparedCount} of {setlist.entries.length} songs fully prepared</span>
+          </div>
+        )}
         <div className="setlist-meta-row">
           {isLocal ? (
             <>
