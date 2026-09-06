@@ -64,7 +64,7 @@ export function SetlistPlayView({
   const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
 
-  const { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } =
+  const { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal } =
     useSetlistPlayer({
       setlistId,
       isLocal: _isLocal,
@@ -576,6 +576,12 @@ export function SetlistPlayView({
               <div className="empty-text">{entry.title} is unavailable</div>
               <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{entry.load_error || 'This song was deleted or cannot be loaded.'}</div>
               <button className="btn btn-sm" type="button" onClick={() => window.location.reload()}>Retry loading</button>
+              {setlist?.isLocal || setlist?.user_id === user?.id ? (
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => void removeCurrentMissing()}>Remove this song</button>
+                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => void removeAllMissing()}>Remove all unavailable</button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div

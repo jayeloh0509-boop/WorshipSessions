@@ -22,6 +22,8 @@ vi.mock('../../context/ToastContext', () => ({
 vi.mock('../../lib/storage', () => ({
   getSetlistOverrides: vi.fn(),
   saveSetlistOverride: vi.fn(),
+  getLocalSetlists: vi.fn(),
+  saveLocalSetlists: vi.fn(),
   getCachedSetlist: vi.fn(),
   cacheSetlist: vi.fn(),
 }));

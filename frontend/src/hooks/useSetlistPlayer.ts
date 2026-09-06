@@ -3,7 +3,7 @@ import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists, cacheSetlist, getCachedSetlist } from '../lib/storage';
+import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists, saveLocalSetlists, cacheSetlist, getCachedSetlist } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import { getSongKey } from '../lib/chords';
 import type { Setlist, SetlistEntry } from '../types';
@@ -300,11 +300,52 @@ export function useSetlistPlayer({
     [index],
   );
 
+  const removeMissingEntries = useCallback(
+    async (allMissing: boolean) => {
+      if (!setlist) return;
+      const missing = setlist.entries
+        .map((candidate, position) => ({ candidate, position }))
+        .filter(({ candidate }) => candidate.is_missing);
+      if (!missing.length) return;
+      const targets = allMissing ? missing : missing.filter(({ position }) => position === index);
+      if (!targets.length) return;
+
+      try {
+        if (setlist.isLocal) {
+          const local = getLocalSetlists().find((candidate) => candidate.id === String(setlist.id));
+          if (!local) return;
+          const targetIds = new Set(targets.map(({ candidate }) => String(candidate.entry_id)));
+          local.entries = local.entries.filter((candidate, position) => {
+            const entry = setlist.entries[position];
+            return !entry?.is_missing || !targetIds.has(String(entry.entry_id));
+          });
+          saveLocalSetlists(getLocalSetlists().map((candidate) => (candidate.id === local.id ? local : candidate)));
+        } else {
+          for (const { candidate } of targets) {
+            await apiCall('DELETE', `/api/setlists/${setlistId}/entries/${candidate.entry_id}`);
+          }
+        }
+
+        const removedBefore = targets.filter(({ position }) => position < index).length;
+        const remaining = setlist.entries.filter((candidate) => !targets.some(({ candidate: target }) => target.entry_id === candidate.entry_id));
+        setSetlist((current) => (current ? { ...current, entries: remaining } : current));
+        setIndex((current) => Math.max(0, Math.min(current - removedBefore, remaining.length - 1)));
+        toast(allMissing ? 'Unavailable songs removed' : 'Unavailable song removed', 'success');
+      } catch (e) {
+        toast((e as Error).message, 'error');
+      }
+    },
+    [apiCall, index, setlist, setlistId, toast],
+  );
+
+  const removeCurrentMissing = useCallback(() => removeMissingEntries(false), [removeMissingEntries]);
+  const removeAllMissing = useCallback(() => removeMissingEntries(true), [removeMissingEntries]);
+
   const exit = useCallback(() => {
     if (setlist) {
       navigate('setlist-edit', { id: String(setlist.id) });
     }
   }, [setlist, navigate]);
 
-  return { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
+  return { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal };
 }
