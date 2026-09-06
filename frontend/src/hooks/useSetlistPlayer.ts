@@ -31,6 +31,7 @@ export function useSetlistPlayer({
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const [index, setIndex] = useState(() => {
     const requested = typeof initialIndex === 'number' ? initialIndex : 0;
     try {
@@ -45,7 +46,10 @@ export function useSetlistPlayer({
 
   useEffect(() => {
     const goOffline = () => setOffline(true);
-    const goOnline = () => setOffline(false);
+    const goOnline = () => {
+      setOffline(false);
+      setReloadNonce((current) => current + 1);
+    };
     window.addEventListener('offline', goOffline);
     window.addEventListener('online', goOnline);
     return () => {
@@ -187,7 +191,7 @@ export function useSetlistPlayer({
     };
 
     loadSetlist();
-  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, toast, user]);
+  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, toast, user, reloadNonce]);
 
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;

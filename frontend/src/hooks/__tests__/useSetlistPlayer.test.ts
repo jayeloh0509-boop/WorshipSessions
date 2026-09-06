@@ -131,6 +131,21 @@ describe('useSetlistPlayer Hook', () => {
     expect(localStorage.getItem('worshipsessions-setlist-position:42')).toBe('0');
   });
 
+  it('reloads the setlist when connectivity returns', async () => {
+    mockApiCall.mockResolvedValueOnce(mockSetlist);
+    const { result } = renderHook(() =>
+      useSetlistPlayer({ setlistId: 1, navigate }),
+    );
+    await waitFor(() => expect(result.current.entry).not.toBeNull());
+
+    const refreshed = { ...mockSetlist, name: 'Refreshed Setlist' };
+    mockApiCall.mockResolvedValueOnce(refreshed);
+    act(() => window.dispatchEvent(new Event('online')));
+
+    await waitFor(() => expect(result.current.setlist?.name).toBe('Refreshed Setlist'));
+    expect(mockApiCall).toHaveBeenCalledTimes(2);
+  });
+
   it('saves only key transposition to server during saveOnline', async () => {
     mockApiCall.mockResolvedValue(mockSetlist);
 
