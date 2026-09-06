@@ -86,8 +86,8 @@ export function useAutoScroll(
   );
 
   useEffect(() => {
-    if (!enabled) pause();
-  }, [enabled, pause]);
+    if (!enabled || reducedMotion) pause();
+  }, [enabled, pause, reducedMotion]);
 
   useEffect(() => {
     try {

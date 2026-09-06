@@ -118,6 +118,34 @@ describe('useAutoScroll', () => {
     vi.useRealTimers();
   });
 
+  it('stops an active scroll when reduced-motion becomes preferred', () => {
+    vi.useFakeTimers();
+    let reduced = false;
+    let listener: (() => void) | undefined;
+    const media = {
+      get matches() { return reduced; },
+      addEventListener: vi.fn((_event: string, callback: () => void) => { listener = callback; }),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('matchMedia', vi.fn(() => media));
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: vi.fn(() => media) });
+    const scrollElement = document.createElement('div');
+    Object.defineProperties(scrollElement, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 800 },
+      scrollTop: { configurable: true, writable: true, value: 0 },
+    });
+    const { result } = renderHook(() => useAutoScroll(true, { current: scrollElement }));
+
+    act(() => result.current.start());
+    expect(result.current.running).toBe(true);
+    reduced = true;
+    act(() => listener?.());
+    expect(result.current.running).toBe(false);
+
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
   it('scrolls continuously with a timer, cancels promptly, and pauses when disabled', () => {
     vi.useFakeTimers();
     const now = vi.spyOn(performance, 'now');
