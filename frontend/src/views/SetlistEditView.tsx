@@ -30,6 +30,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     createSection,
     updateSection,
     removeSection,
+    reorderSections,
     getOne,
     rename,
     remove,
@@ -368,6 +369,19 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     } catch (e) { toast((e as Error).message, 'error'); }
   };
 
+  const moveSection = async (sectionId: number | string, direction: -1 | 1) => {
+    if (!setlist) return;
+    const sections = [...(setlist.sections || [])];
+    const index = sections.findIndex((section) => section.id === sectionId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= sections.length) return;
+    [sections[index], sections[nextIndex]] = [sections[nextIndex], sections[index]];
+    try {
+      if (isLocal) reorderSections(String(setlistId), sections.map((section) => String(section.id)));
+      else await apiCall('PUT', `/api/setlists/${setlistId}/sections/reorder`, { section_ids: sections.map((section) => section.id) });
+      setSetlist((prev) => prev ? { ...prev, sections: sections.map((section, position) => ({ ...section, position: position + 1 })) } : prev);
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
   const changeEntrySection = async (idx: number, sectionId: string) => {
     if (!setlist) return;
     const section = (setlist.sections || []).find((s) => String(s.id) === sectionId) || null;
@@ -377,6 +391,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       setSetlist((prev) => { if (!prev) return null; const entries = [...prev.entries]; entries[idx] = { ...entries[idx], section_id: section?.id ?? null, section_name: section?.name ?? null }; return { ...prev, entries }; });
     } catch (e) { toast((e as Error).message, 'error'); }
   };
+
   const copyShareLink = () => {
     const url = window.location.origin + window.location.pathname + `#setlist/${setlistId}`;
     navigator.clipboard
@@ -507,6 +522,8 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
           {(setlist.sections || []).map((section) => (
             <div key={section.id} className="setlist-section-row">
               <strong>{section.name}</strong>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => void moveSection(section.id, -1)} disabled={section.position === 1} aria-label={`Move ${section.name} up`}>↑</button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => void moveSection(section.id, 1)} disabled={section.position === (setlist.sections || []).length} aria-label={`Move ${section.name} down`}>↓</button>
               <button className="btn btn-ghost btn-sm" type="button" onClick={() => void renameSection(section.id, section.name)}>Rename</button>
               <button className="btn btn-ghost btn-sm" type="button" onClick={() => void deleteSection(section.id)}>Remove</button>
             </div>

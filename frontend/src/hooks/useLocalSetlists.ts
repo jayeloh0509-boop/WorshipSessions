@@ -80,6 +80,17 @@ export function useLocalSetlists() {
     setSetlists([...all]);
   }, []);
 
+  const reorderSections = useCallback((id: string, sectionIds: string[]) => {
+    const all = getLocalSetlists();
+    const sl = all.find((candidate) => candidate.id === id);
+    if (!sl) return;
+    const sections = sl.sections || [];
+    const ordered = sectionIds.map((sectionId) => sections.find((section) => section.id === sectionId)).filter((section): section is LocalSetlistSection => Boolean(section));
+    if (ordered.length !== sections.length) return;
+    sl.sections = ordered.map((section, position) => ({ ...section, position: position + 1 }));
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+  }, []);
   const assignSection = useCallback((id: string, idx: number, section: LocalSetlistSection | null) => {
     const all = getLocalSetlists();
     const sl = all.find((candidate) => candidate.id === id);
@@ -89,6 +100,7 @@ export function useLocalSetlists() {
     saveLocalSetlists(all);
     setSetlists([...all]);
   }, []);
+
   const remove = useCallback((id: string) => {
     const all = getLocalSetlists().filter((s) => s.id !== id);
     saveLocalSetlists(all);
@@ -170,6 +182,7 @@ export function useLocalSetlists() {
     createSection,
     updateSection,
     removeSection,
+    reorderSections,
     assignSection,
     updateRehearsalNotes,
     remove,

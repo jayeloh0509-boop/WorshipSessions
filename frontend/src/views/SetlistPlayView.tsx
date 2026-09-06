@@ -312,6 +312,8 @@ export function SetlistPlayView({
     );
 
   // hideYt resolved in effectivePrefs above
+  const nextEntry = setlist.entries[index + 1] || null;
+  const nextSectionName = nextEntry?.section_name && nextEntry.section_id !== entry.section_id ? nextEntry.section_name : null;
 
   return (
     <div
@@ -407,6 +409,7 @@ export function SetlistPlayView({
           </button>
           <div className="live-mode-song-info">
             <strong>{entry.title}</strong>
+            {entry.section_name && <span className="live-mode-section">{entry.section_name}</span>}
             <span>
               {index + 1} / {total}
               {keyDisplay ? ` · Key ${keyDisplay}` : ''}
@@ -523,8 +526,14 @@ export function SetlistPlayView({
         />
       )}
 
-      {(entry.song_notes || entry.transition_notes) && (
+      {(entry.song_notes || entry.transition_notes || nextEntry || nextSectionName) && (
         <aside className={`setlist-live-notes${liveMode.active ? ' live' : ''}`} aria-label="Song preparation notes">
+          {nextEntry && (
+            <div>
+              <strong>Up next</strong>
+              <span>{nextEntry.title}{nextSectionName ? ` · ${nextSectionName}` : ''}</span>
+            </div>
+          )}
           {entry.song_notes && (
             <div>
               <strong>Song</strong>
