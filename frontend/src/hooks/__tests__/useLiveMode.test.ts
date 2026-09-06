@@ -55,6 +55,25 @@ describe('useLiveMode', () => {
     await waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
   });
 
+  it('releases wake lock and exits fullscreen when the hook unmounts', async () => {
+    const release = vi.fn().mockResolvedValue(undefined);
+    const exitFullscreen = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: vi.fn().mockResolvedValue({ release, addEventListener: vi.fn() }) },
+    });
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: {} });
+    Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exitFullscreen });
+    const { result, unmount } = renderHook(() => useLiveMode(createRef<HTMLElement>()));
+
+    await act(async () => result.current.start());
+    unmount();
+
+    await waitFor(() => {
+      expect(release).toHaveBeenCalled();
+      expect(exitFullscreen).toHaveBeenCalled();
+    });
+  });
   it('lets the user explicitly re-enter fullscreen', async () => {
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     const targetRef = createRef<HTMLElement>();

@@ -127,6 +127,11 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   useEffect(
     () => () => {
       void releaseWakeLock();
+      if (document.fullscreenElement && document.exitFullscreen) {
+        void document.exitFullscreen().catch(() => {
+          /* fullscreen may already have been exited */
+        });
+      }
     },
     [releaseWakeLock],
   );
