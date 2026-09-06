@@ -185,6 +185,18 @@ describe('exportSetlistPdf', () => {
     expect(await pageCount(await lastPdf())).toBe(3);
   });
 
+  it('adds section divider pages without changing chart page order', async () => {
+    await exportSetlistPdf(
+      setlist([
+        entry(1, { section_id: 10, section_name: 'WELCOME' }),
+        entry(2, { section_id: 10, section_name: 'WELCOME' }),
+        entry(3, { section_id: 20, section_name: 'WORSHIP' }),
+      ]),
+      { nashville: false, fontSize: 0 },
+    );
+    const bytes = await lastPdf();
+    expect(await pageCount(bytes)).toBe(5);
+  });
   it('skips private placeholders', async () => {
     const entries = [entry(1), entry(2, { is_private_placeholder: true }), entry(3)];
     await exportSetlistPdf(setlist(entries), { nashville: false, fontSize: 0 });

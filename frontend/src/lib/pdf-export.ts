@@ -1,5 +1,5 @@
 import { PdfFormatter } from 'chordsheetjs/pdf';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { prepareSong, resolveEffectivePreferences } from './chords';
 import { buildPdfConfig } from './pdf-config';
 import { EMBEDDED_FONT } from './constants';
@@ -88,7 +88,18 @@ export async function exportSetlistPdf(
   const missing = new Set<string>();
   const parts: Uint8Array[] = [];
 
-  for (const entry of entries) {
+  for (let entryIndex = 0; entryIndex < entries.length; entryIndex += 1) {
+    const entry = entries[entryIndex];
+    const configuredSection = entry.section_id == null ? null : (setlist.sections || []).find((candidate) => candidate.id === entry.section_id);
+    const sectionName = configuredSection?.name || entry.section_name || null;
+    if (sectionName && (entryIndex === 0 || entries[entryIndex - 1]?.section_id !== entry.section_id || entries[entryIndex - 1]?.section_name !== entry.section_name)) {
+      const sectionDoc = await PDFDocument.create();
+      const page = sectionDoc.addPage();
+      const font = await sectionDoc.embedFont(StandardFonts.HelveticaBold);
+      const { height } = page.getSize();
+      page.drawText(sectionName, { x: 48, y: height / 2, size: 28, font, color: rgb(0.12, 0.12, 0.12) });
+      parts.push(await sectionDoc.save());
+    }
     const prefs = resolveEffectivePreferences(entry, {
       nashville: !!globalSettings.nashville,
       twoCol: false,
