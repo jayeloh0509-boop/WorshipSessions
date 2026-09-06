@@ -70,6 +70,18 @@ function createSetlistsRouter() {
     const entries = Setlist.getEntries(id);
     const userId = req.user ? req.user.id : 0;
     const safeEntries = entries.map((e) => {
+      if (e.is_missing) {
+        const { song_user_id: _, ...missing } = e;
+        return {
+          ...missing,
+          title: missing.title || 'Unavailable song',
+          artist: missing.artist || '',
+          content: missing.content || '',
+          key: missing.key || '',
+          language: missing.language || '',
+          is_missing: true,
+        };
+      }
       if (
         e.visibility === VISIBILITY.PRIVATE &&
         e.song_user_id !== userId &&
@@ -110,6 +122,10 @@ function createSetlistsRouter() {
     if (!setlist) return;
     const entries = Setlist.getEntries(id);
     const safeEntries = entries.map((e) => {
+      if (e.is_missing) {
+        const { song_user_id: _, ...missing } = e;
+        return { ...missing, title: missing.title || 'Unavailable song', artist: missing.artist || '', content: missing.content || '', key: missing.key || '', language: missing.language || '', is_missing: true };
+      }
       if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== req.user.id && !isAdminRole(req.user.role)) {
         return {
           entry_id: e.entry_id,

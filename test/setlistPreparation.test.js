@@ -15,7 +15,7 @@ function createFixture() {
     .run(user.lastInsertRowid);
   const setlist = Setlist.create(user.lastInsertRowid, 'Sunday', 'private', null);
   const entry = Setlist.addSongEntry(setlist.lastInsertRowid, song.lastInsertRowid, { transpose: 0, nashville: false });
-  return { userId: user.lastInsertRowid, setlistId: setlist.lastInsertRowid, entryId: entry.entry_id };
+  return { userId: user.lastInsertRowid, songId: song.lastInsertRowid, setlistId: setlist.lastInsertRowid, entryId: entry.entry_id };
 }
 
 test('setlist entry preparation fields migrate into the database', () => {
@@ -46,6 +46,15 @@ test('setlist entry preparation fields save without changing the song chart', ()
   assert.equal(entry.transition_notes, 'Hold the final pad into prayer.');
   assert.equal(entry.content, '[C]Test');
 });
+test('deleted songs remain visible in their original position', () => {
+  const fixture = createFixture();
+  db.prepare('DELETE FROM songs WHERE id = ?').run(fixture.songId);
+  const entries = Setlist.getEntries(fixture.setlistId);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].song_id, null);
+  assert.equal(entries[0].is_missing, 1);
+});
+
 test('setlist duplication preserves ordering, repeated entries, and preparation metadata', () => {
   const fixture = createFixture();
   Setlist.update(fixture.setlistId, fixture.userId, 'Sunday', 'private', null, 'Start softly; build into the response.');
