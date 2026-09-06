@@ -310,6 +310,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       const enrichedSetlist: Setlist = {
         id: String(setlistId),
         name: sl.name,
+        sections: sl.sections || [],
         entries,
         isLocal: true,
         visibility: 'private',
