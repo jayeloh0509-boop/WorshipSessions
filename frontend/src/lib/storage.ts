@@ -187,3 +187,20 @@ export function removeSessionItem(key: string): void {
     sessionStorage.removeItem(key);
   } catch {}
 }
+
+export function getCachedSetlist<T>(setlistId: number | string): T | null {
+  try {
+    const raw = sessionStorage.getItem(`cv_setlist_cache:${String(setlistId)}`);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function cacheSetlist<T>(setlistId: number | string, value: T): void {
+  try {
+    sessionStorage.setItem(`cv_setlist_cache:${String(setlistId)}`, JSON.stringify(value));
+  } catch {
+    // Offline cache is best-effort and must never block playback.
+  }
+}

@@ -29,8 +29,29 @@ export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntr
  * Enrich a local setlist entry with song data.
  * Used when initializing playback or editing views requiring full song details.
  */
-export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: number): SetlistEntry | null {
-  if (!song) return null;
+export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: number): SetlistEntry {
+  if (!song) {
+    return {
+      song_id: e.song_id,
+      entry_id: `local_${idx}`,
+      title: e.title || 'Unavailable song',
+      artist: e.artist || '',
+      content: '',
+      content_override: null,
+      performance_key: e.performance_key || null,
+      song_notes: e.song_notes || '',
+      transition_notes: e.transition_notes || '',
+      transpose: e.transpose ?? 0,
+      nashville: e.nashville ?? 0,
+      font: null,
+      two_col: null,
+      bpm: null,
+      youtube_url: null,
+      language: 'en',
+      is_missing: true,
+      load_error: 'This song is unavailable or was deleted.',
+    };
+  }
   return {
     song_id: song.id,
     entry_id: `local_${idx}`,
@@ -73,5 +94,5 @@ export async function enrichLocalSetlistSongs(
   );
   await Promise.all(fetches);
 
-  return entries.map((e, i) => enrichLocalEntry(e, cache[e.song_id], i)).filter(Boolean) as SetlistEntry[];
+  return entries.map((e, i) => enrichLocalEntry(e, cache[e.song_id], i));
 }

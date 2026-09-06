@@ -16,6 +16,8 @@ export interface SetlistEntry {
   youtube_url: string | null;
   language: string;
   is_private_placeholder?: boolean;
+  is_missing?: boolean;
+  load_error?: string;
   visibility?: string;
   // Per-song overrides (runtime only)
   _num?: number | null;
@@ -37,6 +39,7 @@ export interface Setlist {
   created_at?: string;
   updated_at?: string;
   isLocal?: boolean;
+  isStale?: boolean;
 }
 
 export interface SetlistListItem {

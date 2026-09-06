@@ -3,7 +3,7 @@ import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists } from '../lib/storage';
+import { getSetlistOverrides, saveSetlistOverride, getLocalSetlists, getCachedSetlist, cacheSetlist } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import { getSongKey } from '../lib/chords';
 import type { Setlist, SetlistEntry } from '../types';
@@ -30,6 +30,7 @@ export function useSetlistPlayer({
   const toast = useToast();
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
+  const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false);
   const [index, setIndex] = useState(() => {
     const requested = typeof initialIndex === 'number' ? initialIndex : 0;
     try {
@@ -41,6 +42,17 @@ export function useSetlistPlayer({
   });
 
   const [savedTransposes, setSavedTransposes] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => setOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!setlist) return;
@@ -158,9 +170,16 @@ export function useSetlistPlayer({
 
         setSetlist(sl);
         setSavedTransposes(transposes);
+        cacheSetlist(sl.id, sl);
       } catch (e) {
-        toast((e as Error).message, 'error');
-        navigate(user ? 'setlists' : 'browse');
+        const cached = getCachedSetlist<Setlist>(setlistId);
+        if (cached && cached.entries?.length) {
+          setSetlist({ ...cached, isStale: true } as Setlist);
+          toast('Offline: showing the last loaded setlist', 'info');
+        } else {
+          toast((e as Error).message, 'error');
+          navigate(user ? 'setlists' : 'browse');
+        }
       }
     };
 
@@ -287,5 +306,5 @@ export function useSetlistPlayer({
     }
   }, [setlist, navigate]);
 
-  return { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
+  return { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
 }

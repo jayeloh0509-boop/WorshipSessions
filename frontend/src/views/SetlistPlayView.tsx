@@ -64,7 +64,7 @@ export function SetlistPlayView({
   const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
 
-  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } =
+  const { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } =
     useSetlistPlayer({
       setlistId,
       isLocal: _isLocal,
@@ -381,6 +381,12 @@ export function SetlistPlayView({
         </div>
       </div>
 
+      {(offline || setlist.isStale) && (
+        <div className="setlist-stale-banner" role="status">
+          {offline ? 'Offline' : 'Stale data'} — showing the last loaded version. Retry when you’re back online.
+        </div>
+      )}
+
       {(!liveMode.active || liveMode.controlsVisible) && setlist && (
         <SongQueue entries={setlist.entries} currentIndex={index} onSelect={selectSong} />
       )}
@@ -563,6 +569,13 @@ export function SetlistPlayView({
               <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
                 The song owner has marked it as private.
               </div>
+            </div>
+          ) : entry.is_missing ? (
+            <div className="empty setlist-missing-song" role="alert" style={{ marginTop: 40 }}>
+              <div className="empty-icon">⚠</div>
+              <div className="empty-text">{entry.title} is unavailable</div>
+              <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{entry.load_error || 'This song was deleted or cannot be loaded.'}</div>
+              <button className="btn btn-sm" type="button" onClick={() => window.location.reload()}>Retry loading</button>
             </div>
           ) : (
             <div
