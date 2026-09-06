@@ -5,9 +5,11 @@ import type { SetlistEntry } from '../types';
 interface SetlistEntryCardProps {
   entry: SetlistEntry;
   idx: number;
+  totalEntries: number;
   isEditable: boolean;
   isLocal: boolean;
   onRemove: (entryId: number | string, idx: number) => void;
+  onMove: (idx: number, direction: -1 | 1) => void;
   onTranspose: (entryId: number | string, idx: number, delta: number) => void;
   onClick: (idx: number) => void;
   onSavePreparation: (
@@ -26,9 +28,11 @@ interface SetlistEntryCardProps {
 export function SetlistEntryCard({
   entry,
   idx,
+  totalEntries,
   isEditable,
   isLocal,
   onRemove,
+  onMove,
   onTranspose,
   onClick,
   onSavePreparation,
@@ -124,14 +128,19 @@ export function SetlistEntryCard({
         </div>
         {isEditable && (
           <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
-            <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, -1)}>
+            <div className="setlist-entry-order-controls">
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMove(idx, -1)} disabled={idx === 0} aria-label={`Move ${entry.title} up`}>↑</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMove(idx, 1)} disabled={idx === totalEntries - 1} aria-label={`Move ${entry.title} down`}>↓</button>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, -1)} aria-label={`Transpose ${entry.title} down`}>
               &#9837;
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, 1)}>
+            <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, 1)} aria-label={`Transpose ${entry.title} up`}>
               &#9839;
             </button>
           </div>
         )}
+
         {isEditable && (
           <button
             className={`setlist-prepare-btn${preparing ? ' active' : ''}`}

@@ -22,15 +22,39 @@ const entry: SetlistEntry = {
 };
 
 describe('SetlistEntryCard preparation', () => {
+  it('offers accessible move controls with boundary protection', () => {
+    const onMove = vi.fn();
+    render(
+      <SetlistEntryCard
+        entry={entry}
+        idx={0}
+        totalEntries={2}
+        isEditable
+        isLocal={false}
+        onRemove={vi.fn()}
+        onMove={onMove}
+        onTranspose={vi.fn()}
+        onClick={vi.fn()}
+        onSavePreparation={vi.fn().mockResolvedValue(undefined)}
+        t={(key) => key}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /move goodness of god up/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /move goodness of god down/i }));
+    expect(onMove).toHaveBeenCalledWith(0, 1);
+  });
   it('shows saved preparation details and submits edits', async () => {
     const onSavePreparation = vi.fn().mockResolvedValue(undefined);
     render(
       <SetlistEntryCard
         entry={entry}
         idx={0}
+        totalEntries={2}
         isEditable
         isLocal={false}
         onRemove={vi.fn()}
+        onMove={vi.fn()}
         onTranspose={vi.fn()}
         onClick={vi.fn()}
         onSavePreparation={onSavePreparation}

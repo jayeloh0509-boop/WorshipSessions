@@ -235,9 +235,28 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   };
 
+  const moveEntry = async (idx: number, direction: -1 | 1) => {
+    if (!setlist) return;
+    const target = idx + direction;
+    if (target < 0 || target >= reorderedEntries.length) return;
+    const entries = [...reorderedEntries];
+    [entries[idx], entries[target]] = [entries[target], entries[idx]];
+    setSetlist((prev) => (prev ? { ...prev, entries } : prev));
+    if (isLocal) {
+      lsReorderEntries(String(setlistId), entries.map((entry) => ({ ...entry })));
+    } else {
+      try {
+        await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, { entry_ids: entries.map((entry) => entry.entry_id) });
+      } catch (e) {
+        toast((e as Error).message, 'error');
+        load();
+      }
+    }
+  };
   const handleTransposeEntry = async (entryId: number | string, idx: number, delta: number) => {
     if (!setlist) return;
     const entry = reorderedEntries[idx];
+    if (!entry) return;
     const newTranspose = (entry.transpose ?? 0) + delta;
     const performanceKey = entry.performance_key
       ? getSongKey(entry.content_override || entry.content, newTranspose)
@@ -568,22 +587,24 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
                 <div className="setlist-section-heading" role="heading" aria-level={3}>{entry.section_name}</div>
               )}
               <SetlistEntryCard
-              key={entry.entry_id}
-              entry={entry}
-              idx={idx}
-              isEditable={isEditable}
-              isLocal={isLocal}
-              onRemove={removeEntry}
-              onTranspose={handleTransposeEntry}
-              onClick={handleItemClick}
-              onSavePreparation={savePreparation}
-              sections={setlist.sections}
-              onSectionChange={changeEntrySection}
-              dragProps={dragProps(idx)}
-              handleProps={handleProps(idx)}
-              isDragging={draggedIdx === idx}
-              t={t}
-            />
+                key={entry.entry_id}
+                entry={entry}
+                idx={idx}
+                totalEntries={reorderedEntries.length}
+                isEditable={isEditable}
+                isLocal={isLocal}
+                onRemove={removeEntry}
+                onMove={moveEntry}
+                onTranspose={handleTransposeEntry}
+                onClick={handleItemClick}
+                onSavePreparation={savePreparation}
+                sections={setlist.sections}
+                onSectionChange={changeEntrySection}
+                dragProps={dragProps(idx)}
+                handleProps={handleProps(idx)}
+                isDragging={draggedIdx === idx}
+                t={t}
+              />
             </Fragment>
           ))}
         </div>
