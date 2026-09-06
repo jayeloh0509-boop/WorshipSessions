@@ -19,6 +19,8 @@ interface SetlistEntryCardProps {
   dragProps?: React.HTMLProps<HTMLDivElement>;
   handleProps?: React.HTMLProps<HTMLDivElement>;
   isDragging?: boolean;
+  sections?: { id: number | string; name: string }[];
+  onSectionChange?: (idx: number, sectionId: string) => void;
 }
 
 export function SetlistEntryCard({
@@ -34,6 +36,8 @@ export function SetlistEntryCard({
   dragProps,
   handleProps,
   isDragging,
+  sections = [],
+  onSectionChange,
 }: SetlistEntryCardProps) {
   const keyDisplay = getSongKey(entry.content_override || entry.content, entry.transpose);
   const [preparing, setPreparing] = useState(false);
@@ -87,6 +91,12 @@ export function SetlistEntryCard({
             )}
           </div>
           <div className="song-card-meta">
+            {sections.length > 0 && onSectionChange && (
+              <select aria-label={`Section for ${entry.title}`} value={entry.section_id == null ? '' : String(entry.section_id)} onClick={(event) => event.stopPropagation()} onChange={(event) => onSectionChange(idx, event.target.value)}>
+                <option value="">No section</option>
+                {sections.map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}
+              </select>
+            )}
             {entry.artist ? `${entry.artist} · ` : ''}
             {entry.performance_key ? `Performance key ${entry.performance_key}` : keyDisplay}
           </div>

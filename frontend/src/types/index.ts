@@ -5,6 +5,8 @@ export type {
   SetlistListItem,
   LocalSetlist,
   LocalSetlistEntry,
+  LocalSetlistSection,
+  SetlistSection,
   SetlistPreferences,
 } from './setlist';
 export type { User, AuthConfig, AuthResponse } from './user';

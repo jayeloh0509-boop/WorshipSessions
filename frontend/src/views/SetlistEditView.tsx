@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const { t } = useI18n();
   const toast = useToast();
   const {
+    assignSection,
+    createSection,
+    updateSection,
+    removeSection,
     getOne,
     rename,
     remove,
@@ -40,6 +44,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [rehearsalNotes, setRehearsalNotes] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [newSectionName, setNewSectionName] = useState('');
 
   const load = useCallback(async () => {
     if (isLocal) {
@@ -52,6 +57,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       const formatted: Setlist = {
         id: sl.id,
         name: sl.name,
+        sections: sl.sections || [],
         entries: sl.entries.map((e, idx) => formatLocalEntry(e, idx)),
         isLocal: true,
         visibility: 'private',
@@ -328,6 +334,49 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   };
 
+  const saveSection = async () => {
+    const name = newSectionName.trim();
+    if (!setlist || !name) return;
+    try {
+      if (isLocal) {
+        const section = createSection(String(setlistId), name);
+        if (section) setSetlist((prev) => (prev ? { ...prev, sections: [...(prev.sections || []), section] } : prev));
+      } else {
+        const section = await apiCall<{ id: number; name: string; position: number }>('POST', `/api/setlists/${setlistId}/sections`, { name });
+        setSetlist((prev) => (prev ? { ...prev, sections: [...(prev.sections || []), { ...section, setlist_id: setlistId }] } : prev));
+      }
+      setNewSectionName('');
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
+  const renameSection = async (sectionId: number | string, currentName: string) => {
+    const name = window.prompt('Section name', currentName)?.trim();
+    if (!name || name === currentName || !setlist) return;
+    try {
+      if (isLocal) updateSection(String(setlistId), String(sectionId), name);
+      else await apiCall('PUT', `/api/setlists/${setlistId}/sections/${sectionId}`, { name });
+      setSetlist((prev) => prev ? { ...prev, sections: (prev.sections || []).map((s) => s.id === sectionId ? { ...s, name } : s), entries: prev.entries.map((e) => e.section_id === sectionId ? { ...e, section_name: name } : e) } : prev);
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
+  const deleteSection = async (sectionId: number | string) => {
+    if (!setlist || !window.confirm('Remove this section? Songs will remain in the setlist.')) return;
+    try {
+      if (isLocal) removeSection(String(setlistId), String(sectionId));
+      else await apiCall('DELETE', `/api/setlists/${setlistId}/sections/${sectionId}`);
+      setSetlist((prev) => prev ? { ...prev, sections: (prev.sections || []).filter((s) => s.id !== sectionId), entries: prev.entries.map((e) => e.section_id === sectionId ? { ...e, section_id: null, section_name: null } : e) } : prev);
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
+  const changeEntrySection = async (idx: number, sectionId: string) => {
+    if (!setlist) return;
+    const section = (setlist.sections || []).find((s) => String(s.id) === sectionId) || null;
+    try {
+      if (isLocal) assignSection(String(setlistId), idx, section && { id: String(section.id), name: section.name, position: section.position });
+      else await apiCall('PUT', `/api/setlists/${setlistId}/entries/${setlist.entries[idx].entry_id}/section`, { section_id: section?.id ?? null });
+      setSetlist((prev) => { if (!prev) return null; const entries = [...prev.entries]; entries[idx] = { ...entries[idx], section_id: section?.id ?? null, section_name: section?.name ?? null }; return { ...prev, entries }; });
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
   const copyShareLink = () => {
     const url = window.location.origin + window.location.pathname + `#setlist/${setlistId}`;
     navigator.clipboard
@@ -453,12 +502,34 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         </div>
       </div>
 
+      {isEditable && (setlist.sections?.length || 0) > 0 && (
+        <div className="setlist-sections" aria-label="Service flow sections">
+          {(setlist.sections || []).map((section) => (
+            <div key={section.id} className="setlist-section-row">
+              <strong>{section.name}</strong>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => void renameSection(section.id, section.name)}>Rename</button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => void deleteSection(section.id)}>Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {isEditable && (
+        <div className="setlist-section-create" style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
+          <input value={newSectionName} maxLength={80} placeholder="Add service section (e.g. WORSHIP)" aria-label="New service section" onChange={(event) => setNewSectionName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveSection(); }} />
+          <button className="btn btn-sm" type="button" onClick={() => void saveSection()}>Add section</button>
+        </div>
+      )}
+
       {setlist.entries.length === 0 ? (
         <EmptyState icon="&#127926;" text={t('setlist.noSongsYet')} />
       ) : (
         <div className="setlist-entries" id="setlist-entries">
           {reorderedEntries.map((entry, idx) => (
-            <SetlistEntryCard
+            <Fragment key={entry.entry_id}>
+              {entry.section_name && (idx === 0 || reorderedEntries[idx - 1]?.section_id !== entry.section_id) && (
+                <div className="setlist-section-heading" role="heading" aria-level={3}>{entry.section_name}</div>
+              )}
+              <SetlistEntryCard
               key={entry.entry_id}
               entry={entry}
               idx={idx}
@@ -468,11 +539,14 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
               onTranspose={handleTransposeEntry}
               onClick={handleItemClick}
               onSavePreparation={savePreparation}
+              sections={setlist.sections}
+              onSectionChange={changeEntrySection}
               dragProps={dragProps(idx)}
               handleProps={handleProps(idx)}
               isDragging={draggedIdx === idx}
               t={t}
             />
+            </Fragment>
           ))}
         </div>
       )}

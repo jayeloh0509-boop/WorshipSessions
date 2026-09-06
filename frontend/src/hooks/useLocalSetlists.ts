@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { LocalSetlist, LocalSetlistEntry } from '../types';
+import type { LocalSetlist, LocalSetlistEntry, LocalSetlistSection } from '../types';
 import { getLocalSetlists, saveLocalSetlists } from '../lib/storage';
 import { MAX_LOCAL_SETLISTS, MAX_LOCAL_ENTRIES } from '../lib/constants';
 
@@ -29,6 +29,7 @@ export function useLocalSetlists() {
       ...source,
       id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       name: name?.trim() || `${source.name} Copy`,
+      sections: (source.sections || []).map((section) => ({ ...section })),
       entries: source.entries.map((entry) => ({ ...entry })),
       rehearsal_notes: source.rehearsal_notes || '',
     };
@@ -47,6 +48,47 @@ export function useLocalSetlists() {
     setSetlists([...all]);
   }, []);
 
+  const createSection = useCallback((id: string, name: string): LocalSetlistSection | null => {
+    const all = getLocalSetlists();
+    const sl = all.find((s) => s.id === id);
+    if (!sl || !name.trim()) return null;
+    const sections = sl.sections || [];
+    const section = { id: `${id}_section_${Date.now()}`, name: name.trim(), position: sections.length + 1 };
+    sl.sections = [...sections, section];
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+    return section;
+  }, []);
+
+  const updateSection = useCallback((id: string, sectionId: string, name: string) => {
+    const all = getLocalSetlists();
+    const sl = all.find((s) => s.id === id);
+    const section = sl?.sections?.find((candidate) => candidate.id === sectionId);
+    if (!section || !name.trim()) return;
+    section.name = name.trim();
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+  }, []);
+
+  const removeSection = useCallback((id: string, sectionId: string) => {
+    const all = getLocalSetlists();
+    const sl = all.find((s) => s.id === id);
+    if (!sl) return;
+    sl.sections = (sl.sections || []).filter((section) => section.id !== sectionId).map((section, position) => ({ ...section, position: position + 1 }));
+    sl.entries.forEach((entry) => { if (entry.section_id === sectionId) { entry.section_id = null; entry.section_name = null; } });
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+  }, []);
+
+  const assignSection = useCallback((id: string, idx: number, section: LocalSetlistSection | null) => {
+    const all = getLocalSetlists();
+    const sl = all.find((candidate) => candidate.id === id);
+    if (!sl?.entries[idx]) return;
+    sl.entries[idx].section_id = section?.id || null;
+    sl.entries[idx].section_name = section?.name || null;
+    saveLocalSetlists(all);
+    setSetlists([...all]);
+  }, []);
   const remove = useCallback((id: string) => {
     const all = getLocalSetlists().filter((s) => s.id !== id);
     saveLocalSetlists(all);
@@ -125,6 +167,10 @@ export function useLocalSetlists() {
     refresh,
     create,
     duplicate,
+    createSection,
+    updateSection,
+    removeSection,
+    assignSection,
     updateRehearsalNotes,
     remove,
     rename,

@@ -22,6 +22,8 @@ export interface SetlistEntry {
   // Per-song overrides (runtime only)
   _num?: number | null;
   _twoCol?: boolean | null;
+  section_id?: number | string | null;
+  section_name?: string | null;
   _font?: number | null;
   _hideYt?: boolean | null;
 }
@@ -70,12 +72,21 @@ export interface LocalSetlistEntry {
   performance_key?: string | null;
   song_notes?: string;
   transition_notes?: string;
+  section_id?: number | string | null;
+  section_name?: string | null;
+}
+
+export interface LocalSetlistSection {
+  id: string;
+  name: string;
+  position: number;
 }
 
 export interface LocalSetlist {
   id: string;
   name: string;
   entries: LocalSetlistEntry[];
+  sections?: LocalSetlistSection[];
   rehearsal_notes?: string;
 }
 

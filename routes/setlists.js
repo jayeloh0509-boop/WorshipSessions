@@ -302,7 +302,19 @@ function createSetlistsRouter() {
     res.status(201).json({ id: result.lastInsertRowid, setlist_id: id, name, position: Setlist.getSections(id).length });
   });
 
-  router.put('/setlists/:setlistId/sections/:sectionId', requireAuth, (req, res) => {
+  router.put('/setlists/:setlistId/sections/reorder', requireAuth, (req, res) => {
+    const setlistId = parseId(req.params.setlistId);
+    if (!setlistId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    const sectionIds = Array.isArray(req.body?.section_ids) ? req.body.section_ids.map((value) => parseId(value)) : null;
+    const sections = Setlist.getSections(setlistId);
+    if (!sectionIds || sectionIds.some((id) => id === null) || sectionIds.length !== sections.length || new Set(sectionIds).size !== sectionIds.length || sectionIds.some((id) => !sections.some((section) => section.id === id))) {
+      return res.status(400).json({ error: 'section_ids must contain every section exactly once' });
+    }
+    Setlist.reorderSections(setlistId, sectionIds);
+    res.json({ success: true });
+  });
+
+  router.put('/setlists/:setlistId/sections/:sectionId(\\d+)', requireAuth, (req, res) => {
     const setlistId = parseId(req.params.setlistId);
     const sectionId = parseId(req.params.sectionId);
     if (!setlistId || !sectionId || !resolveSetlist(res, setlistId, req.user.id)) return;
