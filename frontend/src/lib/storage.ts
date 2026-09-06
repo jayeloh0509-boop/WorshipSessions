@@ -31,35 +31,67 @@ export function getStoredUser(): User | null {
 }
 
 export function setStoredUser(user: User): void {
-  localStorage.setItem(KEYS.user, JSON.stringify(user));
+  try {
+    localStorage.setItem(KEYS.user, JSON.stringify(user));
+  } catch {
+    // Authentication persistence is best-effort when storage is blocked.
+  }
 }
 
 export function removeStoredUser(): void {
-  localStorage.removeItem(KEYS.user);
+  try {
+    localStorage.removeItem(KEYS.user);
+  } catch {
+    // Storage may be unavailable in private browsing or embedded contexts.
+  }
 }
 
 export function getStoredTheme(): 'dark' | 'light' {
-  return localStorage.getItem(KEYS.theme) === 'light' ? 'light' : 'dark';
+  try {
+    return localStorage.getItem(KEYS.theme) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
 }
 
 export function setStoredTheme(theme: 'dark' | 'light'): void {
-  localStorage.setItem(KEYS.theme, theme);
+  try {
+    localStorage.setItem(KEYS.theme, theme);
+  } catch {
+    // Theme persistence is best-effort.
+  }
 }
 
 export function getStoredChartTone(): 'paper' | 'dark' {
-  return localStorage.getItem(KEYS.chartTone) === 'dark' ? 'dark' : 'paper';
+  try {
+    return localStorage.getItem(KEYS.chartTone) === 'dark' ? 'dark' : 'paper';
+  } catch {
+    return 'paper';
+  }
 }
 
 export function setStoredChartTone(tone: 'paper' | 'dark'): void {
-  localStorage.setItem(KEYS.chartTone, tone);
+  try {
+    localStorage.setItem(KEYS.chartTone, tone);
+  } catch {
+    // Chart tone persistence is best-effort.
+  }
 }
 
 export function getStoredFontSize(): number {
-  return parseInt(localStorage.getItem(KEYS.fontsize) || '0') || 0;
+  try {
+    return parseInt(localStorage.getItem(KEYS.fontsize) || '0') || 0;
+  } catch {
+    return 0;
+  }
 }
 
 export function setStoredFontSize(size: number): void {
-  localStorage.setItem(KEYS.fontsize, String(size));
+  try {
+    localStorage.setItem(KEYS.fontsize, String(size));
+  } catch {
+    // Font-size persistence is best-effort.
+  }
 }
 
 export function getLocalSetlists(): LocalSetlist[] {
@@ -71,7 +103,11 @@ export function getLocalSetlists(): LocalSetlist[] {
 }
 
 export function saveLocalSetlists(arr: LocalSetlist[]): void {
-  localStorage.setItem(KEYS.localSetlists, JSON.stringify(arr));
+  try {
+    localStorage.setItem(KEYS.localSetlists, JSON.stringify(arr));
+  } catch {
+    // Local setlists remain usable in memory when storage is blocked/full.
+  }
 }
 
 export function sanitizeSongReadingPreferences(value: unknown): SongReadingPreferences {

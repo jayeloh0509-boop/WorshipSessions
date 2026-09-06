@@ -1,4 +1,17 @@
-import { clearSongReadingPreferences, getSongReadingPreferences, saveSongReadingPreferences } from '../storage';
+import {
+  clearSongReadingPreferences,
+  getLocalSetlists,
+  getSongReadingPreferences,
+  getStoredChartTone,
+  getStoredFontSize,
+  getStoredTheme,
+  removeStoredUser,
+  saveLocalSetlists,
+  saveSongReadingPreferences,
+  setStoredChartTone,
+  setStoredFontSize,
+  setStoredTheme,
+} from '../storage';
 
 const KEY = 'cv_song_reading_preferences_v1';
 
@@ -9,6 +22,30 @@ describe('per-song reading preference storage', () => {
     expect(getSongReadingPreferences(7)).toEqual({});
     localStorage.setItem(KEY, '{broken');
     expect(getSongReadingPreferences(7)).toEqual({});
+  });
+
+  it('falls back safely when localStorage reads and writes throw', () => {
+    const originalGet = Storage.prototype.getItem;
+    const originalSet = Storage.prototype.setItem;
+    const originalRemove = Storage.prototype.removeItem;
+    Storage.prototype.getItem = () => { throw new Error('blocked'); };
+    Storage.prototype.setItem = () => { throw new Error('blocked'); };
+    Storage.prototype.removeItem = () => { throw new Error('blocked'); };
+    try {
+      expect(getStoredTheme()).toBe('dark');
+      expect(getStoredChartTone()).toBe('paper');
+      expect(getStoredFontSize()).toBe(0);
+      expect(getLocalSetlists()).toEqual([]);
+      expect(() => setStoredTheme('light')).not.toThrow();
+      expect(() => setStoredChartTone('dark')).not.toThrow();
+      expect(() => setStoredFontSize(18)).not.toThrow();
+      expect(() => saveLocalSetlists([])).not.toThrow();
+      expect(() => removeStoredUser()).not.toThrow();
+    } finally {
+      Storage.prototype.getItem = originalGet;
+      Storage.prototype.setItem = originalSet;
+      Storage.prototype.removeItem = originalRemove;
+    }
   });
 
   it('merges validated preferences while isolating songs', () => {
