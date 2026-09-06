@@ -60,12 +60,15 @@ export function useSetlistPlayer({
   }, [setlist]);
 
   useEffect(() => {
+    if (!setlist) return;
+    const safeIndex = Math.min(Math.max(0, index), Math.max(0, setlist.entries.length - 1));
+    if (safeIndex !== index) setIndex(safeIndex);
     try {
-      localStorage.setItem(`worshipsessions-setlist-position:${String(setlistId)}`, String(index));
+      localStorage.setItem(`worshipsessions-setlist-position:${String(setlistId)}`, String(safeIndex));
     } catch {
       // Position persistence is best-effort.
     }
-  }, [index, setlistId]);
+  }, [index, setlist, setlistId]);
 
   useEffect(() => {
     if (isLocal) {

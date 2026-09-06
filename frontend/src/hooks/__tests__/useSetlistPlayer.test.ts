@@ -117,6 +117,20 @@ describe('useSetlistPlayer Hook', () => {
     expect(result.current.isModified).toBe(true);
   });
 
+  it('clamps a saved position after entries are removed', async () => {
+    localStorage.setItem('worshipsessions-setlist-position:42', '4');
+    const shortSetlist = { ...mockSetlist, id: 42, visibility: 'private' as const, event_date: null, entries: mockSetlist.entries.slice(0, 2) };
+    mockApiCall.mockResolvedValue(shortSetlist);
+
+    const { result } = renderHook(() =>
+      useSetlistPlayer({ setlistId: 42, initialSetlist: shortSetlist, navigate: vi.fn() }),
+    );
+
+    await waitFor(() => expect(result.current.setlist).not.toBeNull());
+    await waitFor(() => expect(result.current.index).toBe(0));
+    expect(localStorage.getItem('worshipsessions-setlist-position:42')).toBe('0');
+  });
+
   it('saves only key transposition to server during saveOnline', async () => {
     mockApiCall.mockResolvedValue(mockSetlist);
 
