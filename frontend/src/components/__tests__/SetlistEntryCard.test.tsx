@@ -52,6 +52,10 @@ describe('SetlistEntryCard preparation', () => {
         performance_key: 'Bb',
         song_notes: 'Acoustic intro',
         transition_notes: 'Hold the final pad into prayer.',
+        arrangement_confirmed: false,
+        key_confirmed: false,
+        transition_rehearsed: false,
+        chart_verified: false,
       }),
     );
   });

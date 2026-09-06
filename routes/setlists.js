@@ -221,7 +221,7 @@ function createSetlistsRouter() {
     if (!resolveSetlist(res, setlistId, req.user.id)) return;
     const entry = Setlist.getEntryById(entryId, setlistId);
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    const { transpose, nashville, font, two_col, content_override, performance_key, song_notes, transition_notes } =
+    const { transpose, nashville, font, two_col, content_override, performance_key, song_notes, transition_notes, arrangement_confirmed, key_confirmed, transition_rehearsed, chart_verified } =
       req.body;
     const transposeErr = validateTranspose(transpose);
     if (transposeErr) return res.status(400).json({ error: transposeErr });
@@ -259,6 +259,10 @@ function createSetlistsRouter() {
       performanceKey: performance_key === undefined ? undefined : performance_key?.trim() || null,
       songNotes: song_notes === undefined ? undefined : song_notes.trim(),
       transitionNotes: transition_notes === undefined ? undefined : transition_notes.trim(),
+      arrangementConfirmed: arrangement_confirmed,
+      keyConfirmed: key_confirmed,
+      transitionRehearsed: transition_rehearsed,
+      chartVerified: chart_verified,
     });
     res.json({ success: true });
   });

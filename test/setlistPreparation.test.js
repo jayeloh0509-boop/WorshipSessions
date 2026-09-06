@@ -38,12 +38,20 @@ test('setlist entry preparation fields save without changing the song chart', ()
     performanceKey: 'Ab',
     songNotes: 'Keys intro. Drums enter verse 2.',
     transitionNotes: 'Hold the final pad into prayer.',
+    arrangementConfirmed: true,
+    keyConfirmed: true,
+    transitionRehearsed: true,
+    chartVerified: true,
   });
 
   const entry = Setlist.getEntries(fixture.setlistId)[0];
   assert.equal(entry.performance_key, 'Ab');
   assert.equal(entry.song_notes, 'Keys intro. Drums enter verse 2.');
   assert.equal(entry.transition_notes, 'Hold the final pad into prayer.');
+  assert.equal(entry.arrangement_confirmed, 1);
+  assert.equal(entry.key_confirmed, 1);
+  assert.equal(entry.transition_rehearsed, 1);
+  assert.equal(entry.chart_verified, 1);
   assert.equal(entry.content, '[C]Test');
 });
 test('deleted songs remain visible in their original position', () => {
@@ -88,6 +96,10 @@ test('setlist duplication preserves ordering, repeated entries, and preparation 
     performanceKey: 'D',
     songNotes: 'Confirm ending.',
     transitionNotes: 'Count four.',
+    arrangementConfirmed: true,
+    keyConfirmed: true,
+    transitionRehearsed: true,
+    chartVerified: true,
   });
   Setlist.addSongEntry(fixture.setlistId, second.lastInsertRowid, { transpose: -1, nashville: false });
   Setlist.addSongEntry(fixture.setlistId, second.lastInsertRowid, { transpose: 0, nashville: false });
@@ -103,5 +115,9 @@ test('setlist duplication preserves ordering, repeated entries, and preparation 
   assert.equal(duplicated[0].two_col, 1);
   assert.equal(duplicated[0].song_notes, 'Confirm ending.');
   assert.equal(duplicated[0].transition_notes, 'Count four.');
+  assert.equal(duplicated[0].arrangement_confirmed, 1);
+  assert.equal(duplicated[0].key_confirmed, 1);
+  assert.equal(duplicated[0].transition_rehearsed, 1);
+  assert.equal(duplicated[0].chart_verified, 1);
   assert.equal(Setlist.findById(copy.id, fixture.userId).rehearsal_notes, 'Start softly; build into the response.');
 });

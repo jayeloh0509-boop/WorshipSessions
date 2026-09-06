@@ -120,6 +120,12 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         performance_key: e.performance_key,
         song_notes: e.song_notes,
         transition_notes: e.transition_notes,
+        arrangement_confirmed: e.arrangement_confirmed,
+        key_confirmed: e.key_confirmed,
+        transition_rehearsed: e.transition_rehearsed,
+        chart_verified: e.chart_verified,
+        section_id: e.section_id,
+        section_name: e.section_name,
       }));
       lsReorderEntries(String(setlistId), localEntries);
     } else {
@@ -266,7 +272,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const savePreparation = async (
     entryId: number | string,
     idx: number,
-    values: { performance_key: string; song_notes: string; transition_notes: string },
+    values: { performance_key: string; song_notes: string; transition_notes: string; arrangement_confirmed: boolean; key_confirmed: boolean; transition_rehearsed: boolean; chart_verified: boolean },
   ) => {
     if (!setlist) return;
     const entry = reorderedEntries[idx];
@@ -280,6 +286,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       performance_key: requestedKey || null,
       song_notes: values.song_notes.trim(),
       transition_notes: values.transition_notes.trim(),
+      arrangement_confirmed: values.arrangement_confirmed,
+      key_confirmed: values.key_confirmed,
+      transition_rehearsed: values.transition_rehearsed,
+      chart_verified: values.chart_verified,
       transpose,
     };
 

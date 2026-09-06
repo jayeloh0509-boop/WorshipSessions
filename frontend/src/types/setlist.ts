@@ -8,6 +8,10 @@ export interface SetlistEntry {
   performance_key?: string | null;
   song_notes?: string;
   transition_notes?: string;
+  arrangement_confirmed?: boolean;
+  key_confirmed?: boolean;
+  transition_rehearsed?: boolean;
+  chart_verified?: boolean;
   transpose: number;
   nashville: number;
   font: number | null;
@@ -72,6 +76,10 @@ export interface LocalSetlistEntry {
   performance_key?: string | null;
   song_notes?: string;
   transition_notes?: string;
+  arrangement_confirmed?: boolean;
+  key_confirmed?: boolean;
+  transition_rehearsed?: boolean;
+  chart_verified?: boolean;
   section_id?: number | string | null;
   section_name?: string | null;
 }

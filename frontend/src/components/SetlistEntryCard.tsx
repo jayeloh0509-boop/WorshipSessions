@@ -13,7 +13,7 @@ interface SetlistEntryCardProps {
   onSavePreparation: (
     entryId: number | string,
     idx: number,
-    values: { performance_key: string; song_notes: string; transition_notes: string },
+    values: { performance_key: string; song_notes: string; transition_notes: string; arrangement_confirmed: boolean; key_confirmed: boolean; transition_rehearsed: boolean; chart_verified: boolean },
   ) => Promise<void>;
   t: (key: string) => string;
   dragProps?: React.HTMLProps<HTMLDivElement>;
@@ -44,18 +44,31 @@ export function SetlistEntryCard({
   const [performanceKey, setPerformanceKey] = useState(entry.performance_key || keyDisplay || '');
   const [songNotes, setSongNotes] = useState(entry.song_notes || '');
   const [transitionNotes, setTransitionNotes] = useState(entry.transition_notes || '');
+  const [checklist, setChecklist] = useState({
+    arrangement_confirmed: !!entry.arrangement_confirmed,
+    key_confirmed: !!entry.key_confirmed,
+    transition_rehearsed: !!entry.transition_rehearsed,
+    chart_verified: !!entry.chart_verified,
+  });
 
   useEffect(() => {
     setPerformanceKey(entry.performance_key || keyDisplay || '');
     setSongNotes(entry.song_notes || '');
     setTransitionNotes(entry.transition_notes || '');
-  }, [entry.performance_key, entry.song_notes, entry.transition_notes, keyDisplay]);
+    setChecklist({
+      arrangement_confirmed: !!entry.arrangement_confirmed,
+      key_confirmed: !!entry.key_confirmed,
+      transition_rehearsed: !!entry.transition_rehearsed,
+      chart_verified: !!entry.chart_verified,
+    });
+  }, [entry.performance_key, entry.song_notes, entry.transition_notes, entry.arrangement_confirmed, entry.key_confirmed, entry.transition_rehearsed, entry.chart_verified, keyDisplay]);
 
   const savePreparation = async () => {
     await onSavePreparation(entry.entry_id, idx, {
       performance_key: performanceKey,
       song_notes: songNotes,
       transition_notes: transitionNotes,
+      ...checklist,
     });
     setPreparing(false);
   };
@@ -145,6 +158,11 @@ export function SetlistEntryCard({
       </div>
       {preparing && (
         <div className="setlist-preparation-panel">
+          <div className="setlist-preparation-checklist" aria-label="Preparation checklist">
+            {([['arrangement_confirmed', 'Arrangement confirmed'], ['key_confirmed', 'Key confirmed'], ['transition_rehearsed', 'Transition rehearsed'], ['chart_verified', 'Chart verified']] as const).map(([key, label]) => (
+              <label key={key}><input type="checkbox" checked={checklist[key]} onChange={(event) => setChecklist((current) => ({ ...current, [key]: event.target.checked }))} /> {label}</label>
+            ))}
+          </div>
           <label>
             <span>Performance key</span>
             <input
