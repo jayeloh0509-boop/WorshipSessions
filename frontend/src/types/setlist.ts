@@ -26,6 +26,13 @@ export interface SetlistEntry {
   _hideYt?: boolean | null;
 }
 
+export interface SetlistSection {
+  id: number | string;
+  setlist_id?: number | string;
+  name: string;
+  position: number;
+}
+
 export interface Setlist {
   id: number | string;
   name: string;
@@ -36,6 +43,7 @@ export interface Setlist {
   song_count?: number;
   username?: string;
   entries: SetlistEntry[];
+  sections?: SetlistSection[];
   created_at?: string;
   updated_at?: string;
   isLocal?: boolean;

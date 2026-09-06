@@ -68,6 +68,7 @@ function createSetlistsRouter() {
     const setlist = Setlist.findPublicById(id);
     if (!setlist) return res.status(404).json({ error: 'Setlist not found' });
     const entries = Setlist.getEntries(id);
+    const sections = Setlist.getSections(id);
     const userId = req.user ? req.user.id : 0;
     const safeEntries = entries.map((e) => {
       if (e.is_missing) {
@@ -112,7 +113,7 @@ function createSetlistsRouter() {
       const { song_user_id: _, ...safe } = e;
       return safe;
     });
-    res.json({ ...setlist, entries: safeEntries });
+    res.json({ ...setlist, sections, entries: safeEntries });
   });
 
   router.get('/setlists/:id', requireAuth, (req, res) => {
@@ -121,6 +122,7 @@ function createSetlistsRouter() {
     const setlist = resolveSetlist(res, id, req.user.id);
     if (!setlist) return;
     const entries = Setlist.getEntries(id);
+    const sections = Setlist.getSections(id);
     const safeEntries = entries.map((e) => {
       if (e.is_missing) {
         const { song_user_id: _, ...missing } = e;
@@ -152,7 +154,7 @@ function createSetlistsRouter() {
       const { song_user_id: _, ...safe } = e;
       return safe;
     });
-    res.json({ ...setlist, entries: safeEntries });
+    res.json({ ...setlist, sections, entries: safeEntries });
   });
 
   router.put('/setlists/:id', requireAuth, (req, res) => {
@@ -288,6 +290,57 @@ function createSetlistsRouter() {
     if (parsedIds.length !== entries.length)
       return res.status(400).json({ error: 'entry_ids count must match the number of entries in the setlist' });
     Setlist.reorderEntries(id, parsedIds);
+    res.json({ success: true });
+  });
+
+  router.post('/setlists/:id/sections', requireAuth, (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id || !resolveSetlist(res, id, req.user.id)) return;
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    if (!name || name.length > 80) return res.status(400).json({ error: 'Section name is required (max 80 characters)' });
+    const result = Setlist.createSection(id, name);
+    res.status(201).json({ id: result.lastInsertRowid, setlist_id: id, name, position: Setlist.getSections(id).length });
+  });
+
+  router.put('/setlists/:setlistId/sections/:sectionId', requireAuth, (req, res) => {
+    const setlistId = parseId(req.params.setlistId);
+    const sectionId = parseId(req.params.sectionId);
+    if (!setlistId || !sectionId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    if (!Setlist.getSectionById(sectionId, setlistId)) return res.status(404).json({ error: 'Section not found' });
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    if (!name || name.length > 80) return res.status(400).json({ error: 'Section name is required (max 80 characters)' });
+    Setlist.renameSection(sectionId, setlistId, name);
+    res.json({ success: true });
+  });
+
+  router.delete('/setlists/:setlistId/sections/:sectionId', requireAuth, (req, res) => {
+    const setlistId = parseId(req.params.setlistId);
+    const sectionId = parseId(req.params.sectionId);
+    if (!setlistId || !sectionId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    const result = Setlist.deleteSection(sectionId, setlistId);
+    if (!result.changes) return res.status(404).json({ error: 'Section not found' });
+    res.json({ success: true });
+  });
+  router.put('/setlists/:setlistId/sections/reorder', requireAuth, (req, res) => {
+    const setlistId = parseId(req.params.setlistId);
+    if (!setlistId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    const sectionIds = Array.isArray(req.body?.section_ids) ? req.body.section_ids.map((value) => parseId(value)) : null;
+    const sections = Setlist.getSections(setlistId);
+    if (!sectionIds || sectionIds.some((id) => id === null) || sectionIds.length !== sections.length || new Set(sectionIds).size !== sectionIds.length || sectionIds.some((id) => !sections.some((section) => section.id === id))) {
+      return res.status(400).json({ error: 'section_ids must contain every section exactly once' });
+    }
+    Setlist.reorderSections(setlistId, sectionIds);
+    res.json({ success: true });
+  });
+
+  router.put('/setlists/:setlistId/entries/:entryId/section', requireAuth, (req, res) => {
+    const setlistId = parseId(req.params.setlistId);
+    const entryId = parseId(req.params.entryId);
+    if (!setlistId || !entryId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    const sectionId = req.body?.section_id == null ? null : parseId(req.body.section_id);
+    if (sectionId !== null && (!sectionId || !Setlist.getSectionById(sectionId, setlistId))) return res.status(404).json({ error: 'Section not found' });
+    const result = Setlist.updateEntrySection(entryId, setlistId, sectionId);
+    if (!result.changes) return res.status(404).json({ error: 'Entry not found' });
     res.json({ success: true });
   });
 

@@ -55,6 +55,24 @@ test('deleted songs remain visible in their original position', () => {
   assert.equal(entries[0].is_missing, 1);
 });
 
+test('service-flow sections persist, assign entries, reorder, delete safely, and duplicate', () => {
+  const fixture = createFixture();
+  const welcome = Setlist.createSection(fixture.setlistId, 'WELCOME');
+  const worship = Setlist.createSection(fixture.setlistId, 'WORSHIP');
+  Setlist.updateEntrySection(fixture.entryId, fixture.setlistId, worship.lastInsertRowid);
+  Setlist.reorderSections(fixture.setlistId, [worship.lastInsertRowid, welcome.lastInsertRowid]);
+
+  assert.deepEqual(Setlist.getSections(fixture.setlistId).map((section) => section.name), ['WORSHIP', 'WELCOME']);
+  assert.equal(Setlist.getEntries(fixture.setlistId)[0].section_name, 'WORSHIP');
+
+  const copy = Setlist.duplicate(fixture.setlistId, fixture.userId, 'Section Copy');
+  assert.deepEqual(Setlist.getSections(copy.id).map((section) => section.name), ['WORSHIP', 'WELCOME']);
+  assert.equal(Setlist.getEntries(copy.id)[0].section_name, 'WORSHIP');
+
+  Setlist.deleteSection(worship.lastInsertRowid, fixture.setlistId);
+  assert.equal(Setlist.getEntries(fixture.setlistId)[0].section_id, null);
+});
+
 test('setlist duplication preserves ordering, repeated entries, and preparation metadata', () => {
   const fixture = createFixture();
   Setlist.update(fixture.setlistId, fixture.userId, 'Sunday', 'private', null, 'Start softly; build into the response.');
