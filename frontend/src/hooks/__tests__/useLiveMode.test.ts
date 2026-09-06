@@ -74,6 +74,24 @@ describe('useLiveMode', () => {
       expect(exitFullscreen).toHaveBeenCalled();
     });
   });
+  it('releases a wake lock that resolves after Live Mode exits', async () => {
+    const release = vi.fn().mockResolvedValue(undefined);
+    const addEventListener = vi.fn();
+    const handle = { release, addEventListener };
+    let resolveRequest: ((resolvedHandle: typeof handle) => void) | undefined;
+    const request = vi.fn(() => new Promise<typeof handle>((resolve) => { resolveRequest = resolve; }));
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request } });
+    const { result } = renderHook(() => useLiveMode(createRef<HTMLElement>()));
+
+    const startPromise = result.current.start();
+    await act(async () => result.current.stop());
+    await act(async () => resolveRequest?.(handle));
+    await startPromise;
+
+    expect(request).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    expect(result.current.active).toBe(false);
+  });
   it('lets the user explicitly re-enter fullscreen', async () => {
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     const targetRef = createRef<HTMLElement>();

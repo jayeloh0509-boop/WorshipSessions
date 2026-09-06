@@ -36,22 +36,42 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement);
   const wakeLockRef = useRef<WakeLockHandle | null>(null);
+  const wakeLockRequestRef = useRef<Promise<boolean> | null>(null);
+  const activeRef = useRef(active);
 
   const requestWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) return true;
+    if (wakeLockRequestRef.current) return wakeLockRequestRef.current;
     const wakeLock = (navigator as WakeLockCapableNavigator).wakeLock;
     if (!wakeLock || document.visibilityState !== 'visible') return false;
-    try {
-      const handle = await wakeLock.request('screen');
-      wakeLockRef.current = handle;
-      setWakeLockActive(true);
-      handle.addEventListener?.('release', () => {
-        if (wakeLockRef.current === handle) wakeLockRef.current = null;
+    const request = (async () => {
+      try {
+        const handle = await wakeLock.request('screen');
+        if (!activeRef.current) {
+          try {
+            await handle.release();
+          } catch {
+            /* request resolved after Live Mode exited */
+          }
+          return false;
+        }
+        wakeLockRef.current = handle;
+        setWakeLockActive(true);
+        handle.addEventListener?.('release', () => {
+          if (wakeLockRef.current === handle) wakeLockRef.current = null;
+          setWakeLockActive(false);
+        });
+        return true;
+      } catch {
         setWakeLockActive(false);
-      });
-      return true;
-    } catch {
-      setWakeLockActive(false);
-      return false;
+        return false;
+      }
+    })();
+    wakeLockRequestRef.current = request;
+    try {
+      return await request;
+    } finally {
+      if (wakeLockRequestRef.current === request) wakeLockRequestRef.current = null;
     }
   }, []);
 
@@ -69,6 +89,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   }, []);
 
   const start = useCallback(async () => {
+    activeRef.current = true;
     setActive(true);
     setControlsVisible(false);
     persistActive(true);
@@ -84,6 +105,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   }, [requestWakeLock, targetRef]);
 
   const stop = useCallback(async () => {
+    activeRef.current = false;
     setActive(false);
     setControlsVisible(false);
     persistActive(false);
@@ -126,6 +148,7 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
 
   useEffect(
     () => () => {
+      activeRef.current = false;
       void releaseWakeLock();
       if (document.fullscreenElement && document.exitFullscreen) {
         void document.exitFullscreen().catch(() => {
