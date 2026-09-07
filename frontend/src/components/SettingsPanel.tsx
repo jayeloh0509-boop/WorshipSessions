@@ -12,6 +12,8 @@ interface SettingsPanelProps {
   onLineSpacingChange: (delta: number) => void;
   highContrast: boolean;
   onHighContrastChange: (value: boolean) => void;
+  holdToAdvance: boolean;
+  onHoldToAdvanceChange: (value: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -28,6 +30,8 @@ export function SettingsPanel({
   onLineSpacingChange,
   highContrast,
   onHighContrastChange,
+  holdToAdvance,
+  onHoldToAdvanceChange,
 }: SettingsPanelProps) {
   return (
     <div className="sl-options-panel">
@@ -57,6 +61,13 @@ export function SettingsPanel({
         <span>High contrast</span>
         <span className="toggle">
           <input type="checkbox" checked={highContrast} onChange={(e) => onHighContrastChange(e.target.checked)} />
+          <span className="toggle-slider" />
+        </span>
+      </label>
+      <label className="sl-option">
+        <span>Hold Next on touch</span>
+        <span className="toggle">
+          <input type="checkbox" checked={holdToAdvance} onChange={(e) => onHoldToAdvanceChange(e.target.checked)} />
           <span className="toggle-slider" />
         </span>
       </label>

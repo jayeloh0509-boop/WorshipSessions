@@ -60,6 +60,13 @@ export function SetlistPlayView({
       return 1.45;
     }
   });
+  const [holdToAdvance, setHoldToAdvance] = useState(() => {
+    try { return localStorage.getItem('worshipsessions-hold-to-advance') !== 'false'; } catch { return true; }
+  });
+  const changeHoldToAdvance = useCallback((value: boolean) => {
+    setHoldToAdvance(value);
+    try { localStorage.setItem('worshipsessions-hold-to-advance', String(value)); } catch { /* optional storage */ }
+  }, []);
   const [highContrast, setHighContrast] = useState(() => {
     try { return localStorage.getItem('worshipsessions-high-contrast') === 'true'; } catch { return false; }
   });
@@ -248,7 +255,7 @@ export function SetlistPlayView({
   }, [autoScroll, next]);
 
   const startLiveNextHold = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (event.pointerType === 'mouse') return;
+    if (!holdToAdvance || event.pointerType === 'mouse') return;
     if (liveNextTimerRef.current) clearTimeout(liveNextTimerRef.current);
     suppressLiveNextClickRef.current = false;
     setLiveNextHolding(true);
@@ -258,7 +265,7 @@ export function SetlistPlayView({
       setLiveNextHolding(false);
       advanceLiveNext();
     }, 450);
-  }, [advanceLiveNext]);
+  }, [advanceLiveNext, holdToAdvance]);
 
   const cancelLiveNextHold = useCallback(() => {
     if (liveNextTimerRef.current) {
@@ -598,6 +605,8 @@ export function SetlistPlayView({
           onLineSpacingChange={changeLineSpacing}
           highContrast={highContrast}
           onHighContrastChange={changeHighContrast}
+          holdToAdvance={holdToAdvance}
+          onHoldToAdvanceChange={changeHoldToAdvance}
         />
       )}
 

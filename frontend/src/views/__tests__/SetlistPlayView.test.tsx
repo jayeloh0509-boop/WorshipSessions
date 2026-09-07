@@ -51,6 +51,7 @@ describe('SetlistPlayView', () => {
     localStorage.removeItem('worshipsessions-live-mode');
     localStorage.removeItem('worshipsessions-autoscroll-speed');
     localStorage.removeItem('worshipsessions-high-contrast');
+    localStorage.removeItem('worshipsessions-hold-to-advance');
     (useSetlistPlayer as Mock).mockReturnValue({
       setlist: {
         id: 1,
@@ -136,6 +137,11 @@ describe('SetlistPlayView', () => {
     expect(highContrast).toBeChecked();
     expect(screen.getByTestId('setlist-play-container')).toHaveClass('high-contrast');
     expect(localStorage.getItem('worshipsessions-high-contrast')).toBe('true');
+    const holdToAdvance = screen.getByRole('checkbox', { name: /hold next on touch/i });
+    expect(holdToAdvance).toBeChecked();
+    fireEvent.click(holdToAdvance);
+    expect(holdToAdvance).not.toBeChecked();
+    expect(localStorage.getItem('worshipsessions-hold-to-advance')).toBe('false');
     expect(screen.getByRole('button', { name: /decrease line spacing/i })).toBeInTheDocument();
     expect(screen.getByTitle(/Auto-fit for this screen/)).toBeInTheDocument();
   });
@@ -209,6 +215,7 @@ describe('SetlistPlayView', () => {
   it('starts, pauses, and persists Live Mode auto-scroll controls', async () => {
     localStorage.removeItem('worshipsessions-autoscroll-speed');
     localStorage.removeItem('worshipsessions-high-contrast');
+    localStorage.removeItem('worshipsessions-hold-to-advance');
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,
       value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
