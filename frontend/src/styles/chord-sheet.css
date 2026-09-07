@@ -48,6 +48,36 @@
   }
 }
 
+/* Chord alignment: keep each chord anchored above its lyric syllable without
+   collapsing whitespace or allowing long lines to drift on tablet widths. */
+.chord-sheet .paragraph,
+.chord-sheet .chord-output .paragraph {
+  white-space: pre-wrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: calc(1em * var(--line-spacing, 1.45));
+}
+
+.chord-sheet .chord-output .chord,
+.chord-sheet .chord-output .chord-line,
+.chord-sheet .chord-output .chord-name {
+  display: inline-block;
+  white-space: pre;
+  vertical-align: baseline;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chord-sheet .chord-output .chord-line {
+  min-height: 1.15em;
+  margin-bottom: .12em;
+}
+
+@media (max-width: 900px) {
+  .chord-sheet-wrap { overflow-x: auto; }
+  .chord-sheet .chord-output { min-width: max-content; }
+}
+
 /* ChordSheetJS output styles */
 .chord-sheet .paragraph {
   margin-bottom: 0.4em;
@@ -668,4 +698,7 @@
   white-space: pre-wrap;
   color: var(--text, inherit);
   padding: 0.5rem 0;
+}
+.chord-output {
+  line-height: var(--line-spacing, 1.45);
 }

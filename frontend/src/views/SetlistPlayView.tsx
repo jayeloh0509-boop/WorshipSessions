@@ -51,6 +51,21 @@ export function SetlistPlayView({
   const autoScroll = useAutoScroll(liveMode.active, chartScrollRef);
   const pauseAutoScroll = autoScroll.pause;
   const [autoScrollControlsVisible, setAutoScrollControlsVisible] = useState(false);
+  const [lineSpacing, setLineSpacing] = useState(() => {
+    try {
+      const value = Number(localStorage.getItem('worshipsessions-line-spacing'));
+      return Number.isFinite(value) && value >= 1.1 && value <= 2.2 ? value : 1.45;
+    } catch {
+      return 1.45;
+    }
+  });
+  const changeLineSpacing = useCallback((delta: number) => {
+    setLineSpacing((current) => {
+      const next = Math.max(1.1, Math.min(2.2, Math.round((current + delta) * 10) / 10));
+      try { localStorage.setItem('worshipsessions-line-spacing', String(next)); } catch { /* best-effort */ }
+      return next;
+    });
+  }, []);
 
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -523,6 +538,8 @@ export function SetlistPlayView({
           fontSize={fontScale.fontSize}
           onFontChange={fontScale.changeFontSize}
           onFontReset={resetFont}
+          lineSpacing={lineSpacing}
+          onLineSpacingChange={changeLineSpacing}
         />
       )}
 
@@ -598,7 +615,7 @@ export function SetlistPlayView({
               className={`live-mode-chart-viewport${liveMode.active ? ' active' : ''}`}
               data-testid="live-mode-chart-viewport"
             >
-              <ChordSheet html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} autoFit={autoFitActive} />
+              <ChordSheet html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} lineSpacing={lineSpacing} autoFit={autoFitActive} />
             </div>
           )}
         </>

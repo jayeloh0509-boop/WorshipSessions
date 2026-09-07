@@ -5,6 +5,7 @@ interface ChordSheetProps {
   html: string;
   twoCol?: boolean;
   fontSize?: number;
+  lineSpacing?: number;
   autoFit?: boolean; // Kept for class naming if needed
   tone?: 'default' | 'paper' | 'dark';
   outputId?: string;
@@ -14,6 +15,7 @@ export function ChordSheet({
   html,
   twoCol,
   fontSize,
+  lineSpacing = 1.45,
   autoFit,
   tone = 'default',
   outputId = 'chord-output',
@@ -21,9 +23,10 @@ export function ChordSheet({
   // Manual/Legacy Scaling Logic
   const manualScale = fontScaleValue(fontSize || 0);
 
-  const style: React.CSSProperties = manualScale
-    ? ({ '--font-scale': String(manualScale) } as React.CSSProperties)
-    : {};
+  const style = {
+    ...(manualScale ? { '--font-scale': String(manualScale) } : {}),
+    '--line-spacing': String(lineSpacing),
+  } as React.CSSProperties;
 
   // Premium: chords briefly settle in when the rendered sheet changes (transpose, notation)
   const [settle, setSettle] = useState(false);

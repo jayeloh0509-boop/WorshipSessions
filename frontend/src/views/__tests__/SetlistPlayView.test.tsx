@@ -122,6 +122,11 @@ describe('SetlistPlayView', () => {
     fireEvent.click(await screen.findByRole('button', { name: /show chart controls/i }));
 
     expect(screen.getByRole('button', { name: /hide chart controls/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Settings'));
+    expect(screen.getByText('Line spacing')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /increase line spacing/i }));
+    expect(localStorage.getItem('worshipsessions-line-spacing')).toBe('1.6');
+    expect(screen.getByRole('button', { name: /decrease line spacing/i })).toBeInTheDocument();
     expect(screen.getByTitle(/Auto-fit for this screen/)).toBeInTheDocument();
   });
 

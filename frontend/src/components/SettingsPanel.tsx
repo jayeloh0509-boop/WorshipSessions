@@ -8,6 +8,8 @@ interface SettingsPanelProps {
   fontSize: number;
   onFontChange: (delta: number) => void;
   onFontReset: () => void;
+  lineSpacing: number;
+  onLineSpacingChange: (delta: number) => void;
 }
 
 export function SettingsPanel({
@@ -20,6 +22,8 @@ export function SettingsPanel({
   fontSize,
   onFontChange,
   onFontReset,
+  lineSpacing,
+  onLineSpacingChange,
 }: SettingsPanelProps) {
   return (
     <div className="sl-options-panel">
@@ -62,6 +66,14 @@ export function SettingsPanel({
           >
             &#8634;
           </button>
+        </div>
+      </div>
+      <div className="sl-option">
+        <span>Line spacing</span>
+        <div className="sl-font-btns">
+          <button className="btn btn-ghost btn-sm" onClick={() => onLineSpacingChange(-0.1)} disabled={lineSpacing <= 1.1} aria-label="Decrease line spacing">−</button>
+          <span aria-live="polite">{lineSpacing.toFixed(1)}</span>
+          <button className="btn btn-ghost btn-sm" onClick={() => onLineSpacingChange(0.1)} disabled={lineSpacing >= 2.2} aria-label="Increase line spacing">+</button>
         </div>
       </div>
     </div>
