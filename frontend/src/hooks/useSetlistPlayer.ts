@@ -193,6 +193,8 @@ export function useSetlistPlayer({
     loadSetlist();
   }, [setlistId, apiCall, isLocal, initialSetlist, navigate, toast, user, reloadNonce]);
 
+  const retry = useCallback(() => setReloadNonce((current) => current + 1), []);
+
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;
 
@@ -355,5 +357,5 @@ export function useSetlistPlayer({
     }
   }, [setlist, navigate]);
 
-  return { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal };
+  return { setlist, entry, index, total, offline, retry, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal };
 }

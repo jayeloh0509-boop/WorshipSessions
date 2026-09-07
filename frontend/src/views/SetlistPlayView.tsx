@@ -86,7 +86,7 @@ export function SetlistPlayView({
   const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
 
-  const { setlist, entry, index, total, offline, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal } =
+  const { setlist, entry, index, total, offline, retry, goTo, prev, next, exit, updateEntry, removeCurrentMissing, removeAllMissing, isModified, saveOnline, saveLocal } =
     useSetlistPlayer({
       setlistId,
       isLocal: _isLocal,
@@ -407,7 +407,8 @@ export function SetlistPlayView({
 
       {(offline || setlist.isStale) && (
         <div className="setlist-stale-banner" role="status">
-          {offline ? 'Offline' : 'Stale data'} — showing the last loaded version. Retry when you’re back online.
+          <span>{offline ? 'Offline' : 'Stale data'} — showing the last loaded version.</span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={retry} disabled={offline}>Retry</button>
         </div>
       )}
 
