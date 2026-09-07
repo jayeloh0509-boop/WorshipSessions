@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
 import { useToast } from '../context/ToastContext';
 import { importSongs, ApiError, type ImportResult } from '../lib/api';
-import { fileToSong, chunkSongs } from '../lib/import';
+import { fileToSong, chunkSongs, reviewChart, type ChartReview } from '../lib/import';
 import { IMPORT_ACCEPT, IMPORT_CONFIRM_FILE_COUNT, DEMO_MAX_IMPORT } from '../lib/constants';
 
 interface ImportModalProps {
@@ -38,6 +38,7 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [reviews, setReviews] = useState<{ filename: string; review: ChartReview }[]>([]);
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     let picked = Array.from(e.target.files ?? []);
@@ -73,6 +74,7 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
     try {
       const texts = await Promise.all(files.map(readText));
       const songs = texts.map((t, i) => fileToSong(files[i].name, t));
+      setReviews(songs.map((song, i) => ({ filename: files[i].name, review: reviewChart(song.content) })));
       const batches = chunkSongs(songs);
 
       const agg: Summary = { imported: 0, skipped: [], errors: [] };
@@ -112,6 +114,26 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
             &#10005;
           </button>
         </div>
+
+        {reviews.length > 0 && (
+          <div className="import-review" data-testid="import-review">
+            <strong>Import review</strong>
+            {reviews.map(({ filename, review }) => (
+              <div key={filename} className="import-review-row">
+                <span>{filename}</span>
+                <span className={review.status === 'verified' ? 'text-success' : 'text-warning'}>
+                  {review.status === 'verified' ? 'Verified' : `Needs review (${review.warnings.length})`}
+                </span>
+                <small>{review.sections} sections · {review.chordLines} chord lines · {review.lyricLines} lyric lines</small>
+                {review.warnings.length > 0 && (
+                  <ul className="import-review-warnings">
+                    {review.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {!summary && (
           <>

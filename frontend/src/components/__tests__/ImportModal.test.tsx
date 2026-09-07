@@ -27,6 +27,10 @@ describe('ImportModal', () => {
     await userEvent.upload(input, [file('A.cho', '[G]a'), file('B.cho', '[G]a')]);
     await userEvent.click(screen.getByTestId('import-start'));
     await waitFor(() => {
+      expect(screen.getByTestId('import-review')).toHaveTextContent('Needs review');
+      expect(screen.getByTestId('import-review')).toHaveTextContent('No standard section headings detected.');
+    });
+    await waitFor(() => {
       expect(screen.getByTestId('import-summary')).toHaveTextContent('1 imported');
       expect(screen.getByTestId('import-summary')).toHaveTextContent('1 already in your library');
     });
