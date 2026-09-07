@@ -59,6 +59,13 @@ export function SetlistPlayView({
       return 1.45;
     }
   });
+  const [highContrast, setHighContrast] = useState(() => {
+    try { return localStorage.getItem('worshipsessions-high-contrast') === 'true'; } catch { return false; }
+  });
+  const changeHighContrast = useCallback((value: boolean) => {
+    setHighContrast(value);
+    try { localStorage.setItem('worshipsessions-high-contrast', String(value)); } catch { /* best-effort */ }
+  }, []);
   const changeLineSpacing = useCallback((delta: number) => {
     setLineSpacing((current) => {
       const next = Math.max(1.1, Math.min(2.2, Math.round((current + delta) * 10) / 10));
@@ -334,7 +341,7 @@ export function SetlistPlayView({
     <div
       ref={containerRef}
       data-testid="setlist-play-container"
-      className={`setlist-play-container${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}`}
+      className={`setlist-play-container${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}${highContrast ? ' high-contrast' : ''}`}
       style={{
         ...(liveMode.active
           ? {
@@ -540,6 +547,8 @@ export function SetlistPlayView({
           onFontReset={resetFont}
           lineSpacing={lineSpacing}
           onLineSpacingChange={changeLineSpacing}
+          highContrast={highContrast}
+          onHighContrastChange={changeHighContrast}
         />
       )}
 

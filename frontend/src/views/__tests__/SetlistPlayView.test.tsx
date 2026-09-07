@@ -50,6 +50,7 @@ describe('SetlistPlayView', () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     localStorage.removeItem('worshipsessions-live-mode');
     localStorage.removeItem('worshipsessions-autoscroll-speed');
+    localStorage.removeItem('worshipsessions-high-contrast');
     (useSetlistPlayer as Mock).mockReturnValue({
       setlist: {
         id: 1,
@@ -126,6 +127,11 @@ describe('SetlistPlayView', () => {
     expect(screen.getByText('Line spacing')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /increase line spacing/i }));
     expect(localStorage.getItem('worshipsessions-line-spacing')).toBe('1.6');
+    const highContrast = screen.getByRole('checkbox', { name: /high contrast/i });
+    fireEvent.click(highContrast);
+    expect(highContrast).toBeChecked();
+    expect(screen.getByTestId('setlist-play-container')).toHaveClass('high-contrast');
+    expect(localStorage.getItem('worshipsessions-high-contrast')).toBe('true');
     expect(screen.getByRole('button', { name: /decrease line spacing/i })).toBeInTheDocument();
     expect(screen.getByTitle(/Auto-fit for this screen/)).toBeInTheDocument();
   });
@@ -160,6 +166,7 @@ describe('SetlistPlayView', () => {
 
   it('starts, pauses, and persists Live Mode auto-scroll controls', async () => {
     localStorage.removeItem('worshipsessions-autoscroll-speed');
+    localStorage.removeItem('worshipsessions-high-contrast');
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,
       value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },

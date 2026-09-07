@@ -3511,3 +3511,24 @@
     justify-content: flex-start;
   }
 }
+.setlist-play-container.high-contrast {
+  --text: #000;
+  --muted: #111;
+  --border: #000;
+  background: #fff;
+  color: #000;
+}
+
+.setlist-play-container.high-contrast .live-mode-topbar,
+.setlist-play-container.high-contrast .live-mode-navigation,
+.setlist-play-container.high-contrast .setlist-live-notes {
+  border-color: #000;
+  background: #fff;
+  color: #000;
+}
+
+.setlist-play-container.high-contrast button,
+.setlist-play-container.high-contrast a {
+  color: #000;
+  border-color: #000;
+}

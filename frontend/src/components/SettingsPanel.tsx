@@ -10,6 +10,8 @@ interface SettingsPanelProps {
   onFontReset: () => void;
   lineSpacing: number;
   onLineSpacingChange: (delta: number) => void;
+  highContrast: boolean;
+  onHighContrastChange: (value: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -24,6 +26,8 @@ export function SettingsPanel({
   onFontReset,
   lineSpacing,
   onLineSpacingChange,
+  highContrast,
+  onHighContrastChange,
 }: SettingsPanelProps) {
   return (
     <div className="sl-options-panel">
@@ -46,6 +50,13 @@ export function SettingsPanel({
         <span>Multi-column layout</span>
         <span className="toggle">
           <input type="checkbox" checked={twoCol} onChange={(e) => onTwoColChange(e.target.checked)} />
+          <span className="toggle-slider" />
+        </span>
+      </label>
+      <label className="sl-option">
+        <span>High contrast</span>
+        <span className="toggle">
+          <input type="checkbox" checked={highContrast} onChange={(e) => onHighContrastChange(e.target.checked)} />
           <span className="toggle-slider" />
         </span>
       </label>
