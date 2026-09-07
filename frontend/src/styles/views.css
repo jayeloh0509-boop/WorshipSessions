@@ -3532,3 +3532,22 @@
   color: #000;
   border-color: #000;
 }
+
+.live-mode-capabilities {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted-text, rgba(255, 255, 255, 0.65));
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.live-mode-capabilities span {
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.setlist-play-container.high-contrast .live-mode-capabilities {
+  color: #000;
+}

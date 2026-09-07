@@ -439,6 +439,10 @@ export function SetlistPlayView({
               {entry.bpm ? ` · ${entry.bpm} bpm` : ''}
             </span>
           </div>
+          <div className="live-mode-capabilities" role="status" aria-label="Live Mode capabilities">
+            {!liveMode.fullscreenSupported && <span title="Fullscreen is unavailable">Fullscreen unavailable</span>}
+            {!liveMode.wakeLockSupported && <span title="Screen wake lock is unavailable">Wake lock unavailable</span>}
+          </div>
           <button
             type="button"
             className="live-mode-fullscreen"

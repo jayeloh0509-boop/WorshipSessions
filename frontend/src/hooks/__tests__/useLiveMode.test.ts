@@ -92,6 +92,14 @@ describe('useLiveMode', () => {
     expect(release).toHaveBeenCalledOnce();
     expect(result.current.active).toBe(false);
   });
+  it('reports unavailable optional capabilities without blocking Live Mode', async () => {
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: undefined });
+    const { result } = renderHook(() => useLiveMode(createRef<HTMLElement>()));
+    expect(result.current.wakeLockSupported).toBe(false);
+    await act(async () => result.current.start());
+    expect(result.current.active).toBe(true);
+  });
+
   it('lets the user explicitly re-enter fullscreen', async () => {
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     const targetRef = createRef<HTMLElement>();

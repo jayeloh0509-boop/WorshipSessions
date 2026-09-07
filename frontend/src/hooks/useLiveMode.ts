@@ -35,6 +35,8 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
   const [controlsVisible, setControlsVisible] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const [fullscreenActive, setFullscreenActive] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement);
+  const fullscreenSupported = typeof document !== 'undefined' && typeof document.documentElement?.requestFullscreen === 'function';
+  const wakeLockSupported = typeof navigator !== 'undefined' && typeof (navigator as WakeLockCapableNavigator).wakeLock?.request === 'function';
   const wakeLockRef = useRef<WakeLockHandle | null>(null);
   const wakeLockRequestRef = useRef<Promise<boolean> | null>(null);
   const activeRef = useRef(active);
@@ -164,6 +166,8 @@ export function useLiveMode(targetRef: React.RefObject<HTMLElement | null>) {
     controlsVisible,
     wakeLockActive,
     fullscreenActive,
+    fullscreenSupported,
+    wakeLockSupported,
     toggleFullscreen,
     start,
     stop,
