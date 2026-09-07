@@ -108,7 +108,11 @@ describe('SetlistPlayView', () => {
     const exits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
     expect(exits).toHaveLength(1);
     expect(exits[0]).toBeVisible();
-    fireEvent.click(exits[0]);
+    fireEvent.click(await screen.findByRole('button', { name: /show chart controls/i }));
+    const revealedExits = screen.getAllByRole('button', { name: 'Exit Live Mode' });
+    expect(revealedExits).toHaveLength(1);
+    expect(revealedExits[0]).toBeVisible();
+    fireEvent.click(revealedExits[0]);
     await waitFor(() => expect(screen.getByRole('button', { name: /start live mode/i })).toBeInTheDocument());
   });
 
