@@ -124,6 +124,10 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
                 <span className={review.status === 'verified' ? 'text-success' : 'text-warning'}>
                   {review.status === 'verified' ? 'Verified' : `Needs review (${review.warnings.length})`}
                 </span>
+                <small>
+                  {review.title || 'Untitled'}{review.artist ? ` · ${review.artist}` : ''}
+                  {review.key ? ` · Key ${review.key}` : ''}{review.capo ? ` · Capo ${review.capo}` : ''}
+                </small>
                 <small>{review.sections} sections · {review.chordLines} chord lines · {review.lyricLines} lyric lines</small>
                 {review.warnings.length > 0 && (
                   <ul className="import-review-warnings">

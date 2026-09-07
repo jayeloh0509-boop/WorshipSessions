@@ -54,11 +54,52 @@ export function textChartToChordPro(filename: string, text: string): string {
   return `${directives.join('\n')}\n\n${normalized}`;
 }
 
+export interface ChartReview {
+  sections: number;
+  chordLines: number;
+  lyricLines: number;
+  title: string;
+  artist: string;
+  key: string;
+  capo: string;
+  warnings: string[];
+  status: 'verified' | 'needs-review';
+}
+
+const STANDARD_SECTION = /^(?:intro|verse|alt verse|pre-?chorus|chorus|half-chorus|bridge|interlude|instrumental|vamp|tag|outro|ending|refrain|break|solo)\s*\d*:?$/i;
+
+export function reviewChart(content: string): ChartReview {
+  const lines = content.replace(/\r\n?/g, '\n').split('\n');
+  const metadata = (name: string) => lines.find((line) => new RegExp(`^\\{${name}\\s*:`,'i').test(line))?.replace(new RegExp(`^\\{${name}\\s*:\\s*`,'i'), '').replace(/}\s*$/, '').trim() || '';
+  const title = metadata('title');
+  const artist = metadata('artist');
+  const key = metadata('key');
+  const capo = metadata('capo');
+  let sections = 0;
+  let chordLines = 0;
+  let lyricLines = 0;
+  const warnings: string[] = [];
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed || /^\{[^}]+\}$/.test(trimmed)) return;
+    if (STANDARD_SECTION.test(trimmed)) { sections += 1; return; }
+    const hasChord = /\[[A-G](?:#|b)?[^\]]*\]/.test(trimmed);
+    if (hasChord) chordLines += 1;
+    if (hasChord || !/^\[[A-G](?:#|b)?[^\]]*\]\s*$/.test(trimmed)) lyricLines += 1;
+    if (/^\[[A-G](?:#|b)?[^\]]*\]\s*$/.test(trimmed) && !lines[index + 1]?.trim()) {
+      warnings.push(`Line ${index + 1}: chord line has no following lyric.`);
+    }
+  });
+  if (!sections) warnings.push('No standard section headings detected.');
+  if (!chordLines) warnings.push('No chord lines detected.');
+  return { title, artist, key, capo, sections, chordLines, lyricLines, warnings, status: warnings.length ? 'needs-review' : 'verified' };
+}
+
+
 export function fileToSong(filename: string, text: string): { content: string } {
   if (HAS_TITLE.test(text)) return { content: text };
   return { content: `{title: ${basename(filename)}}\n${text}` };
 }
-
 export function chunkSongs(songs: { content: string }[]): { content: string }[][] {
   const batches: { content: string }[][] = [];
   let current: { content: string }[] = [];

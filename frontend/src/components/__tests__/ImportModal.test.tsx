@@ -24,10 +24,10 @@ describe('ImportModal', () => {
   it('imports selected files and shows a summary', async () => {
     render(<ImportModal onClose={() => {}} onDone={() => {}} />);
     const input = screen.getByTestId('import-file-input') as HTMLInputElement;
-    await userEvent.upload(input, [file('A.cho', '[G]a'), file('B.cho', '[G]a')]);
+    await userEvent.upload(input, [file('A.cho', '{title: Test Song}\n{artist: Test Artist}\n{key: G}\n{capo: 2}\n[G]a'), file('B.cho', '[G]a')]);
     await userEvent.click(screen.getByTestId('import-start'));
     await waitFor(() => {
-      expect(screen.getByTestId('import-review')).toHaveTextContent('Needs review');
+      expect(screen.getByTestId('import-review')).toHaveTextContent('Test Song · Test Artist · Key G · Capo 2');
       expect(screen.getByTestId('import-review')).toHaveTextContent('No standard section headings detected.');
     });
     await waitFor(() => {
