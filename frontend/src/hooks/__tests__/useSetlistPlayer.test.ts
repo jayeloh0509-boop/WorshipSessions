@@ -143,6 +143,20 @@ describe('useSetlistPlayer Hook', () => {
     expect(mockToast).toHaveBeenCalledWith('Offline: showing the last loaded setlist', 'info');
   });
 
+  it('retries a stale cached setlist in place', async () => {
+    mockApiCall.mockRejectedValueOnce(new Error('offline'));
+    mockGetCachedSetlist.mockReturnValue({ ...mockSetlist, name: 'Cached Setlist' });
+
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate }));
+    await waitFor(() => expect(result.current.setlist?.isStale).toBe(true));
+
+    mockApiCall.mockResolvedValueOnce({ ...mockSetlist, name: 'Fresh Setlist' });
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(result.current.setlist?.name).toBe('Fresh Setlist'));
+    expect(result.current.setlist?.isStale).not.toBe(true);
+  });
+
   it('reloads the setlist when connectivity returns', async () => {
     mockApiCall.mockResolvedValueOnce(mockSetlist);
     const { result } = renderHook(() =>
