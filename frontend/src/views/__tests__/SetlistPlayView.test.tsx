@@ -168,6 +168,44 @@ describe('SetlistPlayView', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
+  it('requires a short hold for touch next-song advances', async () => {
+    vi.useFakeTimers();
+    try {
+      const next = vi.fn();
+    (useSetlistPlayer as Mock).mockReturnValue({
+      setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1 }, { entry_id: 2 }] },
+      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+      index: 0,
+      total: 2,
+      goTo: vi.fn(),
+      prev: vi.fn(),
+      next,
+      exit: vi.fn(),
+      updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
+    });
+
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+    const nextButton = screen.getByRole('button', { name: /next song/i });
+    fireEvent.pointerDown(nextButton, { pointerType: 'touch' });
+    fireEvent.pointerUp(nextButton, { pointerType: 'touch' });
+    fireEvent.click(nextButton);
+    expect(next).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(nextButton, { pointerType: 'touch' });
+    vi.advanceTimersByTime(450);
+    expect(next).toHaveBeenCalledOnce();
+    fireEvent.pointerUp(nextButton, { pointerType: 'touch' });
+    fireEvent.click(nextButton);
+    expect(next).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('starts, pauses, and persists Live Mode auto-scroll controls', async () => {
     localStorage.removeItem('worshipsessions-autoscroll-speed');
     localStorage.removeItem('worshipsessions-high-contrast');

@@ -1,3 +1,4 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -237,6 +238,45 @@ export function SetlistPlayView({
   // Swipe
   useSwipe({ onNext: next, onPrev: prev, enabled: !editing && !!setlist, containerRef });
 
+  const liveNextTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressLiveNextClickRef = useRef(false);
+  const [liveNextHolding, setLiveNextHolding] = useState(false);
+
+  const advanceLiveNext = useCallback(() => {
+    autoScroll.pause();
+    next();
+  }, [autoScroll, next]);
+
+  const startLiveNextHold = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === 'mouse') return;
+    if (liveNextTimerRef.current) clearTimeout(liveNextTimerRef.current);
+    suppressLiveNextClickRef.current = false;
+    setLiveNextHolding(true);
+    liveNextTimerRef.current = setTimeout(() => {
+      liveNextTimerRef.current = null;
+      suppressLiveNextClickRef.current = true;
+      setLiveNextHolding(false);
+      advanceLiveNext();
+    }, 450);
+  }, [advanceLiveNext]);
+
+  const cancelLiveNextHold = useCallback(() => {
+    if (liveNextTimerRef.current) {
+      clearTimeout(liveNextTimerRef.current);
+      liveNextTimerRef.current = null;
+      suppressLiveNextClickRef.current = true;
+    }
+    setLiveNextHolding(false);
+  }, []);
+
+  const handleLiveNextClick = useCallback(() => {
+    if (suppressLiveNextClickRef.current) {
+      suppressLiveNextClickRef.current = false;
+      return;
+    }
+    advanceLiveNext();
+  }, [advanceLiveNext]);
+
   // Keyboard shortcuts
   const shortcuts = useMemo(
     () => ({
@@ -285,6 +325,10 @@ export function SetlistPlayView({
     pauseAutoScroll();
     if (chartScrollRef.current) chartScrollRef.current.scrollTop = 0;
   }, [index, pauseAutoScroll]);
+
+  useEffect(() => () => {
+    if (liveNextTimerRef.current) clearTimeout(liveNextTimerRef.current);
+  }, []);
 
   const resetFont = () => {
     fontScale.resetFontSize();
@@ -661,12 +705,13 @@ export function SetlistPlayView({
           </button>
           <button
             type="button"
-            onClick={() => {
-              autoScroll.pause();
-              next();
-            }}
+            onPointerDown={startLiveNextHold}
+            onPointerUp={cancelLiveNextHold}
+            onPointerCancel={cancelLiveNextHold}
+            onPointerLeave={cancelLiveNextHold}
+            onClick={handleLiveNextClick}
             disabled={index === total - 1}
-            aria-label="Next song"
+            aria-label={liveNextHolding ? 'Hold to advance to next song' : 'Next song'}
           >
             <span aria-hidden="true">›</span>
             <small>Next</small>
