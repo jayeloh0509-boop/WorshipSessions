@@ -10,6 +10,7 @@ const {
 } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
+const SetlistSession = require('../lib/setlistSession');
 
 function resolveSetlist(res, setlistId, userId) {
   const setlist = Setlist.findById(setlistId, userId);
@@ -295,6 +296,54 @@ function createSetlistsRouter() {
       return res.status(400).json({ error: 'entry_ids count must match the number of entries in the setlist' });
     Setlist.reorderEntries(id, parsedIds);
     res.json({ success: true });
+  });
+
+  // -- Now-playing session -------------------------------------------------
+  // The setlist owner leads; the owner on another device, or anyone who can see
+  // a public setlist, follows. State is in memory (lib/setlistSession.js).
+  function resolveSessionAccess(req, res) {
+    const id = parseId(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid setlist ID' });
+      return null;
+    }
+    const own = Setlist.findById(id, req.user.id);
+    if (own) return { id, isOwner: true };
+    if (Setlist.findPublicById(id)) return { id, isOwner: false };
+    res.status(404).json({ error: 'Setlist not found' });
+    return null;
+  }
+
+  router.get('/setlists/:id/session', requireAuth, async (req, res) => {
+    const access = resolveSessionAccess(req, res);
+    if (!access) return;
+    const since = req.query.since === undefined ? undefined : parseInt(req.query.since, 10);
+    const state = await SetlistSession.wait(access.id, Number.isNaN(since) ? undefined : since, {
+      onClose: (cb) => res.on('close', cb),
+    });
+    if (res.writableEnded || res.destroyed) return;
+    res.json({ ...state, is_owner: access.isOwner });
+  });
+
+  router.put('/setlists/:id/session', requireAuth, (req, res) => {
+    const access = resolveSessionAccess(req, res);
+    if (!access) return;
+    if (!access.isOwner) return res.status(403).json({ error: 'Only the setlist owner can lead' });
+    const entryId = parseId(req.body?.entry_id);
+    const index = parseId(req.body?.index);
+    if (entryId === null || index === null) return res.status(400).json({ error: 'entry_id and index are required' });
+    const entries = Setlist.getEntries(access.id);
+    if (index < 0 || index >= entries.length || entries[index].entry_id !== entryId) {
+      return res.status(400).json({ error: 'entry_id does not match the setlist position' });
+    }
+    res.json(SetlistSession.push(access.id, { hostName: req.user.username, entryId, index }));
+  });
+
+  router.delete('/setlists/:id/session', requireAuth, (req, res) => {
+    const access = resolveSessionAccess(req, res);
+    if (!access) return;
+    if (!access.isOwner) return res.status(403).json({ error: 'Only the setlist owner can end the session' });
+    res.json(SetlistSession.end(access.id));
   });
 
   router.post('/setlists/:id/sections', requireAuth, (req, res) => {

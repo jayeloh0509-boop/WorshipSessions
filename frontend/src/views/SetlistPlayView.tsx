@@ -12,6 +12,8 @@ import { useTwoCol } from '../hooks/useTwoCol';
 import { useLiveMode } from '../hooks/useLiveMode';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { LiveSectionTracker } from '../components/LiveSectionTracker';
+import { SessionControl } from '../components/SessionControl';
+import { useSetlistSession } from '../hooks/useSetlistSession';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
@@ -107,6 +109,16 @@ export function SetlistPlayView({
         setEditing(false);
       },
     });
+
+  const { user: sessionUser } = useAuth();
+  const session = useSetlistSession({
+    setlistId,
+    enabled: !!setlist && !setlist.isLocal && !!sessionUser,
+    isOwner: !!setlist?.user_id && !!sessionUser && setlist.user_id === sessionUser.id,
+    entries: setlist?.entries ?? [],
+    index,
+    goTo,
+  });
 
   // Handle auto-fit logic
   useEffect(() => {
@@ -440,6 +452,17 @@ export function SetlistPlayView({
 
         <div className="setlist-play-header-right">
           {!liveMode.active && (
+            <SessionControl
+              mode={session.mode}
+              onModeChange={session.setMode}
+              canLead={session.canLead}
+              canFollow={session.canFollow}
+              leaderPresent={session.leaderPresent}
+              host={session.remote?.host}
+              error={session.error}
+            />
+          )}
+          {!liveMode.active && (
             <button
               className="live-mode-button"
               type="button"
@@ -616,6 +639,11 @@ export function SetlistPlayView({
         <div className="live-mode-context" role="status" aria-live="polite">
           <span className="live-mode-context-current">{entry.title}</span>
           <span className="live-mode-context-position">{index + 1} of {total}</span>
+          {session.mode !== 'solo' && (
+            <span className="live-mode-context-sync">
+              {session.mode === 'lead' ? 'Leading' : session.leaderPresent ? `Following ${session.remote?.host ?? ''}` : 'Waiting for leader'}
+            </span>
+          )}
           {nextEntry && <span className="live-mode-context-next">Up next: {nextEntry.title}{nextSectionName ? ` · ${nextSectionName}` : ''}</span>}
         </div>
       )}
