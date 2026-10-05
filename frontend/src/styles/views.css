@@ -3309,7 +3309,22 @@
   }
 }
 
-/* -- Setlist library rows ----------------- */
+.library-health-row {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: inherit;
+  background: transparent;
+}
+.library-health-row:hover,
+.library-health-row:focus-visible {
+  background: var(--surface-hover, rgba(255,255,255,.06));
+}
+
 .library-setlist-row {
   align-items: center;
   gap: 16px;

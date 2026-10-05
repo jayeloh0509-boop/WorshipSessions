@@ -11,6 +11,7 @@ import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
 import { useLiveMode } from '../hooks/useLiveMode';
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { LiveSectionTracker } from '../components/LiveSectionTracker';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
@@ -27,6 +28,7 @@ import {
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { getTransposeDelta } from '../lib/keys';
 import type { Setlist } from '../types';
+import '../styles/live-mode.css';
 
 interface SetlistPlayViewProps {
   setlistId: number | string;
@@ -517,7 +519,7 @@ export function SetlistPlayView({
                 type="button"
                 className="live-mode-speed-step"
                 onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
-                disabled={autoScroll.speed <= 1}
+                disabled={autoScroll.speed <= 0.1}
                 aria-label="Decrease auto-scroll speed"
               >
                 −
@@ -537,7 +539,7 @@ export function SetlistPlayView({
                 type="range"
                 min="1"
                 max="10"
-                step="1"
+                step="0.1"
                 value={autoScroll.speed}
                 onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
                 aria-label="Auto-scroll speed"
@@ -610,6 +612,14 @@ export function SetlistPlayView({
         />
       )}
 
+      {liveMode.active && (
+        <div className="live-mode-context" role="status" aria-live="polite">
+          <span className="live-mode-context-current">{entry.title}</span>
+          <span className="live-mode-context-position">{index + 1} of {total}</span>
+          {nextEntry && <span className="live-mode-context-next">Up next: {nextEntry.title}{nextSectionName ? ` · ${nextSectionName}` : ''}</span>}
+        </div>
+      )}
+
       {(entry.song_notes || entry.transition_notes || nextEntry || nextSectionName) && (
         <aside className={`setlist-live-notes${liveMode.active ? ' live' : ''}`} aria-label="Song preparation notes">
           {nextEntry && (
@@ -631,6 +641,14 @@ export function SetlistPlayView({
             </div>
           )}
         </aside>
+      )}
+
+      {liveMode.active && !editing && !entry.is_missing && !entry.is_private_placeholder && (
+        <LiveSectionTracker
+          viewportRef={chartScrollRef}
+          chartKey={`${index}:${renderedHtml}:${effTwoCol}:${effFont}:${lineSpacing}`}
+          onNavigate={pauseAutoScroll}
+        />
       )}
 
       {editing ? (

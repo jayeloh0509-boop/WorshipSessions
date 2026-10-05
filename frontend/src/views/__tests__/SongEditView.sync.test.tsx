@@ -130,6 +130,33 @@ describe('SongEditView two-way sync', () => {
     return screen.getByTestId('editor') as HTMLTextAreaElement;
   }
 
+  it('undo restores the pre-proposal draft without saving', async () => {
+    await renderEditor();
+    const draft = '{title: QA}\n{key: G}\n[verse]\n[G]Original lyric';
+    fireEvent.change(getEditor(), { target: { value: draft } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
+    fireEvent.click(screen.getByRole('button', { name: /Propose normalization/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply to draft' }));
+    expect(getEditor().value).not.toBe(draft);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo / Cancel' }));
+    expect(getEditor().value).toBe(draft);
+    expect(mockApiCall.mock.calls.some(([method]) => method === 'POST' || method === 'PUT')).toBe(false);
+  });
+
+  it('keeping the original does not discard an unsaved draft', async () => {
+    mockApiCall.mockImplementation((_method: string, path: string) => {
+      if (path === '/api/songs/7') return Promise.resolve({ id: 7, user_id: 1, content: '{title: QA}\n{key: G}\n[G]Saved lyric', visibility: 'private' });
+      return Promise.resolve({ languages: [] });
+    });
+    await act(async () => { render(<SongEditView songId={7} navigate={navigate} />); });
+    const draft = '{title: QA}\n{key: G}\n[verse]\n[G]Unsaved lyric';
+    fireEvent.change(getEditor(), { target: { value: draft } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep original' }));
+    expect(getEditor().value).toBe(draft);
+    expect(mockApiCall.mock.calls.some(([method]) => method === 'POST' || method === 'PUT')).toBe(false);
+  });
+
   function getTitleInput(): HTMLInputElement {
     return screen.getByPlaceholderText('songEdit.titlePlaceholder') as HTMLInputElement;
   }
@@ -258,6 +285,10 @@ describe('SongEditView two-way sync', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /replace from image, pdf or text/i }));
     fireEvent.click(screen.getByRole('button', { name: /complete chart import/i }));
+
+    await waitFor(() => expect(screen.getByTestId('chart-import-preview')).toBeInTheDocument());
+    expect(getEditor().value).toContain('{title: Existing Song}');
+    fireEvent.click(screen.getByRole('button', { name: /apply import to draft/i }));
 
     await waitFor(() => {
       expect(getEditor().value).toContain('[D]Downloaded [G]chart');

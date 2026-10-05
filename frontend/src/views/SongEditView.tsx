@@ -12,6 +12,8 @@ import { SongSearchModal } from '../components/SongSearchModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, prepareForPersist, extractDirective, updateDirective } from '../lib/chords';
+import { reviewChart } from '../lib/import';
+import { proposeNormalization } from '../lib/normalizer';
 import type { Song } from '../types';
 
 interface SongEditViewProps {
@@ -33,10 +35,14 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
   const [replacementPending, setReplacementPending] = useState(false);
-
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [normalizationOpen, setNormalizationOpen] = useState(false);
+  const [normalizationSnapshot, setNormalizationSnapshot] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<string | null>(null);
   const editor = useSongEditor();
-  const { state, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange, setInitialContent } =
+  const { state, setInitialContent, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange } =
     editor;
+  const normalization = proposeNormalization(normalizationSnapshot ?? state.content);
 
   useEffect(() => {
     if (songId) {
@@ -325,7 +331,65 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           >
             Preview
           </button>
+          <button
+            className="editor-tab"
+            role="tab"
+            onClick={() => setReviewOpen((open) => !open)}
+            aria-selected={reviewOpen}
+          >
+            Review
+          </button>
         </div>
+        {reviewOpen && (
+          <div className="chart-review-panel" data-testid="chart-review-panel">
+            <div className="chart-review-panel-head">
+              <strong>Chart review</strong>
+              <span className={reviewChart(state.content).status === 'verified' ? 'text-success' : 'text-warning'}>
+                {reviewChart(state.content).status === 'verified' ? 'Verified' : 'Needs review'}
+              </span>
+            </div>
+            <p className="muted-text">Review the source below. Nothing changes until you edit and save.</p>
+            {reviewChart(state.content).warnings.length > 0 && (
+              <ul className="chart-review-warnings">
+                {reviewChart(state.content).warnings.map((warning) => <li key={warning}>{warning}</li>)}
+              </ul>
+            )}
+            <div className="chart-review-actions">
+              <button className="btn btn-sm" onClick={() => { setNormalizationSnapshot(state.content); setNormalizationOpen(true); }} disabled={!normalization.changes.length}>Propose normalization{normalization.changes.length ? ` (${normalization.changes.length})` : ''}</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setNormalizationOpen(false); setNormalizationSnapshot(null); setReviewOpen(false); }}>Keep original</button>
+              <button className="btn btn-sm" onClick={() => setReviewOpen(false)}>Continue editing</button>
+            </div>
+            {normalizationOpen && (
+              <div className="chart-normalization-workspace" data-testid="normalization-workspace">
+                <strong>Conservative normalization</strong>
+                <p className="muted-text">Only explicit, unambiguous section labels are proposed. Nothing is saved.</p>
+                <div className="editor-split">
+                  <pre aria-label="Original draft">{normalizationSnapshot ?? state.content}</pre>
+                  <pre aria-label="Proposed draft">{normalization.proposed}</pre>
+                </div>
+                <ul>{normalization.changes.map((change) => <li key={change.line}>Line {change.line}: <code>{change.from}</code> → <code>{change.to}</code></li>)}</ul>
+                <div className="chart-review-actions">
+                  <button className="btn btn-sm" disabled={state.content !== normalizationSnapshot} onClick={() => { handleContentChange(normalization.proposed); }}>Apply to draft</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { if (normalizationSnapshot !== null && state.content === normalization.proposed) handleContentChange(normalizationSnapshot); setNormalizationOpen(false); setNormalizationSnapshot(null); }}>Undo / Cancel</button>
+                </div>
+              </div>
+            )}
+            {importPreview !== null && (
+              <div className="chart-import-preview" data-testid="chart-import-preview">
+                <strong>Imported chart preview</strong>
+                <p className="muted-text">Compare the imported source before applying it. Your current draft remains unchanged.</p>
+                <div className="editor-split">
+                  <pre aria-label="Current draft">{state.content}</pre>
+                  <pre aria-label="Imported draft">{importPreview}</pre>
+                </div>
+                <div className="chart-review-actions">
+                  <button className="btn btn-sm" onClick={() => { handleContentChange(importPreview); setImportPreview(null); setReviewOpen(false); }}>Apply import to draft</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setImportPreview(null)}>Discard import</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <div className="editor-split">
           <div className={`cm-editor-wrap${editorTab === 'preview' ? ' editor-hidden' : ''}`} role="tabpanel">
             <CodeMirrorEditor
@@ -371,7 +435,12 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
               if (!songId) setVisibility('private');
               else setReplacementPending(true);
             }
-            setInitialContent(c);
+            if (songId && state.content.trim()) {
+              setImportPreview(c);
+              setReviewOpen(true);
+            } else {
+              setInitialContent(c);
+            }
           }}
           onClose={() => setOcrOpen(false)}
         />

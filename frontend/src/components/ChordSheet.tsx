@@ -17,7 +17,7 @@ export function ChordSheet({
   fontSize,
   lineSpacing = 1.45,
   autoFit,
-  tone = 'default',
+  tone = 'dark',
   outputId = 'chord-output',
 }: ChordSheetProps) {
   // Manual/Legacy Scaling Logic

@@ -426,11 +426,14 @@ function bracketBarNotationLines(text: string): string {
     .split('\n')
     .map((line) => {
       const trimmed = line.trim();
-      if (!trimmed.startsWith('|') || !trimmed.endsWith('|') || line.includes('[') || line.includes(']')) {
+      const repeat = trimmed.match(/\s+((?:x|×)\s*\d+|\d+\s*x)\s*$/i);
+      const notation = repeat ? trimmed.slice(0, repeat.index).trimEnd() : trimmed;
+      if (!notation.startsWith('|') || !notation.endsWith('|') || line.includes('[') || line.includes(']')) {
         return line;
       }
-      const glued = glueBarNotationLine(trimmed);
-      return glued === null ? line : `[| ${glued} |]`;
+      const glued = glueBarNotationLine(notation);
+      if (glued === null) return line;
+      return `[| ${glued} |]${repeat ? ` ${repeat[1]}` : ''}`;
     })
     .join('\n');
 }

@@ -33,7 +33,7 @@ describe('per-song reading preference storage', () => {
     Storage.prototype.removeItem = () => { throw new Error('blocked'); };
     try {
       expect(getStoredTheme()).toBe('dark');
-      expect(getStoredChartTone()).toBe('paper');
+      expect(getStoredChartTone()).toBe('dark');
       expect(getStoredFontSize()).toBe(0);
       expect(getLocalSetlists()).toEqual([]);
       expect(() => setStoredTheme('light')).not.toThrow();
@@ -81,5 +81,22 @@ describe('per-song reading preference storage', () => {
 
     expect(getSongReadingPreferences(7)).toEqual({});
     expect(getSongReadingPreferences(8)).toEqual({ chartTone: 'dark' });
+  });
+});
+
+describe('legacy preference migration', () => {
+  it('reads preferences saved under the un-scoped key after a user signs in', () => {
+    localStorage.clear();
+    localStorage.setItem('cv_user', JSON.stringify({ id: 7, username: 'jaye', role: 'admin' }));
+    localStorage.setItem('cv_chart_tone', 'paper');
+    expect(getStoredChartTone()).toBe('paper');
+  });
+
+  it('prefers the per-user value over the legacy key', () => {
+    localStorage.clear();
+    localStorage.setItem('cv_user', JSON.stringify({ id: 7, username: 'jaye', role: 'admin' }));
+    localStorage.setItem('cv_chart_tone', 'paper');
+    setStoredChartTone('dark');
+    expect(getStoredChartTone()).toBe('dark');
   });
 });

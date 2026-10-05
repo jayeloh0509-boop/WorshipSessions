@@ -51,16 +51,16 @@
 /* Chord alignment: keep each chord anchored above its lyric syllable without
    collapsing whitespace or allowing long lines to drift on tablet widths. */
 .chord-sheet .paragraph,
-.chord-sheet .chord-output .paragraph {
+.chord-sheet-wrap .chord-output .paragraph {
   white-space: pre-wrap;
   overflow-wrap: normal;
   word-break: normal;
   line-height: calc(1em * var(--line-spacing, 1.45));
 }
 
-.chord-sheet .chord-output .chord,
-.chord-sheet .chord-output .chord-line,
-.chord-sheet .chord-output .chord-name {
+.chord-sheet-wrap .chord-output .chord,
+.chord-sheet-wrap .chord-output .chord-line,
+.chord-sheet-wrap .chord-output .chord-name {
   display: inline-block;
   white-space: pre;
   vertical-align: baseline;
@@ -75,7 +75,26 @@
 
 @media (max-width: 900px) {
   .chord-sheet-wrap { overflow-x: auto; }
-  .chord-sheet .chord-output { min-width: max-content; }
+  .chord-sheet-wrap .chord-output { min-width: max-content; }
+}
+
+/* Visible chart reading hierarchy */
+.chord-sheet-wrap .chord-output {
+  --chart-chord-color: #f5c86b;
+  --chart-lyric-color: #f1eee7;
+}
+.chord-sheet-wrap .chord-output .chord,
+.chord-sheet-wrap .chord-output .chord-name {
+  color: var(--chart-chord-color);
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.chord-sheet-wrap .chord-output .paragraph {
+  margin-block: .8rem 1.15rem;
+}
+.chord-sheet-wrap .chord-output .lyrics,
+.chord-sheet-wrap .chord-output .lyric {
+  color: var(--chart-lyric-color);
 }
 
 /* ChordSheetJS output styles */

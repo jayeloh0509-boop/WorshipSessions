@@ -62,17 +62,32 @@ export function setStoredTheme(theme: 'dark' | 'light'): void {
   }
 }
 
+function userScopedKey(key: string): string {
+  const user = getStoredUser();
+  // Preserve the legacy anonymous key for tests and signed-out local use;
+  // authenticated users get isolated preference storage.
+  if (!user) return key;
+  return `${key}:${user.username || user.id}`;
+}
+
+// Read a per-user value, falling back to the legacy un-scoped key so
+// preferences saved before per-user scoping are not silently lost.
+function readScoped(key: string): string | null {
+  const scoped = localStorage.getItem(userScopedKey(key));
+  return scoped !== null ? scoped : localStorage.getItem(key);
+}
+
 export function getStoredChartTone(): 'paper' | 'dark' {
   try {
-    return localStorage.getItem(KEYS.chartTone) === 'dark' ? 'dark' : 'paper';
+    return readScoped(KEYS.chartTone) === 'paper' ? 'paper' : 'dark';
   } catch {
-    return 'paper';
+    return 'dark';
   }
 }
 
 export function setStoredChartTone(tone: 'paper' | 'dark'): void {
   try {
-    localStorage.setItem(KEYS.chartTone, tone);
+    localStorage.setItem(userScopedKey(KEYS.chartTone), tone);
   } catch {
     // Chart tone persistence is best-effort.
   }
@@ -131,7 +146,7 @@ export function sanitizeSongReadingPreferences(value: unknown): SongReadingPrefe
 
 function getSongReadingPreferenceMap(): Record<string, SongReadingPreferences> {
   try {
-    const parsed = JSON.parse(localStorage.getItem(KEYS.songReadingPreferences) || '{}');
+    const parsed = JSON.parse(readScoped(KEYS.songReadingPreferences) || '{}');
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
@@ -151,7 +166,7 @@ export function saveSongReadingPreferences(
   const next = sanitizeSongReadingPreferences({ ...getSongReadingPreferences(id), ...patch });
   all[id] = next;
   try {
-    localStorage.setItem(KEYS.songReadingPreferences, JSON.stringify(all));
+    localStorage.setItem(userScopedKey(KEYS.songReadingPreferences), JSON.stringify(all));
   } catch {
     // Preferences are best-effort. Private browsing, storage quotas, or
     // browser policy can make localStorage writes fail.
@@ -163,7 +178,7 @@ export function clearSongReadingPreferences(songId: number | string): void {
   const all = getSongReadingPreferenceMap();
   delete all[String(songId)];
   try {
-    localStorage.setItem(KEYS.songReadingPreferences, JSON.stringify(all));
+    localStorage.setItem(userScopedKey(KEYS.songReadingPreferences), JSON.stringify(all));
   } catch {
     // Best-effort local preference cleanup.
   }

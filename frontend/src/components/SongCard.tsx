@@ -6,9 +6,11 @@ interface SongCardProps {
   isOwner?: boolean;
   onClick: () => void;
   onEdit?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
-export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
+export function SongCard({ song, isOwner, onClick, onEdit, isFavorite = false, onToggleFavorite }: SongCardProps) {
   return (
     <article className="song-card library-song-row">
       <div className="song-card-info">
@@ -27,6 +29,11 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
         )}
       </div>
       <div className="song-card-performance" aria-label="Song performance details">
+        {onToggleFavorite && (
+          <button type="button" className="song-card-favorite" aria-label={isFavorite ? `Remove ${song.title} from favorites` : `Add ${song.title} to favorites`} aria-pressed={isFavorite} onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}>
+            {isFavorite ? '★' : '☆'}
+          </button>
+        )}
         {song.key && <span className="song-card-key">{song.key}</span>}
         {song.bpm && <span className="song-card-bpm">{song.bpm} BPM</span>}
         {song.language && (

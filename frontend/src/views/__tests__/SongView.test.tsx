@@ -104,7 +104,7 @@ const song = {
 };
 
 describe('SongView chord-reading workspace', () => {
-  it('prioritizes performance metadata and uses a paper chart surface', async () => {
+  it('prioritizes performance metadata and defaults to a dark chart surface', async () => {
     apiCall.mockImplementation((_method: string, path: string) => {
       if (path.endsWith('/versions')) return Promise.resolve([]);
       if (path.endsWith('/corrections')) return Promise.resolve([]);
@@ -128,7 +128,7 @@ describe('SongView chord-reading workspace', () => {
         7: { simplified: true },
       });
     });
-    expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'paper');
+    expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'dark');
     expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
     expect(screen.getByRole('button', { name: 'Start song auto-scroll' })).toBeInTheDocument();
     expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();
@@ -138,7 +138,7 @@ describe('SongView chord-reading workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'test tone' }));
     await waitFor(() => {
       expect(JSON.parse(localStorage.getItem('cv_song_reading_preferences_v1') || '{}')).toMatchObject({
-        7: { fontSize: 1, chartTone: 'dark' },
+        7: { fontSize: 1, chartTone: 'paper' },
       });
     });
 

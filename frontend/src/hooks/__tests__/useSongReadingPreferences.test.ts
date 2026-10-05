@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSongReadingPreferences } from '../useSongReadingPreferences';
 
-const defaults = { fontSize: 0, twoCol: false, chartTone: 'paper' as const };
+const defaults = { fontSize: 0, twoCol: false, chartTone: 'dark' as const };
 
 describe('useSongReadingPreferences', () => {
   beforeEach(() => localStorage.clear());
@@ -72,7 +72,7 @@ describe('useSongReadingPreferences', () => {
       nashville: false,
       fontSize: 0,
       twoCol: true,
-      chartTone: 'paper',
+      chartTone: 'dark',
       autoFit: false,
       simplified: false,
     });
