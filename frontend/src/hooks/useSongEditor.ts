@@ -56,7 +56,10 @@ export function useSongEditor(initialContent: string = '') {
   );
 
   const setInitialContent = useCallback(
-    (text: string) => {
+    (raw: string) => {
+      // CodeMirror joins lines with a plain newline, so a song stored with
+      // Windows line endings would open as unsaved. Normalise on load.
+      const text = raw.replace(/\r\n?|\r/g, String.fromCharCode(10));
       setContent(text);
       syncContentToFields(text);
     },

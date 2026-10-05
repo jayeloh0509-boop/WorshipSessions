@@ -3566,3 +3566,17 @@
 .setlist-play-container.high-contrast .live-mode-capabilities {
   color: #000;
 }
+/* Touch devices: setlist entry controls meet the 44px minimum touch target.
+   Desktop (fine pointer) keeps the compact sizes. */
+@media (pointer: coarse) {
+  .setlist-remove-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .setlist-prepare-btn,
+  .setlist-entry-controls .btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

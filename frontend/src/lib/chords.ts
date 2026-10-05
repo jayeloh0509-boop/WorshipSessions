@@ -994,6 +994,31 @@ export function fontScaleValue(offset: number): string | undefined {
   return offset ? String(1 + offset * 0.12) : undefined;
 }
 
+/**
+ * Smaller of the layout and visual viewports, so mobile browser chrome that is
+ * currently hidden is not counted as usable height. Pinch zoom shrinks the
+ * visual viewport without shrinking the screen, so it is ignored while zoomed.
+ */
+function fitViewportHeight(): number {
+  const visual = window.visualViewport;
+  if (!visual || visual.scale > 1) return window.innerHeight;
+  return Math.min(window.innerHeight, visual.height);
+}
+
+/**
+ * A chord line that wraps drops its tail onto a second visual line, away from
+ * the chords above it, so the sheet stops lining up.
+ */
+function fitWrapsChordLines(output: HTMLElement): boolean {
+  for (const row of output.querySelectorAll('.row:not(.section-row)')) {
+    const columns = [...row.children];
+    if (!columns.length) continue;
+    const tallest = Math.max(...columns.map((c) => c.getBoundingClientRect().height));
+    if (tallest > 0 && row.getBoundingClientRect().height > tallest * 1.5) return true;
+  }
+  return false;
+}
+
 export function autoFit(): { fontSize: number; twoCol: boolean } {
   const wrap = document.querySelector('.chord-sheet-wrap') as HTMLElement | null;
   if (!wrap) return { fontSize: 0, twoCol: false };
@@ -1004,61 +1029,56 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
   const wasTwoCol = wrap.classList.contains('two-col');
   const prevScale = wrap.style.getPropertyValue('--font-scale');
 
-  const tryFit = (offset: number, twoCol: boolean): boolean => {
-    // Apply settings and measure actual layout
+  const apply = (offset: number, twoCol: boolean) => {
     if (twoCol) wrap.classList.add('two-col');
     else wrap.classList.remove('two-col');
-
     if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
     else wrap.style.removeProperty('--font-scale');
+  };
 
-    // Calculate available height inside the wrap, accounting for padding (24px top + 24px bottom)
-    const available = wrap.clientHeight - 48;
-
-    // Safety check: if clientHeight is 0 (not rendered yet), fall back to viewport calc
+  const fits = (): boolean => {
+    // Height the sheet may occupy: wrap height minus padding (24px top + 24px bottom).
+    let available = wrap.clientHeight - 48;
+    // clientHeight is 0 when not rendered yet: fall back to the viewport.
     if (available <= 0) {
-      const viewportAvailable = window.innerHeight - wrap.getBoundingClientRect().top - 48 - 24; // padding + margin
-      return output.scrollHeight <= viewportAvailable;
+      available = fitViewportHeight() - wrap.getBoundingClientRect().top - 48 - 24;
     }
-
-    return output.scrollHeight <= available;
+    if (output.scrollHeight > available) return false;
+    // A larger font or narrower column can push a line off the side.
+    return wrap.scrollWidth <= wrap.clientWidth;
   };
 
   const isWide = window.innerWidth >= 640;
-
+  const candidates: Array<{ fontSize: number; twoCol: boolean }> = [];
   if (isWide) {
-    // 1. Try 1-col, font 0 (The Gold Standard)
-    if (tryFit(0, false)) return { fontSize: 0, twoCol: false };
-
-    // 2. Try 2-col, font 0 (Prioritize 2-col over shrinking font)
-    if (tryFit(0, true)) return { fontSize: 0, twoCol: true };
-
-    // 3. Try shrinking font in 2-col mode
-    for (let offset = -1; offset >= -3; offset--) {
-      if (tryFit(offset, true)) return { fontSize: clampFontSize(offset), twoCol: true };
-    }
-
-    // 4. Try shrinking font in 1-col mode
-    for (let offset = -1; offset >= -3; offset--) {
-      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
-    }
+    candidates.push({ fontSize: 0, twoCol: false }, { fontSize: 0, twoCol: true });
+    for (let o = -1; o >= -3; o--) candidates.push({ fontSize: o, twoCol: true });
+    for (let o = -1; o >= -3; o--) candidates.push({ fontSize: o, twoCol: false });
   } else {
-    // Phone/Portrait: 1-col is preferred
-    for (let offset = 0; offset >= -3; offset--) {
-      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
-    }
-    // Last resort for phone: 2-col with tiny font (unlikely to be better, but just in case)
-    if (tryFit(-3, true)) return { fontSize: -3, twoCol: true };
+    for (let o = 0; o >= -3; o--) candidates.push({ fontSize: o, twoCol: false });
+    candidates.push({ fontSize: -3, twoCol: true });
   }
 
-  // Restore original state before returning fallback
+  const fitsOnScreen = (c: { fontSize: number; twoCol: boolean }) => {
+    apply(clampFontSize(c.fontSize), c.twoCol);
+    return fits();
+  };
+
+  // Prefer a layout that keeps every chord line intact. Only if no such layout
+  // exists is a wrapped one better than nothing.
+  const fitted =
+    candidates.find((c) => fitsOnScreen(c) && !fitWrapsChordLines(output)) ?? candidates.find(fitsOnScreen);
+
+  // Restore the original state before returning.
   if (wasTwoCol) wrap.classList.add('two-col');
   else wrap.classList.remove('two-col');
   if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
   else wrap.style.removeProperty('--font-scale');
 
-  // If nothing fits, use smallest font and appropriate column count
-  return { fontSize: -3, twoCol: isWide };
+  if (fitted) return { fontSize: clampFontSize(fitted.fontSize), twoCol: fitted.twoCol };
+  // Nothing fits at any size. Stay readable at the normal font and leave the
+  // column count alone: a layout Fit cannot justify is worse than no change.
+  return { fontSize: 0, twoCol: wasTwoCol };
 }
 
 export function resolveEffectivePreferences(
