@@ -80,6 +80,10 @@ function resolveCorrectionWithAuth(req, res) {
 function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   const router = express.Router();
 
+  router.get('/songs/health', requireAuth, (req, res) => {
+    res.json({ songs: Song.scanForUser(req.user.id) });
+  });
+
   router.get('/songs', requireAuth, (req, res) => {
     const { q, language, page, limit } = req.query;
     const userId = req.user.id;

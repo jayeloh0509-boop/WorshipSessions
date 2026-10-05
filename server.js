@@ -59,7 +59,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3100;
 const HOST = process.env.HOST || '0.0.0.0';
-const server = app.listen(PORT, HOST, () => console.log(`WorshipSessions running on ${HOST}:${PORT}`));
+const server = app.listen(PORT, HOST, () => console.log(`WorshipSessions running on ${HOST}:${server.address().port}`));
 
 let shuttingDown = false;
 function gracefulShutdown(signal) {

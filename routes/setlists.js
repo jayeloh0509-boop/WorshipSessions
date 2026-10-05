@@ -318,10 +318,11 @@ function createSetlistsRouter() {
     res.json({ success: true });
   });
 
-  router.put('/setlists/:setlistId/sections/:sectionId(\\d+)', requireAuth, (req, res) => {
+  router.put('/setlists/:setlistId/sections/:sectionId', requireAuth, (req, res) => {
     const setlistId = parseId(req.params.setlistId);
     const sectionId = parseId(req.params.sectionId);
-    if (!setlistId || !sectionId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    if (!setlistId || !sectionId) return res.status(400).json({ error: 'Invalid setlist or section id' });
+    if (!resolveSetlist(res, setlistId, req.user.id)) return;
     if (!Setlist.getSectionById(sectionId, setlistId)) return res.status(404).json({ error: 'Section not found' });
     const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
     if (!name || name.length > 80) return res.status(400).json({ error: 'Section name is required (max 80 characters)' });
@@ -332,7 +333,8 @@ function createSetlistsRouter() {
   router.delete('/setlists/:setlistId/sections/:sectionId', requireAuth, (req, res) => {
     const setlistId = parseId(req.params.setlistId);
     const sectionId = parseId(req.params.sectionId);
-    if (!setlistId || !sectionId || !resolveSetlist(res, setlistId, req.user.id)) return;
+    if (!setlistId || !sectionId) return res.status(400).json({ error: 'Invalid setlist or section id' });
+    if (!resolveSetlist(res, setlistId, req.user.id)) return;
     const result = Setlist.deleteSection(sectionId, setlistId);
     if (!result.changes) return res.status(404).json({ error: 'Section not found' });
     res.json({ success: true });
