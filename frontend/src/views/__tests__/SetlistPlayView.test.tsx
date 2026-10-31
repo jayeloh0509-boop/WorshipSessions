@@ -117,6 +117,43 @@ describe('SetlistPlayView', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /start live mode/i })).toBeInTheDocument());
   });
 
+  it('shows accessible setlist progress in Live Mode', async () => {
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: vi.fn().mockResolvedValue({ release: vi.fn(), addEventListener: vi.fn() }) },
+    });
+
+    const { rerender } = render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    expect(screen.queryByRole('progressbar', { name: /setlist progress/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+    const progress = await screen.findByRole('progressbar', { name: /setlist progress/i });
+    expect(progress).toHaveAttribute('aria-valuemin', '1');
+    expect(progress).toHaveAttribute('aria-valuemax', '2');
+    expect(progress).toHaveAttribute('aria-valuenow', '1');
+    expect(progress).toHaveAttribute('aria-valuetext', 'Song 1 of 2: Song 1');
+    expect(progress.firstElementChild).toHaveStyle({ width: '50%' });
+
+    (useSetlistPlayer as Mock).mockReturnValue({
+      setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1 }, { entry_id: 2 }] },
+      entry: { entry_id: 2, title: 'Song 2', content: 'D A', transpose: 0 },
+      index: 1,
+      total: 2,
+      goTo: vi.fn(),
+      prev: vi.fn(),
+      next: vi.fn(),
+      exit: vi.fn(),
+      updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
+    });
+    rerender(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    expect(progress).toHaveAttribute('aria-valuenow', '2');
+    expect(progress).toHaveAttribute('aria-valuetext', 'Song 2 of 2: Song 2');
+    expect(progress.firstElementChild).toHaveStyle({ width: '100%' });
+  });
+
   it('reveals the toolbar while Live Mode is active', async () => {
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,

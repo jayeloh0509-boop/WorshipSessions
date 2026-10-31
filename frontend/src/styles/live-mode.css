@@ -81,3 +81,24 @@
   .setlist-play-container.live-mode .live-mode-capabilities { display: none; }
   .setlist-play-container.live-mode .live-mode-fullscreen { font-size: .75rem; padding-inline: .5rem; }
 }
+
+.live-mode-set-progress {
+  position: relative;
+  z-index: 81;
+  flex: 0 0 3px;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--live-muted) 24%, transparent);
+}
+
+.live-mode-set-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--live-amber);
+  transition: width 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-mode-set-progress > span { transition: none; }
+}

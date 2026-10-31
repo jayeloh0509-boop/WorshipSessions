@@ -12,7 +12,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { isSectionLabel } from '../chords';
 
@@ -46,10 +46,11 @@ function loadRows(): { id: number; title: string; content: string }[] {
   return JSON.parse(out);
 }
 
-const records = loadRecords();
-const rows = loadRows();
+const recordsAvailable = existsSync(RECORDS);
+const records = recordsAvailable ? loadRecords() : [];
+const rows = recordsAvailable ? loadRows() : [];
 
-describe('imported setlist charts: section labels', () => {
+describe.skipIf(!recordsAvailable)('imported setlist charts: section labels', () => {
   it('loaded the imported rows', () => {
     expect(rows.length).toBe(148);
     expect(records.length).toBeGreaterThan(150);

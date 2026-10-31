@@ -530,6 +530,20 @@ export function SetlistPlayView({
         </div>
       )}
 
+      {liveMode.active && (
+        <div
+          className="live-mode-set-progress"
+          role="progressbar"
+          aria-label="Setlist progress"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={index + 1}
+          aria-valuetext={`Song ${index + 1} of ${total}: ${entry.title}`}
+        >
+          <span style={{ width: `${((index + 1) / total) * 100}%` }} />
+        </div>
+      )}
+
       {liveMode.active && autoScrollControlsVisible && (
         <div className="live-mode-scroll-dock" role="toolbar" aria-label="Auto-scroll controls">
           <div className="live-mode-scroll-popover">
