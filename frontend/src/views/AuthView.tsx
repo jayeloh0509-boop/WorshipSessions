@@ -120,100 +120,128 @@ export function AuthView({ navigate }: AuthViewProps) {
   const showInviteLink = !config.allowRegistration && config.invitesEnabled && tab !== 'invite';
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-card">
-        <div className="auth-brand-block">
-          <div className="auth-logo">{t('auth.logo')}</div>
-          <div className="auth-tagline">Charts, Keys, Setlists.</div>
-          <p className="auth-brand-copy">Keep every chart clear, every key ready, and every setlist close at hand.</p>
-          <div className="auth-feature-list" aria-label="WorshipSessions features">
-            <span>♪ Chord charts</span>
-            <span>◈ Setlists</span>
-            <span>▣ Live Mode</span>
+    <div className="auth-entry">
+      <div className="auth-entry-shell">
+        <aside className="auth-brand-panel" aria-label="WorshipSessions">
+          <div className="auth-brand-lockup">
+            <div className="auth-logo">{t('auth.logo')}</div>
+            <div className="auth-tagline">Charts, Keys, Setlists.</div>
           </div>
-        </div>
-        <div className="auth-form-heading">
-          <h1>{tab === 'login' ? 'Welcome back' : tab === 'invite' ? 'Join your workspace' : 'Create your account'}</h1>
-          <p>{tab === 'login' ? 'Sign in to continue rehearsing.' : 'Set up your worship workspace in a moment.'}</p>
-        </div>
-        {showTabs && (
-          <div className="auth-tabs">
-            <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>
-              {t('auth.signIn')}
+          <div className="auth-brand-message">
+            <p className="auth-brand-copy">Keep every chart clear, every key ready, and every setlist close at hand.</p>
+            <ul className="auth-feature-list" aria-label="WorshipSessions features">
+              <li><span aria-hidden="true">♪</span>Chord charts</li>
+              <li><span aria-hidden="true">◈</span>Setlists</li>
+              <li><span aria-hidden="true">▣</span>Live Mode</li>
+            </ul>
+          </div>
+          <svg className="auth-stage-art" viewBox="0 0 520 190" fill="none" aria-hidden="true">
+            <path d="M18 37H502M18 66H502M18 95H502M18 124H502M18 153H502" />
+            <path className="auth-stage-stem" d="M106 95V27M250 124V56M393 66V12" />
+            <ellipse cx="96" cy="99" rx="16" ry="10" transform="rotate(-18 96 99)" />
+            <ellipse cx="240" cy="128" rx="16" ry="10" transform="rotate(-18 240 128)" />
+            <ellipse cx="383" cy="70" rx="16" ry="10" transform="rotate(-18 383 70)" />
+            <path className="auth-stage-accent" d="M106 27L122 33M250 56L266 62M393 12L409 18" />
+          </svg>
+        </aside>
+        <section className="auth-form-panel" id="auth-form-panel" aria-labelledby="auth-heading">
+          <div className="auth-form-content">
+            <div className="auth-form-heading">
+              <h1 id="auth-heading">{tab === 'login' ? 'Welcome back' : tab === 'invite' ? 'Join your workspace' : 'Create your account'}</h1>
+              <p>{tab === 'login' ? 'Sign in to continue rehearsing.' : 'Set up your worship workspace in a moment.'}</p>
+            </div>
+            {showTabs && (
+              <div className="auth-tabs" role="group" aria-label="Account access">
+                <button
+                  className={`auth-tab${tab === 'login' ? ' active' : ''}`}
+                  type="button"
+                  aria-pressed={tab === 'login'}
+                  aria-controls="auth-form-panel"
+                  onClick={() => setTab('login')}
+                >
+                  {t('auth.signIn')}
+                </button>
+                <button
+                  className={`auth-tab${tab !== 'login' ? ' active' : ''}`}
+                  type="button"
+                  aria-pressed={tab !== 'login'}
+                  aria-controls="auth-form-panel"
+                  onClick={() => setTab('register')}
+                >
+                  {t('auth.register')}
+                </button>
+              </div>
+            )}
+            {tab === 'invite' && (
+              <div className="field">
+                <label htmlFor="auth-invite-code">{t('auth.inviteCode')}</label>
+                <input
+                  id="auth-invite-code"
+                  type="text"
+                  ref={inviteRef}
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  placeholder={t('auth.inviteCodePlaceholder')}
+                  autoComplete="off"
+                  onKeyDown={onKeyDown}
+                />
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="auth-user">{t('auth.username')}</label>
+              <input
+                type="text"
+                ref={userRef}
+                id="auth-user"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t('auth.usernamePlaceholder')}
+                autoComplete="username"
+                onKeyDown={onKeyDown}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="auth-password">{t('auth.password')}</label>
+              <input
+                id="auth-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
+                onKeyDown={onKeyDown}
+              />
+            </div>
+            {config.turnstileSiteKey && tab !== 'login' && <div ref={turnstileRef} style={{ marginTop: 8 }} />}
+            <button className="btn btn-full auth-submit" id="auth-submit" type="button" onClick={submit}>
+              {tab === 'invite'
+                ? t('auth.createAccount')
+                : tab === 'login' || !showTabs
+                  ? t('auth.signIn')
+                  : t('auth.createAccount')}
             </button>
-            <button className={`auth-tab${tab !== 'login' ? ' active' : ''}`} onClick={() => setTab('register')}>
-              {t('auth.register')}
-            </button>
+            {showInviteLink && (
+              <button className="btn btn-ghost btn-full auth-invite-link" type="button" onClick={() => setTab('invite')}>
+                {t('auth.haveInvite')}
+              </button>
+            )}
+            {tab === 'invite' && (
+              <div style={{ textAlign: 'center', marginTop: 12 }}>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTab('login');
+                  }}
+                  style={{ fontSize: 13, color: 'var(--muted)' }}
+                >
+                  {t('auth.backToLogin')}
+                </a>
+              </div>
+            )}
+            {error && <div className="auth-error" role="alert">{error}</div>}
           </div>
-        )}
-        {tab === 'invite' && (
-          <div className="field">
-            <label>{t('auth.inviteCode')}</label>
-            <input
-              type="text"
-              ref={inviteRef}
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              placeholder={t('auth.inviteCodePlaceholder')}
-              autoComplete="off"
-              onKeyDown={onKeyDown}
-            />
-          </div>
-        )}
-        <div className="field">
-          <label>{t('auth.username')}</label>
-          <input
-            type="text"
-            ref={userRef}
-            id="auth-user"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder={t('auth.usernamePlaceholder')}
-            autoComplete="username"
-            onKeyDown={onKeyDown}
-          />
-        </div>
-        <div className="field">
-          <label>{t('auth.password')}</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
-            onKeyDown={onKeyDown}
-          />
-        </div>
-        {config.turnstileSiteKey && tab !== 'login' && <div ref={turnstileRef} style={{ marginTop: 8 }} />}
-        <button className="btn btn-full" id="auth-submit" style={{ marginTop: 8 }} onClick={submit}>
-          {tab === 'invite'
-            ? t('auth.createAccount')
-            : tab === 'login' || !showTabs
-              ? t('auth.signIn')
-              : t('auth.createAccount')}
-        </button>
-        {showInviteLink && (
-          <button className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>
-            {t('auth.haveInvite')}
-          </button>
-        )}
-        {tab === 'invite' && (
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setTab('login');
-              }}
-              style={{ fontSize: 13, color: 'var(--muted)' }}
-            >
-              {t('auth.backToLogin')}
-            </a>
-          </div>
-        )}
-        {error && (
-          <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</div>
-        )}
+        </section>
       </div>
     </div>
   );
