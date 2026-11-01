@@ -102,3 +102,21 @@
 @media (prefers-reduced-motion: reduce) {
   .live-mode-set-progress > span { transition: none; }
 }
+
+/* The app shell keeps a transform after its entry animation. Anchor Live Mode
+   controls to the 100dvh player container instead of that taller shell. */
+.setlist-play-container.live-mode .live-mode-navigation,
+.setlist-play-container.live-mode .live-mode-scroll-dock {
+  position: absolute;
+}
+
+/* Keep all four transport actions on one thumb-reachable row on phones. */
+@media (max-width: 720px) {
+  .setlist-play-container.live-mode .live-mode-navigation {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .setlist-play-container.live-mode .live-mode-navigation button {
+    min-width: 0;
+  }
+}
