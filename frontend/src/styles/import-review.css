@@ -1,0 +1,40 @@
+.import-review-dialog .import-review {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.import-review-dialog .import-review > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.import-review-dialog .import-review-row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.import-review-dialog .import-review-row > span:first-child {
+  font-weight: 700;
+}
+.import-review-dialog .import-review-row > small {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.import-review-dialog details > summary {
+  cursor: pointer;
+  padding-block: 8px;
+}
+.import-review-dialog textarea {
+  font-family: var(--font-mono);
+  margin-block: 8px 16px;
+}
+.import-review-dialog .chord-sheet-wrap {
+  padding: 16px;
+}
+.import-review-dialog > .btn {
+  margin: 6px 8px 6px 0;
+}

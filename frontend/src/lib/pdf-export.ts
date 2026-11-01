@@ -6,9 +6,7 @@ import { EMBEDDED_FONT } from './constants';
 import { loadPdfFont, makePdfConstructor, unsupportedChars } from './pdf-fonts';
 import type { Setlist } from '../types/setlist';
 
-// The library breaks pages mid-verse, so keep a song on one page where we can.
-// Floor matches the app's own font scale.
-const FIT_FLOOR = -3;
+import { formatSectionAwarePdf } from './pdf-pagination';
 
 function download(bytes: Uint8Array, filename: string): void {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
@@ -44,17 +42,11 @@ async function renderOne(
   // types don't match across entry points even though it's one object at runtime.
   const forPdf = song as unknown as Parameters<PdfFormatter['format']>[0];
 
-  let requested: Uint8Array | null = null;
-  for (let size = fontSize; ; size--) {
-    const formatter = new PdfFormatter(buildPdfConfig({ fontName, fontSize: size }));
-    formatter.format(forPdf, Doc);
-    const wrapper = formatter.getDocumentWrapper();
-    const bytes = new Uint8Array(wrapper.doc.output('arraybuffer'));
-    requested ??= bytes;
-    if (wrapper.totalPages === 1) return bytes;
-    // Shrinking did not rescue it — don't punish the reader with tiny text.
-    if (size <= FIT_FLOOR) return requested;
-  }
+  // Preserve the requested reading size; extra pages are preferable to shrinking
+  // every section merely to compensate for moving one verse to the next column.
+  const formatter = new PdfFormatter(buildPdfConfig({ fontName, fontSize }));
+  formatSectionAwarePdf(formatter, forPdf, Doc);
+  return new Uint8Array(formatter.getDocumentWrapper().doc.output('arraybuffer'));
 }
 
 interface SongData {
@@ -90,9 +82,15 @@ export async function exportSetlistPdf(
 
   for (let entryIndex = 0; entryIndex < entries.length; entryIndex += 1) {
     const entry = entries[entryIndex];
-    const configuredSection = entry.section_id == null ? null : (setlist.sections || []).find((candidate) => candidate.id === entry.section_id);
+    const configuredSection =
+      entry.section_id == null ? null : (setlist.sections || []).find((candidate) => candidate.id === entry.section_id);
     const sectionName = configuredSection?.name || entry.section_name || null;
-    if (sectionName && (entryIndex === 0 || entries[entryIndex - 1]?.section_id !== entry.section_id || entries[entryIndex - 1]?.section_name !== entry.section_name)) {
+    if (
+      sectionName &&
+      (entryIndex === 0 ||
+        entries[entryIndex - 1]?.section_id !== entry.section_id ||
+        entries[entryIndex - 1]?.section_name !== entry.section_name)
+    ) {
       const sectionDoc = await PDFDocument.create();
       const page = sectionDoc.addPage();
       const font = await sectionDoc.embedFont(StandardFonts.HelveticaBold);

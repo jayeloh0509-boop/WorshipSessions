@@ -33,8 +33,8 @@ mock.method(aiChartImport, 'importFileWithVision', async (buffer, filename, mime
   visionCalls.push({ filename, mimeType });
   return {
     content: '{title: Vision Song}\n{artist: Vision Artist}\n{key: D}\n{x_language: en}\n\n[D]Recognized by vision',
-    provider: 'theclawbay',
-    model: 'gpt-5.6-sol',
+    provider: 'hermes',
+    model: 'host-configured',
   };
 });
 mock.method(aiChartImport, 'importPdfWithVision', (buffer, filename) =>
@@ -121,8 +121,8 @@ test('a scanned (image-only) PDF falls through both local tiers to vision', asyn
 
   assert.equal(res.status, 200, JSON.stringify(res.body));
   assert.equal(res.body.method, 'vision');
-  assert.equal(res.body.provider, 'theclawbay');
-  assert.equal(res.body.model, 'gpt-5.6-sol');
+  assert.equal(res.body.provider, 'hermes');
+  assert.equal(res.body.model, 'host-configured');
   assert.equal(res.body.title, 'Vision Song');
   assert.equal(visionCalls.length, 1, 'vision should have been reached exactly once after both local tiers failed');
 });

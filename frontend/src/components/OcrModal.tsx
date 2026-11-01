@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -60,13 +60,27 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
   const [resultText, setResultText] = useState('');
   const [resultMethod, setResultMethod] = useState<string | null>(null);
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
-  const [reviewMode, setReviewMode] = useState<'edit' | 'preview'>('edit');
+  const [reviewMode, setReviewMode] = useState<'edit' | 'preview' | 'original'>('edit');
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [originalText, setOriginalText] = useState('');
+
+  useEffect(() => {
+    if (!sourceFile || sourceFile.type === 'text/plain' || /\.txt$/i.test(sourceFile.name) || !URL.createObjectURL)
+      return;
+    const url = URL.createObjectURL(sourceFile);
+    setSourceUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [sourceFile]);
   const [warningsAcknowledged, setWarningsAcknowledged] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSourceFile(file);
+    setSourceUrl(null);
+    setOriginalText('');
     const pdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const textFile = file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
     setIsPdf(pdf);
@@ -80,7 +94,9 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
       setPreview(file.name);
       const reader = new FileReader();
       reader.onload = (event) => {
-        setResultText(textChartToChordPro(file.name, String(event.target?.result || '')));
+        const text = String(event.target?.result || '');
+        setOriginalText(text);
+        setResultText(textChartToChordPro(file.name, text));
         setResultMethod('text');
         setDetectedLang('en');
       };
@@ -157,6 +173,12 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
   const canExtract = !!preview;
   const review = chartReview(resultText);
   const reviewWarnings = [
+    resultMethod === 'local'
+      ? 'Generic PDF extraction may merge columns or misplace chords. Compare reading order and chord positions with the original file.'
+      : '',
+    resultMethod === 'vision'
+      ? 'AI recognition is not source verification. Check every section, chord and repeat against the original file.'
+      : '',
     !review.title ? 'Title was not detected' : '',
     !review.key ? 'Key was not detected' : '',
     !review.sections.length ? 'No recognizable song sections were found' : '',
@@ -351,8 +373,42 @@ export function OcrModal({ onResult, onClose }: OcrModalProps) {
               >
                 Preview chart
               </button>
+              <button
+                className={`btn btn-sm ${reviewMode === 'original' ? '' : 'btn-ghost'}`}
+                onClick={() => setReviewMode('original')}
+                aria-pressed={reviewMode === 'original'}
+              >
+                Original file
+              </button>
             </div>
-            {reviewMode === 'edit' ? (
+            {reviewMode === 'original' ? (
+              <div aria-label="Original chart source">
+                {isTextImport ? (
+                  <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{originalText}</pre>
+                ) : sourceUrl ? (
+                  isPdf ? (
+                    <>
+                      <a href={sourceUrl} target="_blank" rel="noreferrer">
+                        Open original PDF in a new tab
+                      </a>
+                      <iframe
+                        title="Original PDF chart"
+                        src={sourceUrl}
+                        style={{ width: '100%', height: '55vh', border: 0 }}
+                      />
+                    </>
+                  ) : (
+                    <img
+                      alt="Original uploaded chord chart"
+                      src={sourceUrl}
+                      style={{ width: '100%', height: 'auto' }}
+                    />
+                  )
+                ) : (
+                  <p>Original preview unavailable. Compare against your downloaded file.</p>
+                )}
+              </div>
+            ) : reviewMode === 'edit' ? (
               <textarea
                 id="import-review-text"
                 className="ocr-result"

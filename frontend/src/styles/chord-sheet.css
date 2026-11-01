@@ -145,6 +145,17 @@
    the next visual line butting straight up against the first, so a long
    instrumental line settles into clearly separated rows — the same natural
    grouping the "Center" example that prompted this had by hand. */
+/* Group a complete measure as one inline box. Whitespace within an ordinary
+   measure must not wrap before its barline. Exception: an unusually wide
+   measure can still reflow inside the phone canvas rather than overflow. */
+.chord-sheet .row-instrumental .instrumental-measure {
+  display: inline-block;
+  vertical-align: top;
+  width: max-content;
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
 .chord-sheet .row.row-instrumental .column {
   margin-right: 0.28em;
   margin-bottom: 0.2em;

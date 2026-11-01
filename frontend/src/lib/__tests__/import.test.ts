@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fileToSong, chunkSongs, textChartToChordPro } from '../import';
+import { fileToSong, chunkSongs, textChartToChordPro, reviewChart } from '../import';
 
 describe('fileToSong', () => {
   it('injects {title:} from filename when absent', () => {
@@ -49,7 +49,20 @@ describe('chunkSongs', () => {
 });
 
 describe('textChartToChordPro', () => {
-  it('derives title, artist and key from a named inline-chord text chart', () => {
+  it('preserves an explicit source key even when the first chord differs', () => {
+    const content = textChartToChordPro('Chart.txt', '{title: Source}\n{key: C}\nVerse 1\n[F]Morning');
+    expect(content).toContain('{key: C}');
+    expect(content).not.toContain('{key: F}');
+    expect(reviewChart(content).warnings).not.toContain(expect.stringContaining('Key was not detected'));
+  });
+
+  it('flags a missing key rather than trusting the opening chord', () => {
+    const content = textChartToChordPro('Chart.txt', 'Verse 1\n[F]Morning');
+    expect(content).not.toContain('{key:');
+    expect(reviewChart(content).status).toBe('needs-review');
+    expect(reviewChart(content).warnings).toContainEqual(expect.stringContaining('first chord may not be the key'));
+  });
+  it('derives title and artist without guessing the key from the first chord', () => {
     const content = textChartToChordPro(
       'Who Else - Gateway Worship.txt',
       'Intro\r\n[|Ab / / / |]\r\n\r\nVERSE 1\r\nI am an [Ab]instrument of exalt[Eb]ation',
@@ -57,7 +70,7 @@ describe('textChartToChordPro', () => {
 
     expect(content).toContain('{title: Who Else}');
     expect(content).toContain('{artist: Gateway Worship}');
-    expect(content).toContain('{key: Ab}');
+    expect(content).not.toContain('{key:');
     expect(content).toContain('{x_language: en}');
     expect(content).toContain(`VERSE 1
 I am an [Ab]instrument of [Eb]exaltation`);

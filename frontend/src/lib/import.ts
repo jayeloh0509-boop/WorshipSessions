@@ -17,11 +17,6 @@ function filenameMetadata(filename: string): { title: string; artist: string } {
   };
 }
 
-function firstChordKey(text: string): string {
-  const match = text.match(/\[\|?\s*([A-G](?:b|#)?(?:m)?)(?=[0-9/\s|\]])/);
-  return match?.[1] || '';
-}
-
 function snapEmbeddedChordsToWordStarts(text: string): string {
   return text
     .split('\n')
@@ -44,11 +39,9 @@ export function textChartToChordPro(filename: string, text: string): string {
   if (HAS_TITLE.test(normalized)) return normalized;
 
   const { title, artist } = filenameMetadata(filename);
-  const key = firstChordKey(normalized);
   const directives = [
     `{title: ${title || 'Untitled'}}`,
     ...(artist ? [`{artist: ${artist}}`] : []),
-    ...(key ? [`{key: ${key}}`] : []),
     '{x_language: en}',
   ];
   return `${directives.join('\n')}\n\n${normalized}`;
@@ -66,11 +59,17 @@ export interface ChartReview {
   status: 'verified' | 'needs-review';
 }
 
-const STANDARD_SECTION = /^(?:intro|verse|alt verse|pre-?chorus|chorus|half-chorus|bridge|interlude|instrumental|vamp|tag|outro|ending|refrain|break|solo)\s*\d*:?$/i;
+const STANDARD_SECTION =
+  /^(?:intro|verse|alt verse|pre-?chorus|chorus|half-chorus|bridge|interlude|instrumental|vamp|tag|outro|ending|refrain|break|solo)\s*\d*:?$/i;
 
 export function reviewChart(content: string): ChartReview {
   const lines = content.replace(/\r\n?/g, '\n').split('\n');
-  const metadata = (name: string) => lines.find((line) => new RegExp(`^\\{${name}\\s*:`,'i').test(line))?.replace(new RegExp(`^\\{${name}\\s*:\\s*`,'i'), '').replace(/}\s*$/, '').trim() || '';
+  const metadata = (name: string) =>
+    lines
+      .find((line) => new RegExp(`^\\{${name}\\s*:`, 'i').test(line))
+      ?.replace(new RegExp(`^\\{${name}\\s*:\\s*`, 'i'), '')
+      .replace(/}\s*$/, '')
+      .trim() || '';
   const title = metadata('title');
   const artist = metadata('artist');
   const key = metadata('key');
@@ -82,7 +81,10 @@ export function reviewChart(content: string): ChartReview {
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     if (!trimmed || /^\{[^}]+\}$/.test(trimmed)) return;
-    if (STANDARD_SECTION.test(trimmed)) { sections += 1; return; }
+    if (STANDARD_SECTION.test(trimmed)) {
+      sections += 1;
+      return;
+    }
     const hasChord = /\[[A-G](?:#|b)?[^\]]*\]/.test(trimmed);
     if (hasChord) chordLines += 1;
     if (hasChord || !/^\[[A-G](?:#|b)?[^\]]*\]\s*$/.test(trimmed)) lyricLines += 1;
@@ -90,11 +92,21 @@ export function reviewChart(content: string): ChartReview {
       warnings.push(`Line ${index + 1}: chord line has no following lyric.`);
     }
   });
+  if (!key) warnings.push('Key was not detected. Confirm it from the source; the first chord may not be the key.');
   if (!sections) warnings.push('No standard section headings detected.');
   if (!chordLines) warnings.push('No chord lines detected.');
-  return { title, artist, key, capo, sections, chordLines, lyricLines, warnings, status: warnings.length ? 'needs-review' : 'verified' };
+  return {
+    title,
+    artist,
+    key,
+    capo,
+    sections,
+    chordLines,
+    lyricLines,
+    warnings,
+    status: warnings.length ? 'needs-review' : 'verified',
+  };
 }
-
 
 export function fileToSong(filename: string, text: string): { content: string } {
   if (HAS_TITLE.test(text)) return { content: text };

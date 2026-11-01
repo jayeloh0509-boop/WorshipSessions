@@ -6,7 +6,8 @@ type FontSpec = { name?: string; size?: number };
 type StyledItem = { style?: FontSpec };
 
 // One step on WorshipSessions' -3..+5 scale is one point.
-const MIN_PT = 5;
+// A PDF is allowed to grow pages instead of sacrificing readable text.
+const MIN_PT = 7;
 
 // The library's own defaults, read once. Overriding narrowly is safe: partial
 // configs deep-merge, so untouched siblings keep their defaults. Arrays are the

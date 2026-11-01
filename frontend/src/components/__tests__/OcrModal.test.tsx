@@ -129,7 +129,7 @@ Half-Chorus
     render(<OcrModal onResult={vi.fn()} onClose={vi.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(input, new File(['image'], 'chart.png', { type: 'image/png' }));
-    const recognizeButton = screen.getByRole('button', { name: /recognize chart/i });
+    const recognizeButton = await screen.findByRole('button', { name: /recognize chart/i });
     await waitFor(() => expect(recognizeButton).toBeEnabled());
     fireEvent.click(recognizeButton);
 
@@ -220,8 +220,15 @@ Half-Chorus
     const chart = (review as HTMLTextAreaElement).value;
     expect(chart).toContain('{title: Who Else}');
     expect(chart).toContain('{artist: Gateway Worship}');
-    expect(chart).toContain('{key: Ab}');
+    expect(chart).not.toContain('{key:');
+    fireEvent.click(screen.getByRole('button', { name: 'Original file' }));
+    expect(screen.getByLabelText('Original chart source').textContent).toContain('exalt[Eb]ation');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit chart' }));
+    expect((screen.getByLabelText(/review and edit chart/i) as HTMLTextAreaElement).value).toBe(chart);
+    expect(screen.getByText('Key was not detected')).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /import into editor/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: /I understand this import/i }));
     fireEvent.click(screen.getByRole('button', { name: /import into editor/i }));
     expect(onResult).toHaveBeenCalledWith(expect.stringContaining('VERSE 1'), 'en', 'text');
   });

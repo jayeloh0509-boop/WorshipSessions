@@ -9,7 +9,7 @@ mkdir -p "$DATA_DIR"
 # directory retains the host's ownership.  We must run Node as THAT user so
 # SQLite can open / create its database file without SQLITE_CANTOPEN errors.
 #
-# `stat -c` is BusyBox/GNU syntax (works on Alpine).
+# `stat -c` is BusyBox/GNU syntax (works on Alpine and Debian).
 DATA_UID=$(stat -c '%u' "$DATA_DIR")
 DATA_GID=$(stat -c '%g' "$DATA_DIR")
 
@@ -24,12 +24,12 @@ fi
 
 # ── Drop privileges and exec Node ───────────────────────────────────────
 # If we are already running as the correct UID, just exec directly.
-# Otherwise use su-exec (Alpine's lightweight alternative to gosu) to
+# Otherwise use gosu (Debian's equivalent of Alpine's su-exec) to
 # switch to the owner of the data directory.
 if [ "$(id -u)" = "$DATA_UID" ]; then
   exec node server.js
 else
   # Ensure the app files are readable by the target user
   chown -R "$DATA_UID:$DATA_GID" /app
-  exec su-exec "$DATA_UID:$DATA_GID" node server.js
+  exec gosu "$DATA_UID:$DATA_GID" node server.js
 fi

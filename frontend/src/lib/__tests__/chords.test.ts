@@ -984,6 +984,28 @@ Death could not [G]hold You`;
 // individual punctuation-only columns within it get "column-punct" so CSS
 // can space chord chips generously while keeping bar/beat marks tight.
 describe('renderChordPro: row-instrumental / column-punct CSS hooks', () => {
+  it('groups each publisher-style measure with all its hold beats', () => {
+    const host = document.createElement('div');
+    host.innerHTML = renderChordPro('{key: Eb}\nIntro\n|[Eb] / / / | [Bb/D] / / / | [Cm7] / / / | [Eb2/G] / / / |');
+    const measures = [...host.querySelectorAll('.instrumental-measure')];
+    expect(measures).toHaveLength(4);
+    expect(measures.map((node) => node.querySelector('.chord:not(:empty)')?.textContent)).toEqual([
+      'Eb',
+      'Bb/D',
+      'Cm7',
+      'Eb2/G',
+    ]);
+    for (const measure of measures) {
+      const beats = [...measure.querySelectorAll('.lyrics')].map((node) => node.textContent).join('');
+      expect((beats.match(/\//g) || []).length).toBe(3);
+      expect(beats).toContain('|');
+    }
+  });
+
+  it('does not group an ordinary lyric row or an unbarred chord progression into measures', () => {
+    expect(renderChordPro('{key: C}\nVerse 1\n[C]Morning [G]light')).not.toContain('instrumental-measure');
+    expect(renderChordPro('{key: C}\nIntro\n[C] [G] [Am] [F]')).not.toContain('instrumental-measure');
+  });
   it('marks a Center-shaped instrumental row (already bracketed, spaced hold-beats)', () => {
     const html = renderChordPro('{key: G}\nIntro\n[|G / / / |Gmaj7 / / / |]\n\nVerse 1\n[G]a', 0);
     const introRow = html.slice(html.indexOf('Intro'), html.indexOf('Verse 1'));

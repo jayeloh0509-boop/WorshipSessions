@@ -24,6 +24,6 @@ More lyrics`),
     /no usable musical chords/i,
   );
 });
-test('vision import uses the same TheClawBay GPT-5.6 Sol model as this Hermes chat', () => {
-  assert.deepEqual(providers(), [{ id: 'theclawbay', provider: 'custom:the-claw-bay', model: 'gpt-5.6-sol' }]);
+test('vision import inherits the authenticated host route rather than hardcoding a paid third-party provider', () => {
+  assert.deepEqual(providers(), [{ id: 'hermes', provider: null, model: null }]);
 });

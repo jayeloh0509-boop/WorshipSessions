@@ -182,7 +182,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
       {health && (
         <div className="card" style={{ marginTop: 20 }} data-testid="library-health">
           <h3>Library health</h3>
-          <p className="muted-text">{health.filter((s) => s.review.status === 'verified').length} verified · {health.filter((s) => s.review.status !== 'verified').length} need review</p>
+          <p className="muted-text">{health.filter((s) => s.review.status === 'verified').length} with no structural warnings · {health.filter((s) => s.review.status !== 'verified').length} need review</p>
           {health.filter((s) => s.review.status !== 'verified').map((song) => (
             <button
               key={song.id}

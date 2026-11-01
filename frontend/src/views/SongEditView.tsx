@@ -345,7 +345,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             <div className="chart-review-panel-head">
               <strong>Chart review</strong>
               <span className={reviewChart(state.content).status === 'verified' ? 'text-success' : 'text-warning'}>
-                {reviewChart(state.content).status === 'verified' ? 'Verified' : 'Needs review'}
+                {reviewChart(state.content).status === 'verified' ? 'No structural warnings' : 'Needs review'}
               </span>
             </div>
             <p className="muted-text">Review the source below. Nothing changes until you edit and save.</p>

@@ -752,9 +752,20 @@ class ResponsiveHtmlFormatter {
 
     const wrapAtBars = this.isInstrumentalLine(l);
     const barWrapState = { hasContent: false };
-    const content = l.items
+    let content = l.items
       .map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair, wrapAtBars, barWrapState))
       .join('');
+    // A wbr adds a safe break, but does not disable ordinary whitespace breaks.
+    // Keep the rendered columns of each measure together so a hold slash cannot
+    // wrap away from the chord it belongs to. Chord-only rows without barlines
+    // retain their existing wrapping behavior.
+    const barBreak = '<wbr class="bar-wrap-opportunity">';
+    if (wrapAtBars && content.includes(barBreak)) {
+      content = content
+        .split(barBreak)
+        .map((measure) => (measure.trim() ? `<span class="instrumental-measure">${measure}</span>` : measure))
+        .join(barBreak);
+    }
     const rowClass = wrapAtBars ? 'row row-instrumental' : 'row';
     return `<div class="${rowClass}">${content}</div>`;
   }

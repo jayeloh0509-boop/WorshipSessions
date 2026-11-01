@@ -9,7 +9,9 @@ output = Path(sys.argv[2])
 doc = pymupdf.open(source)
 if doc.page_count == 0:
     raise SystemExit("PDF has no pages")
-page_count = min(doc.page_count, 4)
+if doc.page_count > 4:
+    raise SystemExit("Vision import supports up to 4 PDF pages. Split this PDF into smaller files; no pages were imported.")
+page_count = doc.page_count
 width = max(doc.load_page(i).rect.width for i in range(page_count))
 gap = 18
 heights = [doc.load_page(i).rect.height * width / doc.load_page(i).rect.width for i in range(page_count)]

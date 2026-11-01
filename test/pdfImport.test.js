@@ -43,6 +43,44 @@ test('pdfTextToChordPro derives title from first non-empty line when missing', (
   assert.match(result.content, /\[D\]Come thou \[G\]fount/);
 });
 
+test('pdfTextToChordPro preserves original chord columns in the minimal repro', () => {
+  const parsed = pdfTextToChordPro('Example\nArtist: Test\nKey: C\nVerse 1\nC       G\nSing to me today');
+  assert.equal(
+    parsed.content.split('\n').find((line) => line.includes('[C]')),
+    '[C]Sing to [G]me today',
+  );
+});
+
+test('pdfTextToChordPro preserves indented chord and lyric columns and lyric whitespace', () => {
+  const lyrics = '    Sing  to me today';
+  const parsed = pdfTextToChordPro(`Example\nArtist: Test\nKey: C\nVerse 1\n    C       G\n${lyrics}`);
+  const line = parsed.content.split('\n').find((value) => value.includes('[C]'));
+  assert.equal(line, '    [C]Sing  to[G] me today');
+  assert.equal(line.replace(/\[[^\]]+\]/g, ''), lyrics);
+  for (const newline of ['\n', '\r\n']) {
+    const offset = pdfTextToChordPro(
+      ['Example', 'Artist: Test', 'Key: C', 'Verse 1', '    C       G', '', 'Sing to me today'].join(newline),
+    );
+    assert.ok(offset.content.includes('\nSing[C] to me t[G]oday\n'));
+    assert.doesNotMatch(offset.content, /\r/);
+  }
+});
+
+test('pdfTextToChordPro bridges extractor blank rows but flushes standalone chords at sections and EOF', () => {
+  const parsed = pdfTextToChordPro(
+    'Example\nArtist: Test\nKey: C\nVerse 1\nC       G\n\nSing to me today\nD\n\nChorus\nAm\nF\n\nSing again\nEnding\nC\n\n',
+  );
+  assert.equal(
+    parsed.content.split('\n\n').slice(1).join('\n\n').trim(),
+    '{comment: Verse 1}\n[C]Sing to [G]me today\n[D]\n\n{comment: Chorus}\n[Am]\n[F]Sing again\n{comment: Ending}\n[C]',
+  );
+});
+
+test('pdfTextToChordPro appends chords beyond lyric end without inserting inside chord markers', () => {
+  const parsed = pdfTextToChordPro('Example\nArtist: Test\nKey: C\nVerse 1\nC       G       Am\nSing');
+  assert.match(parsed.content, /^\[C\]Sing\[G\]\[Am\]$/m);
+});
+
 test('pdfTextToChordPro surfaces a clean error for empty input', () => {
   assert.throws(() => pdfTextToChordPro(''), /PDF contained no extractable text/);
 });
@@ -81,8 +119,15 @@ Verse 1
   assert.equal(parsed.title, 'The Blessing (Peace Album)');
   assert.match(parsed.content, /\{key: G\}/);
   assert.match(parsed.content, /\{tempo: 65\}/);
-  assert.match(parsed.content, /\[G\].*\[C\].*\[G\/B\].*\[D\]/);
+  assert.match(parsed.content, /^\[G\] \/ \/ \/ \| \[C\] \/ \/ \/ \| \[G\/B\] \/ \/ \/ \| \[D\] \/ \/ \/$/m);
   assert.doesNotMatch(parsed.content, /CCLI|All Rights Reserved|Written by/);
+});
+
+test('WT bar rows retain holds, repeat markers, extended chords, and unknown tokens verbatim', () => {
+  const parsed = convertWorshipTogetherText(
+    'Example\nTest Artist\nC • 68 bpm • 4/4\nCopyright Test\nIntro\n|: Cadd9 / / - | G/B / N.C. / :|\nVerse 1\n[C]Sing',
+  );
+  assert.ok(parsed.content.includes('Intro\n|: [Cadd9] / / - | [G/B] / N.C. / :|\nVerse 1\n[C]Sing\n'));
 });
 
 test('supports dot-spaced chord-over-lyric layouts', () => {
@@ -117,7 +162,8 @@ test('importPdfBuffer extracts the real text-PDF fixture through discovered pdft
   const result = await importPdfBuffer(fixture, 'worship-together-text.pdf');
   assert.equal(result.title, 'Living Hope');
   assert.equal(result.key, 'G');
-  assert.match(result.content, /\[G\]/);
+  assert.match(result.content, /^\[G\]How great th\[C\]e chasm that lay between us$/m);
+  assert.match(result.content, /^\[Em\]How high the\[D\] mountain I could not climb$/m);
 });
 
 test('coordinate-aware extraction places chords before the governed lyric word', async () => {
@@ -149,6 +195,13 @@ test('imports the real two-column Always On Time Worship Together PDF in reading
   assert.match(parsed.content, /I \[F\]remember how You \[C\/F\]provided/);
   assert.match(parsed.content, /If I knew \[C\]then \[F\/A\]what I know \[Bb\]now/);
   assert.match(parsed.content, /^INSTRUMENTAL 1$/m);
+  assert.ok(parsed.content.includes('INTRO\n|[F] / / / | [C/E] / / / | [Dm] / / / | [Bb] / / / |\n'));
+  assert.ok(parsed.content.includes('INSTRUMENTAL 1\n|[F] / / / | [Eb] / / / | [Bb] / / [F/A] | [Gm] / / / |\n'));
+  assert.ok(
+    parsed.content.includes(
+      'INSTRUMENTAL 2\n|[F] / / / | [Eb] / / / | [Bb] / / [F/A] | [Gm] / / / |\n|[F] / / / | [Eb/G] / / / | [Bb] / / [F/A] | [Gm] / / / | [Gm] / / / |\n',
+    ),
+  );
   assert.match(parsed.content, /^BRIDGE \(4X\)$/m);
   assert.match(parsed.content, /There's never been a \[F\]day, never been a minute/);
   assert.doesNotMatch(parsed.content, /Copyright|All Rights Reserved/);

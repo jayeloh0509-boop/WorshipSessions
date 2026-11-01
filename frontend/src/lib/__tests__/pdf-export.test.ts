@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import { resolve } from 'node:path';
 import { exportSongPdf, exportSetlistPdf } from '../pdf-export';
+import { PdfFormatter } from 'chordsheetjs/pdf';
+import { jsPDF } from 'jspdf';
+import { buildPdfConfig } from '../pdf-config';
+import { prepareSong } from '../chords';
 import { PDFDocument } from 'pdf-lib';
 import type { Setlist, SetlistEntry } from '../../types/setlist';
 
@@ -11,7 +15,8 @@ const FONT = resolve(process.cwd(), 'src/assets/NotoSansTC.ttf');
 // Pull the drawn text back out of the PDF. Text is written as Identity-H glyph
 // ids, so it has to be mapped back through the font's ToUnicode CMap — which is
 // exactly what a PDF reader does when you select and copy.
-function textOf(bytes: Uint8Array): string {
+type PdfTextRun = { text: string; x: number; y: number; size: number; page: number };
+function drawnText(bytes: Uint8Array): PdfTextRun[] {
   const buf = Buffer.from(bytes);
   const raw = buf.toString('latin1');
   const streams: string[] = [];
@@ -38,8 +43,30 @@ function textOf(bytes: Uint8Array): string {
         for (let i = from; i <= to; i++) map[i.toString(16).padStart(4, '0')] = String.fromCodePoint(uni + i - from);
       }
   }
-  return [...streams.join('').matchAll(/<([0-9a-fA-F]+)>\s*Tj/g)]
-    .map((x) => (x[1].match(/..../g) ?? []).map((g) => map[g.toLowerCase()] ?? '').join(''))
+  return streams
+    .filter((stream) => /\bBT\b/.test(stream))
+    .flatMap((stream, page) =>
+      [...stream.matchAll(/BT\s+([\s\S]*?)\s+ET/g)].flatMap((block) => {
+        const position = /(-?[\d.]+)\s+(-?[\d.]+)\s+Td/.exec(block[1]);
+        const size = /\/F\d+\s+([\d.]+)\s+Tf/.exec(block[1]);
+        const text = /<([0-9a-fA-F]+)>\s*Tj/.exec(block[1]);
+        if (!position || !size || !text) return [];
+        return [
+          {
+            text: (text[1].match(/..../g) ?? []).map((g) => map[g.toLowerCase()] ?? '').join(''),
+            x: Number(position[1]),
+            y: Number(position[2]),
+            size: Number(size[1]),
+            page,
+          },
+        ];
+      }),
+    );
+}
+
+function textOf(bytes: Uint8Array): string {
+  return drawnText(bytes)
+    .map((run) => run.text)
     .join('');
 }
 
@@ -62,6 +89,138 @@ beforeAll(() => {
 
 const song = (content: string, title = 'T') => ({ title, artist: 'A', content, bpm: null });
 const opts = { transpose: 0, nashville: false, fontSize: 0 };
+
+// Exact chart emitted by the real Always On Time PDF importer. Keep this
+// pagination regression independent of Python; the opt-in import-fidelity test
+// separately exercises the source PDF -> importer -> exporter path.
+const alwaysOnTime = `{title: Always On Time}
+{artist: Steven Furtick, Jonathan Smith, Leeland Mooring, Pat Barrett}
+{key: F}
+{tempo: 68}
+{x_language: en}
+
+INTRO
+|[F] / / / | [C/E] / / / | [Dm] / / / | [Bb] / / / |
+VERSE 1
+I [F]remember how You [C/F]provided
+How You [Dm/F]held me through the [Bb/F]night
+I [F]remember how You [C/F]sustained me
+When You [Dm/F]stepped in to save my [Bb/F]life
+PRE-CHORUS
+If I knew [C]then [F/A]what I know [Bb]now
+I would be [C/E]still, and [F/A]let You work it [Bb]out
+CHORUS
+[F]Jesus, I was tossed in the [Cm]water
+But I never went [Bb]under
+You were [Gm]always on time
+[F]Jesus, when I went through the [Cm]fire
+You were right there [Bb]beside me
+You were [Gm]always on time
+TAG
+You [F]are always, always
+[Cm]Always on time
+You [F/A]are always, always
+[Gm]Always on time
+VERSE 2
+I [F]remember how You [C]carried
+When I [Dm]couldn't take a [Bb]step
+I [F]remember how You [C]loved me
+When [Dm]I couldn't love [Bb]myself
+REPEAT CHORUS
+REPEAT TAG 2X
+INSTRUMENTAL 1
+|[F] / / / | [Eb] / / / | [Bb] / / [F/A] | [Gm] / / / |
+BRIDGE (4X)
+There's never been a [F]day, never been a minute
+Never been a [Eb]moment that You weren't in it
+There's never been a [Bb]time
+That You didn't see me [Bb]through, God
+So [Gm]I worship You
+REPEAT CHORUS 2X
+REPEAT TAG 2X
+REPEAT BRIDGE
+INSTRUMENTAL 2
+|[F] / / / | [Eb] / / / | [Bb] / / [F/A] | [Gm] / / / |
+|[F] / / / | [Eb/G] / / / | [Bb] / / [F/A] | [Gm] / / / | [Gm] / / / |
+REPEAT CHORUS`;
+
+const locationOf = (run: PdfTextRun) => `${run.page}:${run.x < 300 ? 'left' : 'right'}`;
+
+function sectionRuns(runs: PdfTextRun[], start: string, end: string): PdfTextRun[] {
+  const first = runs.findIndex((run) => run.text === start);
+  const last = runs.findIndex((run, index) => index > first && run.text === end);
+  expect(first).toBeGreaterThanOrEqual(0);
+  expect(last).toBeGreaterThan(first);
+  // Repeated page headers can occur between two section bodies in drawing
+  // order. Exclude their title/key sizes from this body-coordinate assertion.
+  return runs.slice(first, last).filter((run) => run.size <= 10);
+}
+
+describe('PDF section pagination (drawn PDF coordinates)', () => {
+  it('keeps Always On Time Verse 2 entirely in the right column at the requested size', async () => {
+    // Prove this chart really exercises the upstream 2+2 split, rather than
+    // merely asserting coordinates for a verse that would already fit.
+    const stock = new PdfFormatter(buildPdfConfig({ fontName: null, fontSize: 0 }));
+    stock.format(prepareSong(alwaysOnTime, 0, false)! as unknown as Parameters<PdfFormatter['format']>[0], jsPDF);
+    const stockRuns = drawnText(new Uint8Array(stock.getDocumentWrapper().doc.output('arraybuffer')));
+    expect(new Set(sectionRuns(stockRuns, 'VERSE 2', 'REPEAT CHORUS').map(locationOf)).size).toBe(2);
+
+    await exportSongPdf(song(alwaysOnTime), opts);
+    const bytes = await lastPdf();
+    const runs = drawnText(bytes);
+    const verse = sectionRuns(runs, 'VERSE 2', 'REPEAT CHORUS');
+    expect(verse.map((run) => run.text).join('')).toContain("couldn't love");
+    expect(verse.map((run) => run.text).join('')).toContain('myself');
+    expect(new Set(verse.map(locationOf))).toEqual(new Set(['0:right']));
+    // Not a blanket one-column workaround, and no silent fit-to-page shrink.
+    expect(runs.some((run) => run.text === 'VERSE 1' && run.x < 300)).toBe(true);
+    expect(verse.every((run) => run.size === 9 || run.size === 10)).toBe(true);
+    expect(await pageCount(bytes)).toBe(1);
+  });
+
+  it('keeps normal sections across both column and page boundaries', async () => {
+    const sections = Array.from(
+      { length: 14 },
+      (_, i) =>
+        `{start_of_verse: Block ${i}}\n` +
+        Array.from({ length: 4 }, (_, j) => `[G]word${i}_${j} [C]end${i}_${j}`).join('\n') +
+        '\n{end_of_verse}',
+    );
+    await exportSongPdf(song('{key: G}\n' + sections.join('\n\n') + '\n\n{comment: FINISH}'), opts);
+    const bytes = await lastPdf();
+    const runs = drawnText(bytes);
+    expect(await pageCount(bytes)).toBeGreaterThan(1);
+    for (let i = 0; i < 14; i++) {
+      const section = sectionRuns(runs, `Block ${i}`, i === 13 ? 'FINISH' : `Block ${i + 1}`);
+      expect(new Set(section.map(locationOf)).size).toBe(1);
+      for (let j = 0; j < 4; j++) expect(section.map((run) => run.text).join('')).toContain(`end${i}_${j}`);
+      expect(section.every((run) => run.size === 9 || run.size === 10)).toBe(true);
+    }
+  });
+
+  it('flows sections taller than several columns without losing or reordering any line', async () => {
+    const words = Array.from({ length: 150 }, (_, i) => `line${String(i).padStart(3, '0')}`);
+    await exportSongPdf(
+      song(
+        '{key: G}\n{start_of_verse: LONG}\n' +
+          words.map((word) => `[G]${word}`).join('\n') +
+          '\n{end_of_verse}\n\n{start_of_verse: AFTER}\n[C]lastword\n{end_of_verse}',
+      ),
+      opts,
+    );
+    const bytes = await lastPdf();
+    const runs = drawnText(bytes);
+    expect(await pageCount(bytes)).toBeGreaterThan(2);
+    expect(runs.map((run) => run.text).filter((text) => /^line\d{3}$/.test(text))).toEqual(words);
+    expect(runs.filter((run) => run.text === 'G')).toHaveLength(150);
+    expect(runs.find((run) => run.text === 'lastword')).toBeDefined();
+    // PDF bottom-origin baselines must stay within the content rectangle.
+    expect(
+      runs.filter((run) => /^line\d{3}$/.test(run.text)).every((run) => run.y >= 40 && run.y <= 697 && run.size === 10),
+    ).toBe(true);
+    expect(new Set(runs.filter((run) => /^line/.test(run.text)).map(locationOf)).size).toBeGreaterThan(4);
+  });
+});
 
 describe('exportSongPdf', () => {
   it('writes English lyrics as real text', async () => {
@@ -141,6 +300,13 @@ describe('exportSongPdf', () => {
     expect(text).toContain('4');
   });
 
+  it('enforces a 7pt font floor in the actual PDF', async () => {
+    await exportSongPdf(song('{key: G}\n[G]smallword\n'), { ...opts, fontSize: -50 });
+    const runs = drawnText(await lastPdf());
+    expect(runs.find((run) => run.text === 'smallword')?.size).toBe(7);
+    expect(runs.find((run) => run.text === 'G')?.size).toBe(7);
+  });
+
   it('reports characters no font can draw', async () => {
     const missing = await exportSongPdf(song('{key: G}\n[G]안녕하세요\n'), opts);
     expect(missing.length).toBeGreaterThan(0);
@@ -215,6 +381,21 @@ describe('exportSetlistPdf', () => {
   it('applies per-entry transpose', async () => {
     await exportSetlistPdf(setlist([entry(1, { transpose: 2 })]), { nashville: false, fontSize: 0 });
     expect(textOf(await lastPdf())).toContain('A');
+  });
+
+  it('preserves per-entry font, Nashville and transpose overrides in merged PDFs', async () => {
+    await exportSetlistPdf(
+      setlist([
+        entry(1, { content: '{key: G}\n[G]firstword [C]endword\n', transpose: 2, _num: 0, _font: 2, font: -2 }),
+        entry(2, { content: '{key: G}\n[G]secondword [C]lastword\n' }),
+      ]),
+      { nashville: true, fontSize: -1 },
+    );
+    const runs = drawnText(await lastPdf());
+    expect(runs.find((run) => run.text === 'firstword ')?.size).toBe(12);
+    expect(runs.find((run) => run.text === 'secondword ')?.size).toBe(9);
+    expect(runs.filter((run) => run.size === 11 && run.page === 0).map((run) => run.text)).toEqual(['A', 'D']);
+    expect(runs.filter((run) => run.size === 8).map((run) => run.text)).toEqual(['1', '4']);
   });
 
   it('prefers content_override over the song content', async () => {
