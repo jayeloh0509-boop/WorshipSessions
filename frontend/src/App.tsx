@@ -152,7 +152,7 @@ export function App() {
       location.hash = `#setlist/${params.id}`;
     } else if (view === 'setlist-play' && params.id) {
       let h = `#setlist/${params.id}/play`;
-      if (params.index && params.index !== '0') h += `/${params.index}`;
+      if (params.index !== undefined) h += `/${params.index}`;
       location.hash = h;
     } else if (
       ['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)

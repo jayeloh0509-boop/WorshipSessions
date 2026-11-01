@@ -44,6 +44,38 @@ describe('SetlistEntryCard preparation', () => {
     fireEvent.click(screen.getByRole('button', { name: /move goodness of god down/i }));
     expect(onMove).toHaveBeenCalledWith(0, 1);
   });
+  it('discards fields and checklist on Cancel and keeps progress based on saved values', () => {
+    const onSavePreparation = vi.fn();
+    render(<SetlistEntryCard entry={entry} idx={0} totalEntries={2} isEditable isLocal={false}
+      onRemove={vi.fn()} onMove={vi.fn()} onTranspose={vi.fn()} onClick={vi.fn()}
+      onSavePreparation={onSavePreparation} t={(key) => key} />);
+    fireEvent.click(screen.getByTitle(/prepare song/i));
+    fireEvent.change(screen.getByLabelText(/performance key/i), { target: { value: 'F#' } });
+    fireEvent.change(screen.getByLabelText(/^song notes/i), { target: { value: 'Unsaved intro' } });
+    fireEvent.change(screen.getByLabelText(/transition after this song/i), { target: { value: 'Unsaved transition' } });
+    fireEvent.click(screen.getByLabelText(/arrangement confirmed/i));
+    expect(screen.getByText(/0\/4 prepared/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+    expect(screen.getByText(/0\/4 prepared/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle(/prepare song/i));
+    expect(screen.getByLabelText(/performance key/i)).toHaveValue('Ab');
+    expect(screen.getByLabelText(/^song notes/i)).toHaveValue(entry.song_notes);
+    expect(screen.getByLabelText(/transition after this song/i)).toHaveValue(entry.transition_notes);
+    expect(screen.getByLabelText(/arrangement confirmed/i)).not.toBeChecked();
+    expect(onSavePreparation).not.toHaveBeenCalled();
+  });
+
+  it('also discards drafts when the PREP toggle closes the panel', () => {
+    render(<SetlistEntryCard entry={entry} idx={0} totalEntries={2} isEditable isLocal={false}
+      onRemove={vi.fn()} onMove={vi.fn()} onTranspose={vi.fn()} onClick={vi.fn()}
+      onSavePreparation={vi.fn()} t={(key) => key} />);
+    fireEvent.click(screen.getByTitle(/prepare song/i));
+    fireEvent.change(screen.getByLabelText(/performance key/i), { target: { value: 'F#' } });
+    fireEvent.click(screen.getByTitle(/prepare song/i));
+    fireEvent.click(screen.getByTitle(/prepare song/i));
+    expect(screen.getByLabelText(/performance key/i)).toHaveValue('Ab');
+  });
+
   it('shows saved preparation details and submits edits', async () => {
     const onSavePreparation = vi.fn().mockResolvedValue(undefined);
     render(

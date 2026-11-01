@@ -544,57 +544,6 @@ export function SetlistPlayView({
         </div>
       )}
 
-      {liveMode.active && autoScrollControlsVisible && (
-        <div className="live-mode-scroll-dock" role="toolbar" aria-label="Auto-scroll controls">
-          <div className="live-mode-scroll-popover">
-            <div className="live-mode-scroll-popover-head">
-              <strong>Auto-scroll</strong>
-              <span>Speed {autoScroll.speed}</span>
-            </div>
-            <div className="live-mode-scroll-popover-controls">
-              <button
-                type="button"
-                className="live-mode-speed-step"
-                onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
-                disabled={autoScroll.speed <= 0.1}
-                aria-label="Decrease auto-scroll speed"
-              >
-                −
-              </button>
-              <button
-                type="button"
-                className="live-mode-scroll-play"
-                onClick={autoScroll.toggle}
-                aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
-                aria-pressed={autoScroll.running}
-              >
-                <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
-              </button>
-              <input
-                id="live-mode-speed-slider"
-                className="live-mode-speed-slider"
-                type="range"
-                min="1"
-                max="10"
-                step="0.1"
-                value={autoScroll.speed}
-                onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
-                aria-label="Auto-scroll speed"
-              />
-              <button
-                type="button"
-                className="live-mode-speed-step"
-                onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
-                disabled={autoScroll.speed >= 10}
-                aria-label="Increase auto-scroll speed"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="setlist-play-controls">
         <Toolbar
           currentKey={keyDisplay}
@@ -750,6 +699,62 @@ export function SetlistPlayView({
 
       {liveMode.active && (
         <nav className="live-mode-navigation" aria-label="Live song navigation">
+          {autoScrollControlsVisible && (
+            <div className="live-mode-scroll-dock" role="toolbar" aria-label="Auto-scroll controls">
+              <div className="live-mode-scroll-popover">
+                <div className="live-mode-scroll-popover-head">
+                  <strong>Auto-scroll</strong>
+                  <span>Speed {autoScroll.speed}</span>
+                  <button
+                    type="button"
+                    className="live-mode-scroll-close"
+                    aria-label="Close auto-scroll controls"
+                    onClick={() => setAutoScrollControlsVisible(false)}
+                  >×</button>
+                </div>
+                <div className="live-mode-scroll-popover-controls">
+                  <button
+                    type="button"
+                    className="live-mode-speed-step"
+                    onClick={() => autoScroll.setSpeed(autoScroll.speed - 1)}
+                    disabled={autoScroll.speed <= 0.1}
+                    aria-label="Decrease auto-scroll speed"
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    className="live-mode-scroll-play"
+                    onClick={autoScroll.toggle}
+                    aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
+                    aria-pressed={autoScroll.running}
+                  >
+                    <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
+                  </button>
+                  <input
+                    id="live-mode-speed-slider"
+                    className="live-mode-speed-slider"
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="0.1"
+                    value={autoScroll.speed}
+                    onChange={(event) => autoScroll.setSpeed(Number(event.target.value))}
+                    aria-label="Auto-scroll speed"
+                  />
+                  <button
+                    type="button"
+                    className="live-mode-speed-step"
+                    onClick={() => autoScroll.setSpeed(autoScroll.speed + 1)}
+                    disabled={autoScroll.speed >= 10}
+                    aria-label="Increase auto-scroll speed"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => {

@@ -284,6 +284,18 @@ describe('SetlistPlayView', () => {
     expect(screen.getByRole('button', { name: /start auto-scroll/i })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('places the scroll popup inside its navigation anchor with an explicit close action', async () => {
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(screen.getByRole('button', { name: /start live mode/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show auto-scroll controls/i }));
+    const navigation = screen.getByRole('navigation', { name: /live song navigation/i });
+    const scroll = within(navigation).getByRole('toolbar', { name: /auto-scroll controls/i });
+    fireEvent.click(within(scroll).getByRole('button', { name: /close auto-scroll controls/i }));
+    expect(screen.queryByRole('toolbar', { name: /auto-scroll controls/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /show auto-scroll controls/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(within(navigation).getByRole('button', { name: /exit live mode/i })).toBeInTheDocument();
+  });
+
   it('pauses auto-scroll when changing songs', async () => {
     const next = vi.fn();
     (useSetlistPlayer as Mock).mockReturnValue({

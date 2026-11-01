@@ -110,6 +110,41 @@
   position: absolute;
 }
 
+/* Anchor the popup to the transport itself so its bottom always clears the
+   navigation row, including safe-area offsets and larger text sizes. */
+.setlist-play-container.live-mode .live-mode-navigation .live-mode-scroll-dock {
+  right: 0;
+  bottom: calc(100% + 10px);
+  max-width: 100%;
+}
+
+.setlist-play-container.live-mode .live-mode-scroll-popover {
+  max-width: 100%;
+}
+
+.setlist-play-container.live-mode .live-mode-navigation .live-mode-scroll-dock button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.setlist-play-container.live-mode .live-mode-scroll-close {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--live-ink);
+  font-size: 24px;
+  cursor: pointer;
+}
+
 /* Keep all four transport actions on one thumb-reachable row on phones. */
 @media (max-width: 720px) {
   .setlist-play-container.live-mode .live-mode-navigation {

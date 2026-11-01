@@ -33,12 +33,16 @@ export function useSetlistPlayer({
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [index, setIndex] = useState(() => {
-    const requested = typeof initialIndex === 'number' ? initialIndex : 0;
+    // A selected song (including index 0) takes precedence over resume state.
+    if (typeof initialIndex === 'number' && Number.isInteger(initialIndex) && initialIndex >= 0) {
+      return initialIndex;
+    }
     try {
-      const saved = Number(localStorage.getItem(`worshipsessions-setlist-position:${String(setlistId)}`));
-      return Number.isFinite(saved) && saved >= 0 ? saved : requested;
+      const raw = localStorage.getItem(`worshipsessions-setlist-position:${String(setlistId)}`);
+      const saved = raw?.trim() ? Number(raw) : NaN;
+      return Number.isInteger(saved) && saved >= 0 ? saved : 0;
     } catch {
-      return requested;
+      return 0;
     }
   });
 

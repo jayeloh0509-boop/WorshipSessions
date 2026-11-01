@@ -29,6 +29,12 @@ describe('parseHash tools routes', () => {
     expect(withHash('#tools/').view).toBe('tools');
   });
 
+  it('distinguishes explicit first-song links from resume links', () => {
+    expect(withHash('#setlist/47/play')).toEqual({ view: 'setlist-play', params: { id: '47' } });
+    expect(withHash('#setlist/47/play/0')).toEqual({ view: 'setlist-play', params: { id: '47', index: '0' } });
+    expect(withHash('#setlist/47/play/1')).toEqual({ view: 'setlist-play', params: { id: '47', index: '1' } });
+  });
+
   it('still parses existing routes', () => {
     expect(withHash('#song/42')).toEqual({ view: 'song-view', params: { id: '42' } });
     expect(withHash('').view).toBe('browse');

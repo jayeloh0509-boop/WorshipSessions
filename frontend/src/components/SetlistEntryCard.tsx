@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getSongKey } from '../lib/chords';
 import type { SetlistEntry } from '../types';
 
@@ -54,9 +54,10 @@ export function SetlistEntryCard({
     transition_rehearsed: !!entry.transition_rehearsed,
     chart_verified: !!entry.chart_verified,
   });
-  const checklistCount = Object.values(checklist).filter(Boolean).length;
+  // The card reports persisted preparation, never unconfirmed panel edits.
+  const checklistCount = [entry.arrangement_confirmed, entry.key_confirmed, entry.transition_rehearsed, entry.chart_verified].filter(Boolean).length;
 
-  useEffect(() => {
+  const resetPreparation = useCallback(() => {
     setPerformanceKey(entry.performance_key || keyDisplay || '');
     setSongNotes(entry.song_notes || '');
     setTransitionNotes(entry.transition_notes || '');
@@ -67,6 +68,8 @@ export function SetlistEntryCard({
       chart_verified: !!entry.chart_verified,
     });
   }, [entry.performance_key, entry.song_notes, entry.transition_notes, entry.arrangement_confirmed, entry.key_confirmed, entry.transition_rehearsed, entry.chart_verified, keyDisplay]);
+
+  useEffect(() => resetPreparation(), [resetPreparation]);
 
   const savePreparation = async () => {
     await onSavePreparation(entry.entry_id, idx, {
@@ -147,6 +150,7 @@ export function SetlistEntryCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              resetPreparation();
               setPreparing((value) => !value);
             }}
             title="Prepare song"
@@ -205,7 +209,7 @@ export function SetlistEntryCard({
             <button className="btn btn-sm" type="button" onClick={() => void savePreparation()}>
               Save preparation
             </button>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setPreparing(false)}>
+            <button className="btn btn-ghost btn-sm" type="button" onClick={() => { resetPreparation(); setPreparing(false); }}>
               Cancel
             </button>
           </div>

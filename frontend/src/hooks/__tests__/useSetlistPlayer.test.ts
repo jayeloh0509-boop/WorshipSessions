@@ -60,6 +60,8 @@ describe('useSetlistPlayer Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiCall.mockReset();
+    localStorage.clear();
+    mockGetCachedSetlist.mockReset();
     mockGetOverrides.mockReturnValue({});
   });
 
@@ -116,6 +118,42 @@ describe('useSetlistPlayer Hook', () => {
       result.current.updateEntry({ transpose: 3 });
     });
     expect(result.current.isModified).toBe(true);
+  });
+
+  const multiSongSetlist = {
+    ...mockSetlist,
+    entries: Array.from({ length: 4 }, (_, index) => ({
+      ...mockSetlist.entries[0], entry_id: `entry_${index + 1}`, title: `Song ${index + 1}`,
+    })),
+  };
+
+  it.each([0, 1, 2])('honors explicit song %i over a saved resume position', async (initialIndex) => {
+    localStorage.setItem('worshipsessions-setlist-position:1', '3');
+    mockApiCall.mockResolvedValue(multiSongSetlist);
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, initialIndex, navigate }));
+    await waitFor(() => expect(result.current.entry?.title).toBe(`Song ${initialIndex + 1}`));
+    expect(result.current.index).toBe(initialIndex);
+    expect(localStorage.getItem('worshipsessions-setlist-position:1')).toBe(String(initialIndex));
+  });
+
+  it('resumes only when no song was explicitly requested', async () => {
+    localStorage.setItem('worshipsessions-setlist-position:1', '2');
+    mockApiCall.mockResolvedValue(multiSongSetlist);
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate }));
+    await waitFor(() => expect(result.current.entry?.title).toBe('Song 3'));
+  });
+
+  it.each(['', 'invalid', '-1', '1.5'])('ignores invalid saved positions: %s', async (saved) => {
+    localStorage.setItem('worshipsessions-setlist-position:1', saved);
+    mockApiCall.mockResolvedValue(multiSongSetlist);
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate }));
+    await waitFor(() => expect(result.current.entry?.title).toBe('Song 1'));
+  });
+
+  it('clamps an explicit position to the loaded setlist bounds', async () => {
+    mockApiCall.mockResolvedValue(multiSongSetlist);
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, initialIndex: 99, navigate }));
+    await waitFor(() => expect(result.current.entry?.title).toBe('Song 4'));
   });
 
   it('clamps a saved position after entries are removed', async () => {
