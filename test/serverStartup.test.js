@@ -24,6 +24,10 @@ test('real server starts with all routers and protects setlist routes', { timeou
     });
     const response = await fetch(`http://127.0.0.1:${port}/`);
     assert.equal(response.status, 200);
+    const csp = response.headers.get('content-security-policy');
+    assert.match(csp, /img-src 'self' data: blob:/);
+    assert.match(csp, /frame-src 'self' blob: https:\/\/challenges.cloudflare.com/);
+    assert.doesNotMatch(csp, /(?:img-src|frame-src)[^;]*\*/);
     for (const route of ['sections/1', 'sections/reorder']) {
       const response = await fetch(`http://127.0.0.1:${port}/api/setlists/1/${route}`, { method: 'PUT' });
       assert.equal(response.status, 401);

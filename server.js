@@ -27,7 +27,10 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
         fontSrc: ["'self'", 'fonts.gstatic.com'],
         connectSrc: ["'self'"],
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com'],
+        // Original-file previews use local object URLs; allow those without
+        // permitting arbitrary remote image/frame origins.
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        frameSrc: ["'self'", 'blob:', 'https://challenges.cloudflare.com'],
       },
     },
   }),
