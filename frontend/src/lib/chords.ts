@@ -750,8 +750,12 @@ class ResponsiveHtmlFormatter {
       }
     }
 
-    const content = l.items.map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair)).join('');
-    const rowClass = this.isInstrumentalLine(l) ? 'row row-instrumental' : 'row';
+    const wrapAtBars = this.isInstrumentalLine(l);
+    const barWrapState = { hasContent: false };
+    const content = l.items
+      .map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair, wrapAtBars, barWrapState))
+      .join('');
+    const rowClass = wrapAtBars ? 'row row-instrumental' : 'row';
     return `<div class="${rowClass}">${content}</div>`;
   }
 
@@ -785,7 +789,11 @@ class ResponsiveHtmlFormatter {
     return hasChord;
   }
 
-  private renderItem(it: ChordSheetJS.ChordLyricsPair): string {
+  private renderItem(
+    it: ChordSheetJS.ChordLyricsPair,
+    wrapAtBars: boolean,
+    barWrapState: { hasContent: boolean },
+  ): string {
     const lyrics = it.lyrics || '';
 
     // No lyrics, or whitespace-only lyrics (chord-only rows like intros and
@@ -794,6 +802,7 @@ class ResponsiveHtmlFormatter {
     // horizontal spacing between chords is preserved.
     if (!lyrics.trim()) {
       const chord = it.chords || '';
+      if (wrapAtBars && chord.trim()) barWrapState.hasContent = true;
       return `<span class="column"><span class="chord">${escHtml(chord)}</span><span class="lyrics"></span></span>`;
     }
 
@@ -825,12 +834,16 @@ class ResponsiveHtmlFormatter {
         // can keep it tight against its neighbor instead of giving it the
         // same generous gap as an actual chord chip.
         const isPunctColumn = !currentChord && (BAR_PUNCTUATION_RE.test(chunk) || SEPARATOR_TOKEN_RE.test(chunk));
-        const isBarColumn = !currentChord && /^\|+$/.test(chunk);
+        const hasBarBoundary = chunk.includes('|');
+        const isBarColumn = !currentChord && BAR_PUNCTUATION_RE.test(chunk) && hasBarBoundary;
+        const breakAfterBar = wrapAtBars && hasBarBoundary && (barWrapState.hasContent || Boolean(currentChord));
+        if (wrapAtBars && (currentChord || (!hasBarBoundary && chunk.trim()))) barWrapState.hasContent = true;
         const columnClass = isPunctColumn ? 'column column-punct' : 'column';
         const barAttribute = isBarColumn ? ' data-bar="true"' : '';
 
         const lyricText = escHtml(chunk);
-        return `<span class="${columnClass}"${barAttribute}><span class="chord">${escHtml(currentChord)}</span><span class="lyrics">${lyricText}</span></span>`;
+        const column = `<span class="${columnClass}"${barAttribute}><span class="chord">${escHtml(currentChord)}</span><span class="lyrics">${lyricText}</span></span>`;
+        return `${column}${breakAfterBar ? '<wbr class="bar-wrap-opportunity">' : ''}`;
       })
       .join('');
   }

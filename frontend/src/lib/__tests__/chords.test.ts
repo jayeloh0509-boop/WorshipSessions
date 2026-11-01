@@ -991,12 +991,18 @@ describe('renderChordPro: row-instrumental / column-punct CSS hooks', () => {
     expect(introRow).toContain('class="column column-punct"');
     // The chord chips themselves ("G", "Gmaj7") must NOT be punct-tagged.
     expect(introRow).not.toContain('column column-punct"><span class="chord">G<');
+    const barCount = (introRow.match(/data-bar="true"/g) || []).length;
+    const wrapCount = (introRow.match(/<wbr class="bar-wrap-opportunity">/g) || []).length;
+    expect(barCount).toBeGreaterThan(1);
+    // The opening bar stays attached to the first measure; later bars are wrap points.
+    expect(wrapCount).toBe(barCount - 1);
   });
 
   it('marks a WABN-shaped instrumental row (glued hold-beats, no outer pipe)', () => {
     const html = renderChordPro('{key: D}\nInstrumental\n[G///| A///|]\n\nBridge\n[G]a', 0);
     const instrRow = html.slice(html.indexOf('>Instrumental<'), html.indexOf('>Bridge<'));
     expect(instrRow).toContain('class="row row-instrumental"');
+    expect(instrRow).toContain('<wbr class="bar-wrap-opportunity">');
   });
 
   it('marks a bare unbracketed pipe/slash instrumental row (Round 4 shape)', () => {
@@ -1010,6 +1016,7 @@ describe('renderChordPro: row-instrumental / column-punct CSS hooks', () => {
     const html = renderChordPro('{key: G}\nVerse 1\n[G]Amazing [C]grace how sweet', 0);
     expect(html).not.toContain('row-instrumental');
     expect(html).not.toContain('column-punct');
+    expect(html).not.toContain('<wbr class="bar-wrap-opportunity">');
   });
 
   it('does NOT mark a bracket-per-chord instrumental row that already worked (Fall Like Rain shape)', () => {

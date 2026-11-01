@@ -76,6 +76,12 @@
 @media (max-width: 900px) {
   .chord-sheet-wrap { overflow-x: auto; }
   .chord-sheet-wrap .chord-output { min-width: max-content; }
+  /* Let the custom responsive renderer use the phone canvas; its bar rows
+     provide explicit wrap points so measures reflow instead of scrolling. */
+  .chord-sheet-wrap .chord-output:has(.chord-sheet) {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 /* Visible chart reading hierarchy */
