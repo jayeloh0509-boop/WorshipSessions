@@ -1,8 +1,2 @@
-# Run lint-staged (backend + frontend lint on staged files)
-npx lint-staged
-
-# Run frontend typecheck and unit tests
-cd frontend && npx tsc --noEmit && npm test
-
-# Run backend unit tests
-cd .. && npm test
+# Replace the shell so no later command can mask an earlier failure.
+exec node scripts/check-release.js

@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+// Model-unit tests must never resolve a developer's real database.
+process.env.DB_PATH = ':memory:';
 const Changelog = require('../lib/models/changelog');
 const User = require('../lib/models/user');
 

@@ -1,3 +1,5 @@
+import { BuildStatus } from '../components/BuildStatus';
+
 interface AboutViewProps {
   navigate: (view: string) => void;
 }
@@ -13,7 +15,7 @@ export function AboutView({ navigate }: AboutViewProps) {
 
       <div className="about-section">
         <h3>Browse &amp; Search</h3>
-        <p>Browse the full chord library without an account. Search by title or artist to find what you need.</p>
+        <p>Search the library by title, artist or lyrics. This deployment requires sign-in; public content visibility is a separate policy.</p>
       </div>
 
       <div className="about-section">
@@ -69,6 +71,8 @@ export function AboutView({ navigate }: AboutViewProps) {
           </a>
         </p>
       </div>
+
+      <BuildStatus />
 
       <div style={{ textAlign: 'center', marginTop: 32 }}>
         <button className="btn" onClick={() => navigate('auth')}>

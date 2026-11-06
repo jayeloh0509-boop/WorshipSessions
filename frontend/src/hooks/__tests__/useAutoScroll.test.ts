@@ -10,6 +10,12 @@ describe('useAutoScroll', () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 0 });
   });
 
+  it.each([null, '', ' ', 'invalid'])('uses the default speed for an unset or invalid preference (%s)', (stored) => {
+    if (stored !== null) localStorage.setItem('worshipsessions-autoscroll-speed', stored);
+    const { result } = renderHook(() => useAutoScroll(true));
+    expect(result.current.speed).toBe(0.5);
+  });
+
   it('restores and persists a sanitized speed preference', () => {
     localStorage.setItem('worshipsessions-autoscroll-speed', '4');
     const { result } = renderHook(() => useAutoScroll(true));

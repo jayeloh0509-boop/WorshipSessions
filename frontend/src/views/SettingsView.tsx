@@ -5,6 +5,7 @@ import { useDemo } from '../context/DemoContext';
 import { useAuth } from '../context/AuthContext';
 import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
+import { BuildStatus } from '../components/BuildStatus';
 import { MAX_PREFERRED_LANGUAGES } from '../lib/constants';
 
 export function SettingsView() {
@@ -237,6 +238,7 @@ export function SettingsView() {
           </div>
           {showImport && <ImportModal onClose={() => setShowImport(false)} onDone={() => {}} />}
         </div>
+        <BuildStatus />
       </div>
     </>
   );

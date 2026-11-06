@@ -2,6 +2,9 @@ import json
 import re
 import sys
 
+# Node reads subprocess output as UTF-8, including on Windows.
+sys.stdout.reconfigure(encoding="utf-8")
+
 import pymupdf
 
 CHORD_RE = re.compile(

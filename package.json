@@ -20,6 +20,9 @@
     "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "test": "node --test test/*.test.js",
+    "check:release": "node scripts/check-release.js",
+    "backup:db": "node scripts/backup-db.js",
+    "verify:backup": "node scripts/verify-db-backup.js",
     "prepare": "husky || true"
   },
   "dependencies": {

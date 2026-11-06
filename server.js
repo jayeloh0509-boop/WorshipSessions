@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Explicit config selection lets isolated tests avoid loading a real deployment's .env.
+require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH || undefined });
 const express = require('express');
 const helmet = require('helmet');
 const path = require('path');
@@ -10,6 +11,11 @@ const { createAdminRouter } = require('./routes/admin');
 const { createSettingsRouter } = require('./routes/settings');
 const { errorHandler } = require('./lib/errors');
 const { LIMITS } = require('./lib/constants');
+const { readBuildIdentity } = require('./lib/buildIdentity');
+const { createOperationsRouter } = require('./routes/operations');
+const publicDir = process.env.WORSHIPSESSIONS_PUBLIC_DIR || path.join(__dirname, 'public');
+// Freeze the loaded artifact identity so later file copies cannot disguise a stale process.
+const buildInfo = Object.freeze(readBuildIdentity(publicDir, __dirname));
 
 const app = express();
 
@@ -41,9 +47,10 @@ const { apiRateLimiter, withSkipGlobal, authLimiter, registerLimiter, exportLimi
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: LIMITS.MAX_BODY_JSON }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(publicDir));
 
 app.use('/api/', apiRateLimiter);
+app.use('/api', createOperationsRouter({ db, buildInfo, root: __dirname }));
 
 app.use(
   '/api/auth',

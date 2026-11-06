@@ -12,7 +12,8 @@ function clampSpeed(value: number, maxSpeed: number): number {
 
 function loadSpeed(maxSpeed: number): number {
   try {
-    const parsed = Number(localStorage.getItem(STORAGE_KEY));
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const parsed = stored === null || stored.trim() === '' ? DEFAULT_SPEED : Number(stored);
     return Number.isFinite(parsed) ? clampSpeed(parsed, maxSpeed) : clampSpeed(DEFAULT_SPEED, maxSpeed);
   } catch {
     return clampSpeed(DEFAULT_SPEED, maxSpeed);
@@ -167,5 +168,5 @@ export function useAutoScroll(
     };
   }, [pause, running, scrollRef]);
 
-  return { running, speed, progress, start, pause, toggle, setSpeed };
+  return { running, speed, progress, reducedMotion, start, pause, toggle, setSpeed };
 }

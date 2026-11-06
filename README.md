@@ -6,7 +6,7 @@
 
 <p align="center">A self-hosted worship song, chord chart, and setlist application.</p> Prepare songs, transpose charts, build setlists, and lead from any device.
 
-![Node.js](https://img.shields.io/badge/Node.js-20-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
+![Node.js](https://img.shields.io/badge/Node.js-24-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
 ## About WorshipSessions
 
@@ -27,7 +27,7 @@ This project remains licensed under **AGPL-3.0-or-later**. See [NOTICE.md](NOTIC
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
 - **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
-- **Smart OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF, then review and edit the extracted chart before saving. No API key required. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
+- **Reviewed chart import (image/PDF → chord sheet):** supported text PDFs are parsed locally; images/scans use the operator-configured, host-authenticated Hermes route. Compare the original and edit before saving. Recognition is bounded and may be inaccurate; genuine camera-photo and CJK accuracy require representative verification.
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
@@ -35,13 +35,13 @@ This project remains licensed under **AGPL-3.0-or-later**. See [NOTICE.md](NOTIC
 - **BPM & tags:** track tempo and categorize with preset tags (worship, praise, hymn, opener, closer, etc.)
 - **Song language:** required on every song, searchable ISO 639-1 dropdown with preferred languages pinned at top. Filter songs by language on the browse page.
 - **Public/private songs:** toggle visibility per song — private songs are only visible to you and admins
-- **Browse without an account:** all public songs and public setlists are readable by anyone
+- **Deployment access:** the current app shell requires sign-in. Public/private visibility is a content policy; it is not a promise of anonymous UI access.
 
 ### Setlists & Display
 - **Build setlists:** ordered song lists with per-song key transpositions and session-level display overrides.
-- **Local browser setlists:** no account needed, stored in your browser
+- **Local browser setlists:** device-stored lists separate from server-saved setlists; the current app shell still requires sign-in.
 - **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Key transpositions can be saved online or locally.
-- **PDF export:** export a single song or an entire setlist as PDF. Auto-fits to one page per song using 2-column layout when needed. Theme-aware background.
+- **PDF export:** export a single song or an entire setlist with readable, section-aware column/page flow. Long charts can span pages rather than silently shrinking to one page.
 - **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with session-level per-song overrides
 - **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
 - **Font size A-/A+ & Auto-Fit:** adjustable font scale with reset, or auto-fit to screen.
@@ -58,7 +58,7 @@ This project remains licensed under **AGPL-3.0-or-later**. See [NOTICE.md](NOTIC
 - **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane
 - **Single-file database:** SQLite via better-sqlite3 with WAL mode, no external DB server
-- **CI/CD:** GitHub Actions runs lint, typecheck, build, and smoke test on every push/PR
+- **CI/CD definitions:** GitHub workflows define lint, tests, typecheck, build and isolated authenticated smoke checks. Verify actual run results; configuration alone is not proof that CI ran. Image publication is a separate explicit manual opt-in in the Phase 1 workflow definitions.
 - **Lightweight:** minimal CPU/RAM, runs on a Raspberry Pi
 
 ## Quick Start
@@ -89,13 +89,12 @@ docker compose up -d
 
 Open `http://localhost:3100` and register your first account.
 
-Your database lives in `./data/worshipsessions.db`. Back up this directory to preserve your library.
+Your database lives in `./data/worshipsessions.db`. Use the SQLite online backup CLI with explicit paths; copying a live database file may miss WAL data. See [backup and recovery](docs/backup-recovery.md).
 
 To update:
 
 ```bash
-docker compose pull
-docker compose up -d
+docker compose up -d --build
 ```
 
 ### Build from source (Docker)
@@ -139,7 +138,11 @@ cd frontend && npm run build # Build frontend
 node test/smoke.js           # Playwright smoke test (requires running server)
 ```
 
-A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScript typecheck, and frontend unit tests before every commit.
+A fail-fast pre-commit hook (via Husky) runs staged lint, frontend project typecheck/tests and backend tests. It stops on the first failure. `npm run check:release` runs the same checks locally without committing or publishing. See [CI safeguards](docs/ci-safeguards.md).
+
+## Operations and recovery
+
+See [release/build operations](docs/operations.md), [CI safeguards](docs/ci-safeguards.md), and [safe SQLite backup/recovery](docs/backup-recovery.md). Build information is available in Settings once these changes are deliberately built and deployed. Local validation uses isolated artifacts; do not assume the running site has changed.
 
 ## Configuration
 
@@ -185,7 +188,7 @@ docs/           Contributor guide, screenshots
 <summary><strong>Usage Guide</strong></summary>
 
 ### Getting Started
-1. **Browse without an account** all songs and public setlists are accessible immediately. You can also build local setlists stored in your browser.
+1. **Sign in** to access this deployment. Song/setlist public visibility and anonymous browsing are separate policies. Local setlists are stored in your browser.
 2. **Register** from the login screen (or use an invite code if registration is closed) to create and edit songs, submit corrections, and create server-synced setlists.
 3. **Add a song** click **+ New Song**, paste lyrics in any supported format, and save
 

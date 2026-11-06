@@ -265,7 +265,7 @@ describe('SetlistPlayView', () => {
     fireEvent.click(screen.getByRole('button', { name: /show auto-scroll controls/i }));
     expect(screen.getByRole('button', { name: /hide auto-scroll controls/i })).toBeInTheDocument();
     const slider = screen.getByRole('slider', { name: /auto-scroll speed/i });
-    expect(slider).toHaveAttribute('min', '1');
+    expect(slider).toHaveAttribute('min', '0.1');
     expect(slider).toHaveAttribute('max', '10');
     fireEvent.change(slider, { target: { value: '5' } });
     expect(slider).toHaveValue('5');

@@ -22,7 +22,8 @@ test('real server starts with all routers and protects setlist routes', { timeou
         if (match) { clearTimeout(timer); resolve(Number(match[1])); }
       });
     });
-    const response = await fetch(`http://127.0.0.1:${port}/`);
+    // API startup/CSP checks must not depend on ignored frontend build output.
+    const response = await fetch(`http://127.0.0.1:${port}/api/health`);
     assert.equal(response.status, 200);
     const csp = response.headers.get('content-security-policy');
     assert.match(csp, /img-src 'self' data: blob:/);

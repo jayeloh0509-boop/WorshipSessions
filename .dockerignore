@@ -1,3 +1,4 @@
+frontend/tsconfig.tsbuildinfo
 node_modules/
 **/node_modules/
 data/
@@ -12,6 +13,8 @@ scripts/*
 !scripts/seed-data.mjs
 !scripts/extract_pdf_text.py
 !scripts/render_pdf_pages.py
+!scripts/backup-db.js
+!scripts/verify-db-backup.js
 docs/
 .github/
 public/assets/

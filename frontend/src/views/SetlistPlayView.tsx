@@ -726,6 +726,8 @@ export function SetlistPlayView({
                     type="button"
                     className="live-mode-scroll-play"
                     onClick={autoScroll.toggle}
+                    disabled={autoScroll.reducedMotion}
+                    aria-describedby={autoScroll.reducedMotion ? 'auto-scroll-motion-help' : undefined}
                     aria-label={autoScroll.running ? 'Pause auto-scroll' : 'Start auto-scroll'}
                     aria-pressed={autoScroll.running}
                   >
@@ -735,7 +737,7 @@ export function SetlistPlayView({
                     id="live-mode-speed-slider"
                     className="live-mode-speed-slider"
                     type="range"
-                    min="1"
+                    min="0.1"
                     max="10"
                     step="0.1"
                     value={autoScroll.speed}
@@ -752,6 +754,11 @@ export function SetlistPlayView({
                     +
                   </button>
                 </div>
+                {autoScroll.reducedMotion && (
+                  <p id="auto-scroll-motion-help" role="status">
+                    Auto-scroll is paused because Reduce Motion is enabled in your device settings.
+                  </p>
+                )}
               </div>
             </div>
           )}
