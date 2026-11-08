@@ -30,6 +30,14 @@ describe('parseChordSymbol', () => {
 });
 
 describe('extractChords', () => {
+  it('reads bare chord lines in charts that also use brackets', () => {
+    expect(extractChords('[C]Verse\nG Am F').map((c) => c.symbol)).toEqual(['C', 'G', 'Am', 'F']);
+  });
+
+  it('does not mistake a lone lyric word for a chord in bracketed charts', () => {
+    expect(extractChords('[C]Hello\nA\n[G]world').map((c) => c.symbol)).toEqual(['C', 'G']);
+  });
+
   it('extracts ChordPro bracket chords and ignores lyrics', () => {
     const text = '[G]Amazing [D]grace how [Em]sweet the [C]sound';
     expect(extractChords(text).map((c) => c.symbol)).toEqual(['G', 'D', 'Em', 'C']);

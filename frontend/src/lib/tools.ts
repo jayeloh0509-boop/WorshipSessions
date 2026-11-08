@@ -24,22 +24,32 @@ export function extractChords(text: string): ParsedChord[] {
   const chords: ParsedChord[] = [];
   if (!text || !text.trim()) return chords;
 
-  const bracketed = text.match(/\[([^\]]+)\]/g) || [];
-  for (const b of bracketed) {
-    const parsed = parseChordSymbol(b.slice(1, -1));
-    if (parsed) chords.push(parsed);
-  }
-  if (chords.length > 0) return chords;
-
+  const hasBrackets = /\[[^\]]+\]/.test(text);
   for (const line of text.split('\n')) {
     // Skip ChordPro directives and comment lines
     if (/^\s*\{.*\}\s*$/.test(line) || /^\s*#/.test(line)) continue;
+
+    // Bracketed chords are read wherever they appear, in document order.
+    const bracketed = line.match(/\[([^\]]+)\]/g);
+    if (bracketed) {
+      for (const b of bracketed) {
+        const parsed = parseChordSymbol(b.slice(1, -1));
+        if (parsed) chords.push(parsed);
+      }
+      continue;
+    }
+
     const tokens = line.split(/[\s|,]+/).filter((t) => t && t !== '-' && !/^N\.?C\.?$/i.test(t));
     if (tokens.length === 0) continue;
     const parsed = tokens.map(parseChordSymbol);
     const valid = parsed.filter((p): p is ParsedChord => p !== null);
-    // Treat as a chord line only when most tokens are chords (ignores lyric lines)
-    if (valid.length / tokens.length >= 0.6) chords.push(...valid);
+    // A bare chord line must be mostly chords, which ignores lyric lines. In a chart that
+    // also uses [C] brackets, be stricter (every token a chord, two or more) so a stray
+    // lyric word such as "A" is not mistaken for a chord.
+    const isChordLine = hasBrackets
+      ? tokens.length >= 2 && valid.length === tokens.length
+      : valid.length / tokens.length >= 0.6;
+    if (isChordLine) chords.push(...valid);
   }
   return chords;
 }
