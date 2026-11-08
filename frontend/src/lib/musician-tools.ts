@@ -54,11 +54,39 @@ export const GUITAR_SHAPES: Record<string, GuitarShape> = {
   Em: { frets: [0, 2, 2, 0, 0, 0] },
   Fm: { frets: [1, 3, 3, 1, 1, 1] },
   Gm: { frets: [3, 5, 5, 3, 3, 3] },
+  C7: { frets: ['x', 3, 2, 3, 1, 0] },
+  D7: { frets: ['x', 'x', 0, 2, 1, 2] },
+  E7: { frets: [0, 2, 0, 1, 0, 0] },
+  G7: { frets: [3, 2, 0, 0, 0, 1] },
+  A7: { frets: ['x', 0, 2, 0, 2, 0] },
+  B7: { frets: ['x', 2, 1, 2, 0, 2] },
+  Am7: { frets: ['x', 0, 2, 0, 1, 0] },
+  Dm7: { frets: ['x', 'x', 0, 2, 1, 1] },
+  Em7: { frets: [0, 2, 0, 0, 0, 0] },
+  Cmaj7: { frets: ['x', 3, 2, 0, 0, 0] },
+  Fmaj7: { frets: ['x', 'x', 3, 2, 1, 0] },
+  Gmaj7: { frets: [3, 2, 0, 0, 0, 2] },
+  Dsus2: { frets: ['x', 'x', 0, 2, 3, 0] },
+  Dsus4: { frets: ['x', 'x', 0, 2, 3, 3] },
+  Asus2: { frets: ['x', 0, 2, 2, 0, 0] },
+  Asus4: { frets: ['x', 0, 2, 2, 3, 0] },
+  Esus4: { frets: [0, 2, 2, 2, 0, 0] },
 };
 
+// Only return a diagram when the chord's actual quality has a verified shape.
+// Falling back to a simplified chord (e.g. Bdim -> B, Caug -> C) would show a
+// different chord under the original label, so unknown qualities return null.
 export function diagramShape(chord: string): GuitarShape | null {
-  const simple = simplifyChordName(chord).split('/')[0];
-  return GUITAR_SHAPES[simple] || null;
+  const trimmed = chord.trim();
+  if (!isChordName(trimmed)) return null;
+  const match = trimmed.split('/')[0].match(/^([A-G](?:#|b)?)(.*)$/);
+  if (!match) return null;
+  const [, root, rawQuality] = match;
+  let quality = rawQuality;
+  if (/^(?:m|min|minor|-)$/.test(quality)) quality = 'm';
+  else if (/^(?:m7|min7|minor7|-7)$/.test(quality)) quality = 'm7';
+  else if (/^(?:maj7|M7|Maj7|Δ7|∆7|Δ|∆)$/.test(quality)) quality = 'maj7';
+  return GUITAR_SHAPES[`${root}${quality}`] || null;
 }
 
 export function clampTempo(value: number): number {

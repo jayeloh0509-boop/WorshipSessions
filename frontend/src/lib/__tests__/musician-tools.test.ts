@@ -24,8 +24,22 @@ describe('musician tools', () => {
     expect(extractChordNames('[C]One [G]two\n[C]three [Am7]four')).toEqual(['C', 'G', 'Am7']);
   });
 
+  it('never shows a different chord\'s diagram under the original label', () => {
+    expect(diagramShape('Cmaj7')?.frets).toEqual(['x', 3, 2, 0, 0, 0]);
+    expect(diagramShape('CM7')?.frets).toEqual(['x', 3, 2, 0, 0, 0]);
+    expect(diagramShape('Am7')?.frets).toEqual(['x', 0, 2, 0, 1, 0]);
+    expect(diagramShape('G7')?.frets).toEqual([3, 2, 0, 0, 0, 1]);
+    expect(diagramShape('Bdim')).toBeNull();
+    expect(diagramShape('Caug')).toBeNull();
+    expect(diagramShape('Cmaj9')).toBeNull();
+    expect(diagramShape('F#m7')).toBeNull();
+    expect(diagramShape('N.C.')).toBeNull();
+  });
+
   it('provides common guitar shapes and safe tempo bounds', () => {
-    expect(diagramShape('Cmaj7')?.frets).toEqual(['x', 3, 2, 0, 1, 0]);
+    expect(diagramShape('C')?.frets).toEqual(['x', 3, 2, 0, 1, 0]);
+    expect(diagramShape('Cmin')?.frets).toEqual(diagramShape('Cm')?.frets);
+    expect(diagramShape('C/G')?.frets).toEqual(diagramShape('C')?.frets);
     expect(clampTempo(5)).toBe(30);
     expect(clampTempo(999)).toBe(240);
   });
