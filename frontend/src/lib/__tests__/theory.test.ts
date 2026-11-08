@@ -225,6 +225,44 @@ describe('Nashville conversion', () => {
   });
 });
 
+describe('diatonicTriads spelling', () => {
+  it('spells the leading-tone triad with correct letters in sharp keys', () => {
+    const fSharp = diatonicTriads(parseKeyName('F#')!);
+    expect(fSharp[6].symbol).toBe('E#dim');
+    expect(fSharp[6].notes).toEqual(['E#', 'G#', 'B']);
+    const cSharp = diatonicTriads(parseKeyName('C#')!);
+    expect(cSharp[6].symbol).toBe('B#dim');
+  });
+
+  it('still honours an explicit accidental preference', () => {
+    expect(diatonicTriads(parseKeyName('F#')!, 'flat')[6].symbol).toBe('Fdim');
+  });
+});
+
+describe('chordDegree chromatic chords', () => {
+  const c = parseKeyName('C')!;
+  const am = parseKeyName('Am')!;
+
+  it('does not call a dominant seventh off V diatonic', () => {
+    expect(chordDegree(parseChordSymbol('C7')!, c)).toMatchObject({ roman: 'I7', diatonic: false });
+    expect(chordDegree(parseChordSymbol('D7')!, c)).toMatchObject({ diatonic: false });
+    expect(chordDegree(parseChordSymbol('G7')!, c)).toMatchObject({ roman: 'V', diatonic: true });
+    // G7 in A minor is VII7: G-B-D-F are all natural-minor tones.
+    expect(chordDegree(parseChordSymbol('G7')!, am)).toMatchObject({ roman: 'VII', diatonic: true });
+    expect(chordDegree(parseChordSymbol('A7')!, am)).toMatchObject({ diatonic: false });
+    expect(chordDegree(parseChordSymbol('E7')!, am)).toMatchObject({ roman: 'V', diatonic: true });
+  });
+
+  it('does not call an augmented chord diatonic', () => {
+    expect(chordDegree(parseChordSymbol('Caug')!, c)).toMatchObject({ roman: 'I+', diatonic: false });
+  });
+
+  it('keeps major sevenths on I and IV diatonic', () => {
+    expect(chordDegree(parseChordSymbol('Cmaj7')!, c)).toMatchObject({ roman: 'I', diatonic: true });
+    expect(chordDegree(parseChordSymbol('Fmaj7')!, c)).toMatchObject({ roman: 'IV', diatonic: true });
+  });
+});
+
 describe('diatonicTriads', () => {
   it('builds the seven major-key triads with numerals and numbers', () => {
     const triads = diatonicTriads(parseKeyName('C')!);

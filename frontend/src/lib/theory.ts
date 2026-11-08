@@ -355,11 +355,14 @@ export interface DiatonicChord {
 export function diatonicTriads(key: KeyInfo, accidental?: Accidental): DiatonicChord[] {
   const acc = accidental || preferredAccidentalForKey(key);
   const defs = key.minor ? MINOR_TRIADS : MAJOR_TRIADS;
+  // Triad tones are scale tones, so when the caller has not forced sharps/flats use
+  // the letter-correct scale spelling (F# major's vii° is E#dim, not Fdim).
+  const spelled = accidental ? null : spellScale(key.tonicSpelling, scaleSteps(key.minor));
   return defs.map((d, i) => {
     const rootPc = (key.tonicPc + d.off) % 12;
-    const root = pcToName(rootPc, acc);
-    const third = pcToName(rootPc + (d.q === 'major' ? 4 : 3), acc);
-    const fifth = pcToName(rootPc + (d.q === 'dim' ? 6 : 7), acc);
+    const root = spelled ? spelled[i] : pcToName(rootPc, acc);
+    const third = spelled ? spelled[(i + 2) % 7] : pcToName(rootPc + (d.q === 'major' ? 4 : 3), acc);
+    const fifth = spelled ? spelled[(i + 4) % 7] : pcToName(rootPc + (d.q === 'dim' ? 6 : 7), acc);
     return {
       degree: i + 1,
       roman: d.roman,
@@ -387,9 +390,15 @@ export function chordDegree(chord: ParsedChord, key: KeyInfo): DegreeLabel | nul
   const off = (rootPc - key.tonicPc + 12) % 12;
   const defs = key.minor ? [...MINOR_TRIADS, ...MINOR_HARMONIC_EXTRAS] : MAJOR_TRIADS;
   const atOffset = defs.filter((d) => d.off === off);
+  // A dominant-type seventh (C7, C9, C13) adds a note from outside the key unless it
+  // sits on V (or minor's bVII). On any other root it is a chromatic/secondary dominant.
+  const isDominantType = chord.quality === 'major' && /^(?:7|9|11|13)/.test(chord.suffix);
+  const dominantFits = off === 7 || (key.minor && off === 10);
   const exact =
-    atOffset.find((d) => d.q === chord.quality) ||
-    (chord.quality === 'sus' || chord.quality === 'other' || chord.quality === 'aug' ? atOffset[0] : undefined);
+    isDominantType && !dominantFits
+      ? undefined
+      : atOffset.find((d) => d.q === chord.quality) ||
+        (chord.quality === 'sus' || chord.quality === 'other' ? atOffset[0] : undefined);
   if (exact) {
     return {
       roman: exact.roman,
@@ -406,6 +415,7 @@ export function chordDegree(chord: ParsedChord, key: KeyInfo): DegreeLabel | nul
   if (chord.quality === 'minor' || chord.quality === 'dim') roman = roman.toLowerCase();
   if (chord.quality === 'dim') roman += '°';
   if (chord.quality === 'aug') roman += '+';
+  if (isDominantType) roman += '7';
   return {
     roman: accPrefix + roman,
     nashville: token + (chord.quality === 'minor' ? 'm' : chord.quality === 'dim' ? '°' : ''),
