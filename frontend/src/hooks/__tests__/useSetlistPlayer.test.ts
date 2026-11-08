@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSetlistPlayer } from '../useSetlistPlayer';
+import { ApiError } from '../../lib/api';
 import { getCachedSetlist, getSetlistOverrides, saveSetlistOverride } from '../../lib/storage';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 
@@ -179,6 +180,18 @@ describe('useSetlistPlayer Hook', () => {
     await waitFor(() => expect(result.current.setlist?.isStale).toBe(true));
     expect(result.current.total).toBe(0);
     expect(mockToast).toHaveBeenCalledWith('Offline: showing the last loaded setlist', 'info');
+  });
+
+  it('never serves cached charts after access is denied', async () => {
+    mockApiCall.mockRejectedValue(new ApiError('Forbidden', 403));
+    mockGetCachedSetlist.mockReturnValue({ ...mockSetlist, name: 'Cached Setlist' });
+
+    const { result } = renderHook(() => useSetlistPlayer({ setlistId: 1, navigate }));
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('setlists'));
+    expect(result.current.setlist).toBeNull();
+    expect(mockGetCachedSetlist).not.toHaveBeenCalled();
+    expect(mockToast).not.toHaveBeenCalledWith('Offline: showing the last loaded setlist', 'info');
   });
 
   it('retries a stale cached setlist in place', async () => {

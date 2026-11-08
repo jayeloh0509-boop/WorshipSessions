@@ -181,9 +181,13 @@ export function useSetlistPlayer({
 
         setSetlist(sl);
         setSavedTransposes(transposes);
-        cacheSetlist(sl.id, sl);
+        cacheSetlist(sl.id, sl, user?.id);
       } catch (e) {
-        const cached = getCachedSetlist<Setlist>(setlistId);
+        // Only fall back to the offline cache for network/server failures. An
+        // auth or not-found response means access was revoked; never serve cached charts.
+        const accessDenied =
+          e instanceof ApiError && (e.status === 401 || e.status === 403 || e.status === 404);
+        const cached = accessDenied ? null : getCachedSetlist<Setlist>(setlistId, user?.id);
         if (cached && Array.isArray(cached.entries)) {
           setSetlist({ ...cached, isStale: true } as Setlist);
           toast('Offline: showing the last loaded setlist', 'info');

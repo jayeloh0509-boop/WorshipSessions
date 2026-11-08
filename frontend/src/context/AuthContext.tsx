@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import type { User } from '../types';
-import { getStoredUser, setStoredUser, removeStoredUser, removeSessionItem } from '../lib/storage';
+import {
+  getStoredUser,
+  setStoredUser,
+  removeStoredUser,
+  removeSessionItem,
+  clearSetlistCaches,
+} from '../lib/storage';
 import { isAdminRole } from '../lib/chords';
 
 interface AuthContextValue {
@@ -18,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((u: User) => {
     setUser(u);
     setStoredUser(u);
+    clearSetlistCaches();
     removeSessionItem('cv_browse_query');
     removeSessionItem('cv_browse_lang');
     removeSessionItem('cv_browse_show_filters');
@@ -39,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     removeStoredUser();
+    clearSetlistCaches();
     removeSessionItem('cv_browse_query');
     removeSessionItem('cv_browse_lang');
     removeSessionItem('cv_browse_show_filters');

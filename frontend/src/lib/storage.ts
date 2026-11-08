@@ -239,19 +239,38 @@ export function removeSessionItem(key: string): void {
   } catch {}
 }
 
-export function getCachedSetlist<T>(setlistId: number | string): T | null {
+const SETLIST_CACHE_PREFIX = 'cv_setlist_cache:';
+
+// Cache entries are scoped to the signed-in account ('anon' when signed out) so
+// one account's private charts are never served to another in the same tab.
+function setlistCacheKey(setlistId: number | string, ownerId: number | string | null | undefined): string {
+  return `${SETLIST_CACHE_PREFIX}${ownerId == null ? 'anon' : String(ownerId)}:${String(setlistId)}`;
+}
+
+export function getCachedSetlist<T>(setlistId: number | string, ownerId?: number | string | null): T | null {
   try {
-    const raw = sessionStorage.getItem(`cv_setlist_cache:${String(setlistId)}`);
+    const raw = sessionStorage.getItem(setlistCacheKey(setlistId, ownerId));
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 }
 
-export function cacheSetlist<T>(setlistId: number | string, value: T): void {
+export function cacheSetlist<T>(setlistId: number | string, value: T, ownerId?: number | string | null): void {
   try {
-    sessionStorage.setItem(`cv_setlist_cache:${String(setlistId)}`, JSON.stringify(value));
+    sessionStorage.setItem(setlistCacheKey(setlistId, ownerId), JSON.stringify(value));
   } catch {
     // Offline cache is best-effort and must never block playback.
   }
+}
+
+export function clearSetlistCaches(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith(SETLIST_CACHE_PREFIX)) keys.push(key);
+    }
+    keys.forEach((key) => sessionStorage.removeItem(key));
+  } catch {}
 }
