@@ -101,6 +101,12 @@ export function getSongLibraryPreviewVariant(
   return null;
 }
 
+export function getAuthSuccessView(
+  previewVariant: ReturnType<typeof getSongLibraryPreviewVariant>,
+): 'browse' | 'my-songs' {
+  return previewVariant ? 'my-songs' : 'browse';
+}
+
 export function App() {
   const { user, isAdmin } = useAuth();
   const { setDemoMode } = useDemo();
@@ -110,6 +116,7 @@ export function App() {
     import.meta.env.VITE_ENABLE_SONG_LIBRARY_PREVIEW === 'true',
   );
   const isSongLibraryPreview = songLibraryPreviewVariant !== null;
+  const authSuccessView = getAuthSuccessView(songLibraryPreviewVariant);
   const [route, setRoute] = useState<Route>(() =>
     isSongLibraryPreview ? { view: 'my-songs', params: {} } : parseHash(),
   );
@@ -189,7 +196,7 @@ export function App() {
     return (
       <>
         <main id="app">
-          <AuthView navigate={navigate} />
+          <AuthView navigate={navigate} successView={authSuccessView} />
         </main>
         <Toast />
       </>
@@ -227,7 +234,7 @@ export function App() {
           <BrowseView navigate={navigate} />
         );
       case 'auth':
-        return <AuthView navigate={navigate} />;
+        return <AuthView navigate={navigate} successView={authSuccessView} />;
       case 'setlists':
         return <SetlistsView navigate={navigate} />;
       case 'public-setlists':

@@ -6,9 +6,10 @@ import type { AuthConfig, AuthResponse } from '../types';
 
 interface AuthViewProps {
   navigate: (view: string) => void;
+  successView?: 'browse' | 'my-songs';
 }
 
-export function AuthView({ navigate }: AuthViewProps) {
+export function AuthView({ navigate, successView = 'browse' }: AuthViewProps) {
   const { login } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = useState<'login' | 'register' | 'invite'>('login');
@@ -90,7 +91,7 @@ export function AuthView({ navigate }: AuthViewProps) {
           turnstile_token: turnstileToken,
         });
         login(data);
-        navigate('browse');
+        navigate(successView);
       } catch (e) {
         setError((e as Error).message);
       }
@@ -107,7 +108,7 @@ export function AuthView({ navigate }: AuthViewProps) {
         effectiveTab === 'login' ? { username, password } : { username, password, turnstile_token: turnstileToken };
       const data = await api<AuthResponse>('POST', endpoint, body);
       login(data);
-      navigate('browse');
+      navigate(successView);
     } catch (e) {
       setError((e as Error).message);
     }

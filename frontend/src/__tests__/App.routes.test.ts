@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { getSongLibraryPreviewVariant, parseHash } from '../App';
+import { getAuthSuccessView, getSongLibraryPreviewVariant, parseHash } from '../App';
 
 describe('Song Library preview route gate', () => {
   it('keeps both variants available in development', () => {
@@ -14,6 +14,12 @@ describe('Song Library preview route gate', () => {
 
   it('ignores unknown preview query values', () => {
     expect(getSongLibraryPreviewVariant('?preview=unknown', true, false)).toBeNull();
+  });
+
+  it('returns to the requested library view after authentication', () => {
+    const premiumVariant = getSongLibraryPreviewVariant('?preview=song-library-premium', false, true);
+    expect(getAuthSuccessView(premiumVariant)).toBe('my-songs');
+    expect(getAuthSuccessView(null)).toBe('browse');
   });
 });
 
