@@ -1,6 +1,6 @@
 {
   "name": "worshipsessions-frontend",
-  "version": "1.22.1",
+  "version": "1.23.10",
   "private": true,
   "type": "module",
   "scripts": {
