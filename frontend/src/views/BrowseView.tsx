@@ -9,6 +9,7 @@ import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
 import { getSessionItem, setSessionItem } from '../lib/storage';
+import '../styles/song-library-preview.css';
 
 interface BrowseViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -128,15 +129,21 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               {t('songs.search')}
             </button>
             <button
-              className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
+              type="button"
+              className={`btn btn-ghost btn-sm song-filter-toggle${showFilters || langFilter ? ' active' : ''}`}
               onClick={() => {
                 const next = !showFilters;
                 setShowFilters(next);
                 setSessionItem('cv_browse_show_filters', String(next));
               }}
-              title="Filters"
+              title="Language filters"
+              aria-label="Show language filters"
+              aria-expanded={showFilters}
+              aria-controls="browse-song-filters"
             >
-              &#9776;
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
+              </svg>
             </button>
             {user && (
               <button className="btn btn-sm" onClick={() => navigate('song-edit')}>
@@ -145,7 +152,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
             )}
           </div>
           {showFilters && (
-            <div className="search-filters">
+            <div id="browse-song-filters" className="search-filters" role="region" aria-label="Song filters">
               <select
                 className="language-filter"
                 value={langFilter}

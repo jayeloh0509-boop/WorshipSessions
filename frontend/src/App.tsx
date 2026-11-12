@@ -92,7 +92,12 @@ export function parseHash(): Route {
 export function App() {
   const { user, isAdmin } = useAuth();
   const { setDemoMode } = useDemo();
-  const [route, setRoute] = useState<Route>(() => parseHash());
+  const requestedPreview = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('preview') : null;
+  const isSongLibraryPreview = requestedPreview === 'song-library' || requestedPreview === 'song-library-premium';
+  const songLibraryPreviewVariant = requestedPreview === 'song-library-premium' ? 'premium' : 'clean';
+  const [route, setRoute] = useState<Route>(() =>
+    isSongLibraryPreview ? { view: 'my-songs', params: {} } : parseHash(),
+  );
   const [animClass, setAnimClass] = useState('');
 
   useEffect(() => {
@@ -123,18 +128,21 @@ export function App() {
   useEffect(() => {
     const onHashChange = () => {
       const newRoute = parseHash();
+      // In the Song Library preview, the compact variant IS the library view, so an
+      // empty hash (back from a chart) must land on it instead of the default browse view.
+      const resolved = isSongLibraryPreview && newRoute.view === 'browse' ? { view: 'my-songs', params: {} } : newRoute;
       setRoute((prev) => {
-        const isSameView = prev.view === newRoute.view;
+        const isSameView = prev.view === resolved.view;
         const isSameParams =
-          Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
-          Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
+          Object.keys(prev.params).length === Object.keys(resolved.params).length &&
+          Object.keys(prev.params).every((k) => prev.params[k] === resolved.params[k]);
 
-        return isSameView && isSameParams ? prev : newRoute;
+        return isSameView && isSameParams ? prev : resolved;
       });
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+  }, [isSongLibraryPreview]);
 
   const navigate = useCallback((view: string, params: Record<string, string> = {}) => {
     // Trigger animation
@@ -180,7 +188,15 @@ export function App() {
       case 'browse':
         return <BrowseView navigate={navigate} />;
       case 'my-songs':
-        return user ? <MySongsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return user ? (
+          <MySongsView
+            navigate={navigate}
+            compactPreview={isSongLibraryPreview}
+            previewVariant={songLibraryPreviewVariant}
+          />
+        ) : (
+          <BrowseView navigate={navigate} />
+        );
       case 'song-view':
         return params.id ? (
           <SongView songId={parseInt(params.id)} navigate={navigate} />

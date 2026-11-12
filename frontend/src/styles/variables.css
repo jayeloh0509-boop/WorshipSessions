@@ -71,10 +71,15 @@
   --surface2: #f1efeb;
   --border: rgba(20, 20, 24, 0.09);
   --text: #1d1e22;
-  --muted: #73757c;
+  --muted: #686a71;
+  /* The semantic text tokens default to dark-theme (pale) values; override them so
+     components that read them stay legible on paper (WCAG AA, 4.5:1+). */
+  --text-primary: #1d1e22;
+  --text-secondary: #4a4c53;
+  --text-muted: #686a71;
   --accent: #1d1e22;
   --accent2: #000000;
-  --accent-alt: #a8a9ae;
+  --accent-alt: #6b6d75;
   --danger: #c0392b;
   --success: #2e7d54;
   --chord: #9a7b45;

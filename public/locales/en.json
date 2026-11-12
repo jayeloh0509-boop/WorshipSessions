@@ -24,6 +24,7 @@
   "songs.mySongs": "My Songs",
   "songs.newSong": "+ New Song",
   "songs.noSongs": "No songs yet",
+  "songs.noMatches": "No songs match your search.",
   "songs.addFirst": "Add your first song",
   "songs.search": "Search",
   "songs.searchPlaceholder": "Search title or artist...",

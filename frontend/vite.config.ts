@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createRequire } from 'node:module';
+import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
@@ -9,6 +10,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 
 export default defineConfig(({ command }) => {
   const identity = command === 'build' ? createBuildIdentity(root) : null;
+  const apiProxyTarget = env.WS_API_PROXY_TARGET || 'http://localhost:3100';
   return {
     plugins: [
       react(),
@@ -28,8 +30,8 @@ export default defineConfig(({ command }) => {
     server: {
       port: 5173,
       proxy: {
-        '/api': 'http://localhost:3100',
-        '/locales': 'http://localhost:3100',
+        '/api': { target: apiProxyTarget, changeOrigin: true },
+        '/locales': { target: apiProxyTarget, changeOrigin: true },
       },
     },
   };
