@@ -1,5 +1,21 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { parseHash } from '../App';
+import { getSongLibraryPreviewVariant, parseHash } from '../App';
+
+describe('Song Library preview route gate', () => {
+  it('keeps both variants available in development', () => {
+    expect(getSongLibraryPreviewVariant('?preview=song-library', true, false)).toBe('clean');
+    expect(getSongLibraryPreviewVariant('?preview=song-library-premium', true, false)).toBe('premium');
+  });
+
+  it('requires an explicit build-time opt-in for production previews', () => {
+    expect(getSongLibraryPreviewVariant('?preview=song-library-premium', false, false)).toBeNull();
+    expect(getSongLibraryPreviewVariant('?preview=song-library-premium', false, true)).toBe('premium');
+  });
+
+  it('ignores unknown preview query values', () => {
+    expect(getSongLibraryPreviewVariant('?preview=unknown', true, false)).toBeNull();
+  });
+});
 
 function withHash(hash: string) {
   location.hash = hash;

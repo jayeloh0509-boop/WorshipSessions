@@ -89,12 +89,27 @@ export function parseHash(): Route {
   return { view: 'browse', params: {} };
 }
 
+export function getSongLibraryPreviewVariant(
+  search: string,
+  development: boolean,
+  enabledInProduction: boolean,
+): 'clean' | 'premium' | null {
+  if (!development && !enabledInProduction) return null;
+  const requestedPreview = new URLSearchParams(search).get('preview');
+  if (requestedPreview === 'song-library-premium') return 'premium';
+  if (requestedPreview === 'song-library') return 'clean';
+  return null;
+}
+
 export function App() {
   const { user, isAdmin } = useAuth();
   const { setDemoMode } = useDemo();
-  const requestedPreview = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('preview') : null;
-  const isSongLibraryPreview = requestedPreview === 'song-library' || requestedPreview === 'song-library-premium';
-  const songLibraryPreviewVariant = requestedPreview === 'song-library-premium' ? 'premium' : 'clean';
+  const songLibraryPreviewVariant = getSongLibraryPreviewVariant(
+    window.location.search,
+    import.meta.env.DEV,
+    import.meta.env.VITE_ENABLE_SONG_LIBRARY_PREVIEW === 'true',
+  );
+  const isSongLibraryPreview = songLibraryPreviewVariant !== null;
   const [route, setRoute] = useState<Route>(() =>
     isSongLibraryPreview ? { view: 'my-songs', params: {} } : parseHash(),
   );
@@ -192,7 +207,7 @@ export function App() {
           <MySongsView
             navigate={navigate}
             compactPreview={isSongLibraryPreview}
-            previewVariant={songLibraryPreviewVariant}
+            previewVariant={songLibraryPreviewVariant || 'clean'}
           />
         ) : (
           <BrowseView navigate={navigate} />
