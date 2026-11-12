@@ -37,24 +37,47 @@ vi.mock('../../lib/storage', () => ({
   getStoredUser: () => mockUser,
 }));
 
-describe('MySongsView Clean Charcoal preview', () => {
+describe('MySongsView premium library layout', () => {
   const navigate = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
     sessionStorage.clear();
-    mockApiCall.mockImplementation((_method: string, path: string) =>
-      Promise.resolve(
+    mockApiCall.mockImplementation((_method: string, path: string) => {
+      if (path === '/api/songs/health') {
+        return Promise.resolve({
+          songs: [
+            { id: 42, title: sampleSong.title, artist: sampleSong.artist, review: { status: 'verified', warnings: [] } },
+          ],
+        });
+      }
+      return Promise.resolve(
         path.includes('q=no-such-song') ? { songs: [], total: 0, page: 1, limit: 20, totalPages: 1 } : pageResponse,
-      ),
-    );
+      );
+    });
   });
 
   async function renderPreview() {
     render(<MySongsView navigate={navigate} compactPreview />);
     await screen.findByRole('button', { name: 'Open Hungry (Falling on My Knees) chart' });
   }
+
+  it('uses the premium layout by default and preserves scan and library health controls', async () => {
+    const { container } = render(<MySongsView navigate={navigate} />);
+    await screen.findByRole('button', { name: 'Open Hungry (Falling on My Knees) chart' });
+
+    expect(container.querySelector('.song-library-premium-preview')).toBeInTheDocument();
+    expect(mockApiCall).toHaveBeenCalledWith('GET', '/api/songs?page=1&limit=20');
+    expect(screen.getByRole('button', { name: 'Scan library' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Filter songs' }));
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'en' } });
+    await waitFor(() => expect(mockApiCall).toHaveBeenCalledWith('GET', '/api/songs?language=en&page=1&limit=20'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan library' }));
+    expect(await screen.findByTestId('library-health')).toHaveTextContent('1 with no structural warnings');
+    expect(mockApiCall).toHaveBeenCalledWith('GET', '/api/songs/health');
+  });
 
   it('keeps the long title scannable and exposes add, edit, chart, and metadata locations', async () => {
     const { container } = render(<MySongsView navigate={navigate} compactPreview />);

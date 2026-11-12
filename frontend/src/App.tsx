@@ -51,6 +51,8 @@ export function parseHash(): Route {
   const hash = location.hash.slice(1); // remove #
   if (!hash) return { view: 'browse', params: {} };
 
+  if (hash === 'my-songs') return { view: 'my-songs', params: {} };
+
   // #tools and #tools/<slug>; unknown tool slugs fall back to the launcher
   if (hash === 'tools') return { view: 'tools', params: {} };
   if (hash.startsWith('tools/')) {
@@ -103,8 +105,9 @@ export function getSongLibraryPreviewVariant(
 
 export function getAuthSuccessView(
   previewVariant: ReturnType<typeof getSongLibraryPreviewVariant>,
+  routeView?: string,
 ): 'browse' | 'my-songs' {
-  return previewVariant ? 'my-songs' : 'browse';
+  return previewVariant || routeView === 'my-songs' ? 'my-songs' : 'browse';
 }
 
 export function App() {
@@ -116,11 +119,21 @@ export function App() {
     import.meta.env.VITE_ENABLE_SONG_LIBRARY_PREVIEW === 'true',
   );
   const isSongLibraryPreview = songLibraryPreviewVariant !== null;
-  const authSuccessView = getAuthSuccessView(songLibraryPreviewVariant);
   const [route, setRoute] = useState<Route>(() =>
     isSongLibraryPreview ? { view: 'my-songs', params: {} } : parseHash(),
   );
+  const authSuccessView = getAuthSuccessView(songLibraryPreviewVariant, route.view);
   const [animClass, setAnimClass] = useState('');
+
+  useEffect(() => {
+    if (songLibraryPreviewVariant !== 'premium') return;
+    // Keep the old preview link as a compatibility entry, then normalize it to
+    // the ordinary My Songs route so it no longer behaves like a preview gate.
+    const search = new URLSearchParams(window.location.search);
+    search.delete('preview');
+    const query = search.toString();
+    history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}#my-songs`);
+  }, [songLibraryPreviewVariant]);
 
   useEffect(() => {
     api<AuthConfig>('GET', '/api/auth/config')
@@ -150,8 +163,8 @@ export function App() {
   useEffect(() => {
     const onHashChange = () => {
       const newRoute = parseHash();
-      // In the Song Library preview, the compact variant IS the library view, so an
-      // empty hash (back from a chart) must land on it instead of the default browse view.
+      // A legacy preview URL keeps an empty hash on the library until navigation
+      // removes that query; the normal root remains Browse.
       const resolved = isSongLibraryPreview && newRoute.view === 'browse' ? { view: 'my-songs', params: {} } : newRoute;
       setRoute((prev) => {
         const isSameView = prev.view === resolved.view;
@@ -167,6 +180,14 @@ export function App() {
   }, [isSongLibraryPreview]);
 
   const navigate = useCallback((view: string, params: Record<string, string> = {}) => {
+    const currentSearch = new URLSearchParams(location.search);
+    const requestedPreview = currentSearch.get('preview');
+    if (requestedPreview === 'song-library' || requestedPreview === 'song-library-premium') {
+      currentSearch.delete('preview');
+      const query = currentSearch.toString();
+      history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
+    }
+
     // Trigger animation
     setAnimClass('');
     requestAnimationFrame(() => {
@@ -184,13 +205,15 @@ export function App() {
       let h = `#setlist/${params.id}/play`;
       if (params.index !== undefined) h += `/${params.index}`;
       location.hash = h;
+    } else if (view === 'my-songs') {
+      history.replaceState(null, '', `${location.pathname}${location.search}#my-songs`);
     } else if (
-      ['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)
+      ['browse', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)
     ) {
       // Use replaceState to clear hash without triggering hashchange (which would race with the rAF setRoute above)
       history.replaceState(null, '', location.pathname + location.search);
     }
-  }, []);
+  }, [setAnimClass, setRoute]);
 
   if (!user) {
     return (
@@ -213,8 +236,8 @@ export function App() {
         return user ? (
           <MySongsView
             navigate={navigate}
-            compactPreview={isSongLibraryPreview}
-            previewVariant={songLibraryPreviewVariant || 'clean'}
+            compactPreview={songLibraryPreviewVariant === 'clean'}
+            previewVariant={songLibraryPreviewVariant || 'premium'}
           />
         ) : (
           <BrowseView navigate={navigate} />

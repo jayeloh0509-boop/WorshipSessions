@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authState = vi.hoisted(() => ({
@@ -11,8 +11,17 @@ vi.mock('../context/DemoContext', () => ({ useDemo: () => ({ setDemoMode: vi.fn(
 vi.mock('../components/Nav', () => ({ Nav: () => <div data-testid="navigation">Navigation</div> }));
 vi.mock('../components/DemoBanner', () => ({ DemoBanner: () => <div data-testid="demo-banner">Demo</div> }));
 vi.mock('../components/Toast', () => ({ Toast: () => <div data-testid="toast" /> }));
-vi.mock('../views/AuthView', () => ({ AuthView: () => <div>Sign in or register</div> }));
+vi.mock('../views/AuthView', () => ({
+  AuthView: ({ navigate, successView }: { navigate: (view: string) => void; successView?: string }) => (
+    <div>
+      <div data-testid="auth-success-view">{successView}</div>
+      <button type="button" onClick={() => navigate(successView || 'browse')}>Complete sign-in</button>
+      <div>Sign in or register</div>
+    </div>
+  ),
+}));
 vi.mock('../views/BrowseView', () => ({ BrowseView: () => <div>Song library</div> }));
+vi.mock('../views/MySongsView', () => ({ MySongsView: () => <div data-testid="my-songs-view">My Songs</div> }));
 vi.mock('../views/SetlistPlayView', () => ({ SetlistPlayView: () => <div>Setlist player</div> }));
 vi.mock('../lib/api', () => ({ api: vi.fn(() => Promise.resolve({ demoMode: false })) }));
 
@@ -42,6 +51,19 @@ describe('App authentication gate', () => {
     expect(screen.getByTestId('navigation')).toBeInTheDocument();
     expect(screen.queryByText('Sign in or register')).not.toBeInTheDocument();
     expect(document.getElementById('app')).toHaveClass('app-with-nav');
+  });
+
+  it('carries a direct My Songs route across the sign-in boundary', async () => {
+    location.hash = '#my-songs';
+    const { rerender } = render(<App />);
+
+    expect(screen.getByTestId('auth-success-view')).toHaveTextContent('my-songs');
+    fireEvent.click(screen.getByRole('button', { name: 'Complete sign-in' }));
+    await waitFor(() => expect(location.hash).toBe('#my-songs'));
+
+    authState.user = { id: 2, username: 'member', role: 'user' };
+    rerender(<App />);
+    expect(screen.getByTestId('my-songs-view')).toBeInTheDocument();
   });
 
   it('keeps the setlist player edge-to-edge without the desktop navigation offset', () => {

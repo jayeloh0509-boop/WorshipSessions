@@ -29,14 +29,16 @@ interface PaginatedSongsResponse {
 const PREVIEW_PAGE_SIZE = 20;
 const PREVIEW_FETCH_LIMIT = 100;
 
-export function MySongsView({ navigate, compactPreview = false, previewVariant = 'clean' }: MySongsViewProps) {
+export function MySongsView({ navigate, compactPreview = false, previewVariant = 'premium' }: MySongsViewProps) {
+  const isPremiumLayout = previewVariant === 'premium';
+  const usesLibraryPresentation = compactPreview || isPremiumLayout;
   const api = useApi();
   const { t } = useI18n();
   const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
   const [languageFilter, setLanguageFilter] = useState(() =>
-    compactPreview ? getSessionItem('cv_mysongs_preview_language') || '' : '',
+    usesLibraryPresentation ? getSessionItem('cv_mysongs_preview_language') || '' : '',
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -59,7 +61,7 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
       const buildUrl = (requestPage: number) => {
         const params: string[] = [];
         if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
-        if (compactPreview && language) params.push(`language=${encodeURIComponent(language)}`);
+        if (language) params.push(`language=${encodeURIComponent(language)}`);
         params.push(`page=${requestPage}`);
         params.push(`limit=${pageSize}`);
         return `/api/songs?${params.join('&')}`;
@@ -87,12 +89,12 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
         setResultsRevision((revision) => revision + 1);
         setSessionItem('cv_mysongs_query', q);
         setSessionItem('cv_mysongs_page', String(resolvedPage));
-        if (compactPreview) setSessionItem('cv_mysongs_preview_language', language);
+        if (usesLibraryPresentation) setSessionItem('cv_mysongs_preview_language', language);
       } catch (error) {
         if (requestId === loadSequence.current) toast((error as Error).message, 'error');
       }
     },
-    [api, toast, compactPreview],
+    [api, toast, compactPreview, usesLibraryPresentation],
   );
 
   useEffect(() => {
@@ -218,7 +220,7 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
     </div>
   );
 
-  if (compactPreview) {
+  if (compactPreview || isPremiumLayout) {
     // The active tab decides the empty state: a Favorites/Recently view is empty for
     // its own reason, so it must not claim the search found nothing.
     const emptyText =
@@ -258,17 +260,30 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
               {t('songs.mySongs')}
             </h2>
           </div>
-          <button
-            type="button"
-            className="clean-library-add"
-            aria-label="New Song"
-            onClick={() => navigate('song-edit')}
-          >
-            <span className="clean-library-add-icon" aria-hidden="true">
-              +
-            </span>
-            {t('songs.newSong').replace(/^\s*\+\s*/, '')}
-          </button>
+          <div className="clean-library-actions">
+            <button
+              type="button"
+              className="clean-library-scan"
+              aria-label={healthBusy ? 'Scanning library' : 'Scan library'}
+              title={healthBusy ? 'Scanning library' : 'Scan library health'}
+              onClick={scanLibrary}
+              disabled={healthBusy}
+            >
+              <span className="clean-library-scan-icon" aria-hidden="true">↻</span>
+              <span className="clean-library-scan-label">{healthBusy ? 'Scanning…' : 'Scan library'}</span>
+            </button>
+            <button
+              type="button"
+              className="clean-library-add"
+              aria-label="New Song"
+              onClick={() => navigate('song-edit')}
+            >
+              <span className="clean-library-add-icon" aria-hidden="true">
+                +
+              </span>
+              {t('songs.newSong').replace(/^\s*\+\s*/, '')}
+            </button>
+          </div>
         </header>
 
         <form
@@ -423,6 +438,28 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
             )}
           </div>
         </section>
+        {health && (
+          <div className="clean-library-health" data-testid="library-health">
+            <h3>Library health</h3>
+            <p>
+              {health.filter((song) => song.review.status === 'verified').length} with no structural warnings ·{' '}
+              {health.filter((song) => song.review.status !== 'verified').length} need review
+            </p>
+            {health
+              .filter((song) => song.review.status !== 'verified')
+              .map((song) => (
+                <button
+                  key={song.id}
+                  className="clean-library-health-row"
+                  onClick={() => navigate('song-edit', { id: String(song.id) })}
+                  title="Open chart editor for review"
+                >
+                  <span>{song.title}{song.artist ? ` — ${song.artist}` : ''}</span>
+                  <span>{song.review.warnings.map((warning) => warning.message).join(' ')}</span>
+                </button>
+              ))}
+          </div>
+        )}
         {totalPagesForView > 1 && (
           <div className="clean-library-pagination">
             <Pagination page={page} totalPages={totalPagesForView} onPageChange={handlePageChange} />

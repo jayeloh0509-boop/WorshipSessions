@@ -34,6 +34,32 @@ describe('AuthView entry experience', () => {
     await waitFor(() => expect(mocks.api).toHaveBeenCalledWith('GET', '/api/auth/config'));
   });
 
+  it('returns to the requested My Songs route after a successful sign-in', async () => {
+    const navigate = vi.fn();
+    const user = { id: 99, username: 'qa-fixture', token: 'synthetic-test-token', role: 'user' };
+    mocks.api.mockImplementation((_method: string, path: string) =>
+      Promise.resolve(path === '/api/auth/config' ? {
+        allowRegistration: true,
+        invitesEnabled: false,
+        turnstileSiteKey: null,
+        demoMode: false,
+      } : user),
+    );
+    render(<AuthView navigate={navigate} successView="my-songs" />);
+
+    await waitFor(() => expect(mocks.api).toHaveBeenCalledWith('GET', '/api/auth/config'));
+    fireEvent.change(screen.getByLabelText('auth.username'), { target: { value: 'qa-fixture' } });
+    fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'synthetic-test-password' } });
+    fireEvent.click(document.getElementById('auth-submit')!);
+
+    await waitFor(() => expect(mocks.api).toHaveBeenCalledWith('POST', '/api/auth/login', {
+      username: 'qa-fixture',
+      password: 'synthetic-test-password',
+    }));
+    expect(mocks.login).toHaveBeenCalledWith(user);
+    expect(navigate).toHaveBeenCalledWith('my-songs');
+  });
+
   it('switches to registration without losing the focused account form', () => {
     render(<AuthView navigate={vi.fn()} />);
 

@@ -20,6 +20,7 @@ describe('Song Library preview route gate', () => {
     const premiumVariant = getSongLibraryPreviewVariant('?preview=song-library-premium', false, true);
     expect(getAuthSuccessView(premiumVariant)).toBe('my-songs');
     expect(getAuthSuccessView(null)).toBe('browse');
+    expect(getAuthSuccessView(null, 'my-songs')).toBe('my-songs');
   });
 });
 
@@ -59,6 +60,7 @@ describe('parseHash tools routes', () => {
 
   it('still parses existing routes', () => {
     expect(withHash('#song/42')).toEqual({ view: 'song-view', params: { id: '42' } });
+    expect(withHash('#my-songs')).toEqual({ view: 'my-songs', params: {} });
     expect(withHash('').view).toBe('browse');
   });
 });

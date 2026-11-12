@@ -48,6 +48,72 @@
   pointer-events: none;
 }
 
+.clean-library-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-library-premium-preview .clean-library-scan {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid rgb(211 222 220 / 18%);
+  border-radius: 12px;
+  background: var(--sl-surface);
+  color: var(--sl-ink);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.song-library-premium-preview .clean-library-scan:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.song-library-premium-preview .clean-library-scan-icon {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.song-library-premium-preview .clean-library-health {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--sl-divider);
+  border-radius: 12px;
+  background: var(--sl-surface);
+  color: var(--sl-ink);
+}
+
+.song-library-premium-preview .clean-library-health h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.song-library-premium-preview .clean-library-health p {
+  margin: 0 0 8px;
+  color: var(--sl-muted);
+  font-size: 12px;
+}
+
+.song-library-premium-preview .clean-library-health-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--sl-divider);
+  background: transparent;
+  color: var(--sl-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
 .song-library-premium-preview .clean-library-eyebrow {
   margin-bottom: 4px;
   color: var(--sl-muted);
@@ -177,6 +243,7 @@
 }
 
 .song-library-premium-preview .clean-library-filter-toggle:focus-visible,
+.song-library-premium-preview .clean-library-scan:focus-visible,
 .song-library-premium-preview .clean-library-search-submit:focus-visible,
 .song-library-premium-preview .clean-library-clear:focus-visible,
 .song-library-premium-preview .clean-library-add:focus-visible,
@@ -502,6 +569,15 @@
   .song-library-premium-preview .clean-library-add {
     min-width: 108px;
     padding-inline: 12px;
+  }
+
+  .song-library-premium-preview .clean-library-scan {
+    width: 42px;
+    padding: 0;
+  }
+
+  .song-library-premium-preview .clean-library-scan-label {
+    display: none;
   }
 
   .song-library-premium-preview .clean-library-row {
