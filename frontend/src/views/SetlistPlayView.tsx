@@ -406,7 +406,7 @@ export function SetlistPlayView({
     <div
       ref={containerRef}
       data-testid="setlist-play-container"
-      className={`setlist-play-container${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}${highContrast ? ' high-contrast' : ''}`}
+      className={`setlist-play-container studio-play${liveMode.active ? ' live-mode' : ''}${liveMode.controlsVisible ? ' live-controls-visible' : ''}${highContrast ? ' high-contrast' : ''}`}
       style={{
         ...(liveMode.active
           ? {

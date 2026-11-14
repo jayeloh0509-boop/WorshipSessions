@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
@@ -111,6 +112,7 @@ export function getAuthSuccessView(
 }
 
 export function App() {
+  const reducedMotion = useReducedMotion();
   const { user, isAdmin } = useAuth();
   const { setDemoMode } = useDemo();
   const songLibraryPreviewVariant = getSongLibraryPreviewVariant(
@@ -330,11 +332,21 @@ export function App() {
 
   return (
     <>
+      <a className="studio-skip-link" href="#app" onClick={(event) => { event.preventDefault(); document.getElementById('app')?.focus(); }}>Skip to content</a>
       <DemoBanner />
       {route.view !== 'setlist-play' && <Nav view={route.view} navigate={navigate} />}
-      <main id="app" className={`${animClass}${route.view !== 'setlist-play' ? ' app-with-nav' : ''}`.trim()}>
+      <motion.main
+        key={`${route.view}:${route.params.id ?? ''}`}
+        id="app"
+        tabIndex={-1}
+        data-design="studio"
+        className={`${animClass}${route.view !== 'setlist-play' ? ' app-with-nav' : ''}`.trim()}
+        initial={reducedMotion || route.view === 'setlist-play' || (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 959px)').matches) ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reducedMotion || route.view === 'setlist-play' ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+      >
         {renderView()}
-      </main>
+      </motion.main>
       <Toast />
     </>
   );

@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
+import { LibrarySongRow } from '../components/LibrarySongRow';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
@@ -28,6 +29,7 @@ interface PaginatedSongsResponse {
 
 const PREVIEW_PAGE_SIZE = 20;
 const PREVIEW_FETCH_LIMIT = 100;
+const COLLECTION_FETCH_CONCURRENCY = 4;
 
 export function MySongsView({ navigate, compactPreview = false, previewVariant = 'premium' }: MySongsViewProps) {
   const isPremiumLayout = previewVariant === 'premium';
@@ -36,6 +38,8 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
   const { t } = useI18n();
   const toast = useToast();
   const [songs, setSongs] = useState<SongListItem[]>([]);
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'favorites' | 'recent'>('all');
+  const collectionMode = compactPreview || libraryFilter !== 'all';
   const [query, setQuery] = useState(() => getSessionItem('cv_mysongs_query') || '');
   const [languageFilter, setLanguageFilter] = useState(() =>
     usesLibraryPresentation ? getSessionItem('cv_mysongs_preview_language') || '' : '',
@@ -57,7 +61,7 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
   const load = useCallback(
     async (q = '', language = '', targetPage = 1) => {
       const requestId = ++loadSequence.current;
-      const pageSize = compactPreview ? PREVIEW_FETCH_LIMIT : PREVIEW_PAGE_SIZE;
+      const pageSize = collectionMode ? PREVIEW_FETCH_LIMIT : PREVIEW_PAGE_SIZE;
       const buildUrl = (requestPage: number) => {
         const params: string[] = [];
         if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
@@ -68,21 +72,26 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
       };
 
       try {
-        const firstPage = await api<PaginatedSongsResponse>('GET', buildUrl(compactPreview ? 1 : targetPage));
-        const laterPages =
-          compactPreview && firstPage.totalPages > 1
-            ? await Promise.all(
-                Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
-                  api<PaginatedSongsResponse>('GET', buildUrl(index + 2)),
-                ),
-              )
-            : [];
+        const firstPage = await api<PaginatedSongsResponse>('GET', buildUrl(collectionMode ? 1 : targetPage));
+        const laterPages: PaginatedSongsResponse[] = [];
+        if (collectionMode) {
+          for (let start = 2; start <= firstPage.totalPages; start += COLLECTION_FETCH_CONCURRENCY) {
+            if (requestId !== loadSequence.current) return;
+            const end = Math.min(firstPage.totalPages, start + COLLECTION_FETCH_CONCURRENCY - 1);
+            const batch = await Promise.all(
+              Array.from({ length: end - start + 1 }, (_, index) =>
+                api<PaginatedSongsResponse>('GET', buildUrl(start + index)),
+              ),
+            );
+            laterPages.push(...batch);
+          }
+        }
         if (requestId !== loadSequence.current) return;
 
         const completeCollection = [firstPage.songs, ...laterPages.map((result) => result.songs)].flat();
         setSongs(completeCollection);
         const previewPageCount = Math.max(1, Math.ceil(completeCollection.length / PREVIEW_PAGE_SIZE));
-        const resolvedPage = compactPreview ? Math.min(Math.max(1, targetPage), previewPageCount) : firstPage.page;
+        const resolvedPage = collectionMode ? Math.min(Math.max(1, targetPage), previewPageCount) : firstPage.page;
         setPage(resolvedPage);
         setTotalPages(firstPage.totalPages);
         setLoaded(true);
@@ -94,7 +103,7 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
         if (requestId === loadSequence.current) toast((error as Error).message, 'error');
       }
     },
-    [api, toast, compactPreview, usesLibraryPresentation],
+    [api, toast, collectionMode, usesLibraryPresentation],
   );
 
   useEffect(() => {
@@ -114,7 +123,7 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
   };
 
   const handlePageChange = (newPage: number) => {
-    if (compactPreview) {
+    if (collectionMode) {
       setPage(newPage);
       setSessionItem('cv_mysongs_page', String(newPage));
       setResultsRevision((revision) => revision + 1);
@@ -137,7 +146,6 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
   };
 
   const userScope = getStoredUser()?.id ? String(getStoredUser()?.id) : 'guest';
-  const [libraryFilter, setLibraryFilter] = useState<'all' | 'favorites' | 'recent'>('all');
   const [favorites, setFavorites] = useState<number[]>(() => {
     try {
       const parsed = JSON.parse(localStorage.getItem(`cv_favorites:${userScope}`) || '[]');
@@ -159,17 +167,20 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
     if (libraryFilter === 'recent') return recentSongIds.includes(song.id);
     return true;
   });
-  const visibleSongs = compactPreview
+  if (libraryFilter === 'recent') filteredSongs.sort((a, b) => recentSongIds.indexOf(a.id) - recentSongIds.indexOf(b.id));
+  const visibleSongs = collectionMode
     ? filteredSongs.slice((page - 1) * PREVIEW_PAGE_SIZE, page * PREVIEW_PAGE_SIZE)
     : filteredSongs;
-  const totalPagesForView = compactPreview
+  const totalPagesForView = collectionMode
     ? Math.max(1, Math.ceil(filteredSongs.length / PREVIEW_PAGE_SIZE))
     : totalPages;
   const toggleFavorite = (id: number) => {
     const next = favorites.includes(id) ? favorites.filter((value) => value !== id) : [...favorites, id];
     setFavorites(next);
-    setPage(1);
-    setSessionItem('cv_mysongs_page', '1');
+    if (collectionMode) {
+      setPage(1);
+      setSessionItem('cv_mysongs_page', '1');
+    }
     if (libraryFilter === 'favorites') setResultsRevision((revision) => revision + 1);
     try {
       localStorage.setItem(`cv_favorites:${userScope}`, JSON.stringify(next));
@@ -250,15 +261,16 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
 
     return (
       <section
-        className={`song-library-clean-preview${previewVariant === 'premium' ? ' song-library-premium-preview' : ''}`}
+        className={`studio-library studio-my-songs song-library-clean-preview${previewVariant === 'premium' ? ' song-library-premium-preview' : ''}`}
         aria-labelledby="clean-library-title"
       >
         <header className="clean-library-header">
           <div>
-            <div className="clean-library-eyebrow">SONG LIBRARY</div>
-            <h2 id="clean-library-title" className="clean-library-title">
+            <div className="clean-library-eyebrow studio-eyebrow">YOUR COLLECTION</div>
+            <h1 id="clean-library-title" className="clean-library-title">
               {t('songs.mySongs')}
-            </h2>
+            </h1>
+            <p className="studio-subtitle">Your charts, ready for the next session.</p>
           </div>
           <div className="clean-library-actions">
             <button
@@ -396,43 +408,14 @@ export function MySongsView({ navigate, compactPreview = false, previewVariant =
               visibleSongs.map((song) => {
                 const isFavorite = favorites.includes(song.id);
                 return (
-                  <article className="clean-library-row" role="listitem" key={song.id}>
-                    <button
-                      type="button"
-                      className="clean-library-open"
-                      aria-label={`Open ${song.title} chart`}
-                      onClick={() => openSong(song.id)}
-                    >
-                      <span className="clean-library-song-title">{song.title}</span>
-                      <span className="clean-library-song-artist">{song.artist || 'Unknown artist'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`clean-library-favorite${isFavorite ? ' active' : ''}`}
-                      aria-label={`${isFavorite ? 'Remove' : 'Add'} ${song.title} ${isFavorite ? 'from' : 'to'} Favorites`}
-                      aria-pressed={isFavorite}
-                      onClick={() => toggleFavorite(song.id)}
-                    >
-                      {isFavorite ? '★' : '☆'}
-                    </button>
-                    <button
-                      type="button"
-                      className="clean-library-edit"
-                      aria-label={`Edit ${song.title}; BPM, language, and tags`}
-                      title="Edit BPM, language, and tags"
-                      onClick={() => navigate('song-edit', { id: String(song.id) })}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="clean-library-key"
-                      aria-label={`Open ${song.title} chart in key ${song.key || 'not set'}`}
-                      onClick={() => openSong(song.id)}
-                    >
-                      {song.key || '—'}
-                    </button>
-                  </article>
+                  <LibrarySongRow
+                    key={song.id}
+                    song={song}
+                    onOpen={() => openSong(song.id)}
+                    onEdit={() => navigate('song-edit', { id: String(song.id) })}
+                    isFavorite={isFavorite}
+                    onToggleFavorite={() => toggleFavorite(song.id)}
+                  />
                 );
               })
             )}

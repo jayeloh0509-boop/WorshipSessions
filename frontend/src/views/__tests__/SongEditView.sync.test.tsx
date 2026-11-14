@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import { SongEditView } from '../SongEditView';
 
 // ─── Mocks ──────────────────────────────────────────────────────────
@@ -129,6 +129,18 @@ describe('SongEditView two-way sync', () => {
   function getEditor(): HTMLTextAreaElement {
     return screen.getByTestId('editor') as HTMLTextAreaElement;
   }
+
+  it('separates song details from the chart editor without changing save behaviour', async () => {
+    await renderEditor();
+    const details = screen.getByRole('region', { name: 'Song details' });
+    const chart = screen.getByRole('region', { name: 'Chart editor' });
+    expect(details).toBeInTheDocument();
+    expect(chart).toBeInTheDocument();
+    expect(within(details).getByPlaceholderText('songEdit.titlePlaceholder')).toBeInTheDocument();
+    expect(within(chart).getByTestId('editor')).toBeInTheDocument();
+    // The chart stays outside the metadata block.
+    expect(details.querySelector('[data-testid="editor"]')).toBeNull();
+  });
 
   it('undo restores the pre-proposal draft without saving', async () => {
     await renderEditor();

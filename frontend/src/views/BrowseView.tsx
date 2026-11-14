@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
-import { SongCard } from '../components/SongCard';
+import { LibrarySongRow } from '../components/LibrarySongRow';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
 import { getSessionItem, setSessionItem } from '../lib/storage';
 import '../styles/song-library-preview.css';
+import '../styles/song-library-premium.css';
 
 interface BrowseViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -30,9 +31,12 @@ export function BrowseView({ navigate }: BrowseViewProps) {
     return saved ? parseInt(saved, 10) : 1;
   });
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const loadSequence = useRef(0);
 
   const load = useCallback(
     async (q = '', lang = '', targetPage = 1) => {
+      const requestId = ++loadSequence.current;
       try {
         let url = '/api/songs/public';
         const params: string[] = [];
@@ -50,7 +54,9 @@ export function BrowseView({ navigate }: BrowseViewProps) {
           totalPages: number;
         }
         const data = await api<PaginatedSongsResponse>('GET', url);
+        if (requestId !== loadSequence.current) return;
         setSongs(data.songs);
+        setTotal(data.total);
         setPage(data.page);
         setTotalPages(data.totalPages);
         setLoaded(true);
@@ -59,7 +65,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
         setSessionItem('cv_browse_lang', lang);
         setSessionItem('cv_browse_page', String(data.page));
       } catch (e) {
-        toast((e as Error).message, 'error');
+        if (requestId === loadSequence.current) toast((e as Error).message, 'error');
       }
     },
     [api, toast],
@@ -85,7 +91,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const showHero = !user && !query && !langFilter && loaded && songs.length === 0 && page === 1;
 
   return (
-    <>
+    <section className="studio-library studio-browse song-library-clean-preview song-library-premium-preview" aria-label="Shared song library">
       {showHero ? (
         <div className="hero">
           <div className="hero-kicker">WORSHIP WORKSPACE</div>
@@ -108,36 +114,39 @@ export function BrowseView({ navigate }: BrowseViewProps) {
         </div>
       ) : (
         <>
-          <div className="search-row">
-            <div className="search-input-wrapper">
+          <header className="clean-library-header">
+            <div><p className="clean-library-eyebrow studio-eyebrow">THE SHARED LIBRARY</p><h1 className="clean-library-title">Songs</h1>
+              <p className="studio-subtitle">Find the song. Make room for the moment.</p></div>
+            {user && <div className="clean-library-actions"><button type="button" className="clean-library-add" onClick={() => navigate('song-edit')}><span aria-hidden="true">+</span> New Song</button></div>}
+          </header>
+          <form className="clean-library-search" onSubmit={(event) => { event.preventDefault(); doSearch(); }}>
+            <div className="clean-library-search-input">
               <input
                 type="search"
+                aria-label="Search songs by title or artist"
                 placeholder={t('songs.searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') doSearch();
-                }}
               />
               {query && (
-                <button className="search-clear-btn" onClick={handleClear} title="Clear search">
+                <button type="button" className="clean-library-clear" onClick={handleClear} aria-label="Clear search">
                   &times;
                 </button>
               )}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={doSearch}>
-              {t('songs.search')}
+            <button type="submit" className="clean-library-search-submit" aria-label="Search songs" title="Search songs">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m15.5 15.5 4.2 4.2" /></svg>
             </button>
             <button
               type="button"
-              className={`btn btn-ghost btn-sm song-filter-toggle${showFilters || langFilter ? ' active' : ''}`}
+              className={`clean-library-filter-toggle${showFilters || langFilter ? ' active' : ''}`}
               onClick={() => {
                 const next = !showFilters;
                 setShowFilters(next);
                 setSessionItem('cv_browse_show_filters', String(next));
               }}
               title="Language filters"
-              aria-label="Show language filters"
+              aria-label="Filter songs"
               aria-expanded={showFilters}
               aria-controls="browse-song-filters"
             >
@@ -145,16 +154,13 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                 <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
               </svg>
             </button>
-            {user && (
-              <button className="btn btn-sm" onClick={() => navigate('song-edit')}>
-                &#43; New Song
-              </button>
-            )}
-          </div>
+
+          </form>
           {showFilters && (
-            <div id="browse-song-filters" className="search-filters" role="region" aria-label="Song filters">
+            <div id="browse-song-filters" className="clean-library-filter-panel" role="region" aria-label="Song filters">
               <select
                 className="language-filter"
+                aria-label="Language"
                 value={langFilter}
                 onChange={(e) => {
                   setLangFilter(e.target.value);
@@ -170,24 +176,24 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               </select>
             </div>
           )}
-          <div className="song-grid">
+          <div className="clean-library-count" aria-live="polite">{loaded ? `${total} songs · Page ${page} of ${Math.max(1, totalPages)}` : 'Loading songs…'}</div>
+          <div className="clean-library-rows" role="list">
             {loaded && songs.length === 0 ? (
-              <EmptyState icon="&#128269;" text={t('songs.noPublicSongs')} />
+              <EmptyState icon="&#128269;" text={query || langFilter ? t('songs.noMatches', 'No songs match your filters.') : t('songs.noPublicSongs')} />
             ) : (
               songs.map((s) => (
-                <SongCard
+                <LibrarySongRow
                   key={s.id}
                   song={s}
-                  isOwner={user?.username === s.username}
-                  onClick={() => navigate('song-view', { id: String(s.id) })}
-                  onEdit={() => navigate('song-edit', { id: String(s.id) })}
+                  onOpen={() => navigate('song-view', { id: String(s.id) })}
+                  onEdit={user?.username === s.username ? () => navigate('song-edit', { id: String(s.id) }) : undefined}
                 />
               ))
             )}
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          {totalPages > 1 && <div className="clean-library-pagination"><Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} /></div>}
         </>
       )}
-    </>
+    </section>
   );
 }

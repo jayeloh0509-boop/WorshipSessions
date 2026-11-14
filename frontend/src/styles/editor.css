@@ -137,3 +137,57 @@
   color: var(--muted);
   font-style: italic;
 }
+
+/* -- Studio editor --------------------------------------------------------
+   The editor keeps its split-pane contract but stays inside the workspace
+   instead of breaking out of the app column. */
+.studio-editor .editor-split {
+  width: 100%;
+  max-width: none;
+  left: auto;
+  transform: none;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.studio-editor .song-view-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+.studio-editor .edit-cols {
+  gap: 20px;
+}
+.studio-editor .field > label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.studio-editor .editor-tabs {
+  background: var(--surface);
+}
+.studio-editor .editor-tab {
+  min-height: 44px;
+}
+.studio-editor .editor-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--chord);
+}
+.studio-editor .chart-review-panel {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--chord);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.studio-editor .chart-review-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.studio-editor .song-view-nav {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.studio-editor .song-view-nav > div {
+  flex-wrap: wrap;
+}

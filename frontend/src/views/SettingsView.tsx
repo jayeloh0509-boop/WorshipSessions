@@ -105,9 +105,13 @@ export function SettingsView() {
   };
 
   return (
-    <>
+    <div className="studio-page studio-settings">
       <div className="view-header">
-        <h2 className="view-title">Settings</h2>
+        <div>
+          <p className="studio-eyebrow">YOUR WORKSPACE</p>
+          <h1 className="view-title">Settings</h1>
+          <p className="studio-page-description">Your account, languages and song collection.</p>
+        </div>
       </div>
       <div className="settings-grid">
         <div className="settings-section">
@@ -240,6 +244,6 @@ export function SettingsView() {
         </div>
         <BuildStatus />
       </div>
-    </>
+    </div>
   );
 }

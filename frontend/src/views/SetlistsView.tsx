@@ -163,9 +163,13 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
     : ls.setlists;
 
   return (
-    <>
+    <div className="studio-page studio-setlists">
       <div className="view-header">
-        <h2 className="view-title">{t('setlist.title')}</h2>
+        <div>
+          <p className="studio-eyebrow">YOUR SETLISTS</p>
+          <h1 className="view-title">{t('setlist.title')}</h1>
+          <p className="studio-page-description">Prepare the flow. Leave room for the moment.</p>
+        </div>
         <button className="btn btn-sm" onClick={() => setShowNew(true)}>
           {t('setlist.newSetlist')}
         </button>
@@ -287,6 +291,6 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           ))}
       </div>
       {activeTab === 'cloud' && <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />}
-    </>
+    </div>
   );
 }

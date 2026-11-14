@@ -3643,3 +3643,475 @@
     display: none;
   }
 }
+
+/* -- Studio surfaces ------------------------------------------------------
+   Scoped to owned view roots so the library, chart renderer and Live Mode
+   geometry are untouched. Identity sits outside the music; charts keep their
+   own column alignment, chord anchoring and section structure. */
+.studio-page {
+  min-width: 0;
+}
+.studio-tools.tools-page {
+  max-width: none;
+  margin-inline: 0;
+}
+.studio-tools .tools-title,
+.studio-tools .tools-subtitle {
+  text-align: left;
+}
+.studio-about.about-page {
+  max-width: none;
+  margin-inline: 0;
+}
+.studio-about .about-title,
+.studio-about .about-subtitle {
+  text-align: left;
+}
+.studio-about .about-title {
+  margin: 0;
+  font: 400 clamp(38px, 4vw, 58px)/1.1 var(--font-serif);
+  letter-spacing: -.035em;
+  color: var(--text);
+}
+.studio-about .about-subtitle {
+  margin-top: 12px;
+}
+.studio-about .about-section,
+.studio-about .build-status {
+  max-width: 760px;
+}
+.studio-page > .view-header,
+.studio-page-heading {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-page .view-title,
+.studio-tools .tools-title,
+.studio-about .about-title,
+.studio-song .song-view-title,
+.studio-editor .song-view-title {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+.studio-page-description,
+.studio-tools .tools-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0 0;
+  max-width: 64ch;
+}
+.studio-eyebrow {
+  color: var(--chord);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.studio-section-heading {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-editor-details,
+.studio-editor-chart {
+  margin-bottom: 32px;
+}
+.studio-editor-chart {
+  padding-top: 8px;
+}
+.studio-page > .view-header {
+  align-items: center;
+  gap: 20px;
+}
+.studio-page .btn:focus-visible,
+.studio-tools button:focus-visible {
+  outline: 2px solid var(--chord);
+  outline-offset: 3px;
+}
+
+/* A setlist is a running order, not a grid of promotional cards. */
+.studio-setlists .song-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+.studio-setlists .library-setlist-row {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  padding: 18px 12px;
+  box-shadow: none;
+  min-height: 92px;
+}
+.studio-setlists .library-setlist-row:hover {
+  background: var(--ghost-bg);
+  transform: none;
+}
+.studio-setlists .setlist-card-index {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  width: 42px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: var(--chord);
+}
+.studio-setlists .song-card-title {
+  font-size: 17px;
+}
+.studio-setlists .setlist-card-actions .btn {
+  min-height: 44px;
+}
+.studio-setlists .setlist-play-button {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.studio-setlists .setlist-tabs {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 22px;
+  gap: 22px;
+}
+.studio-setlists .setlist-tab {
+  border-radius: 0;
+  padding: 12px 2px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.studio-setlists .setlist-tab.active {
+  color: var(--text);
+  box-shadow: inset 0 -2px var(--chord);
+}
+.studio-setlist-editor .song-view-header {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-setlist-editor .setlist-name-input {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw, 46px);
+}
+.studio-setlist-editor .setlist-preparation-overview {
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+}
+.studio-setlist-editor .setlist-entries {
+  gap: 8px;
+}
+.studio-setlist-editor .setlist-section-heading {
+  color: var(--chord);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 20px 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-setlist-editor .setlist-preparation-panel {
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+/* Tools keep their input/output contracts inside one quiet workbench. */
+.studio-tools {
+  max-width: var(--workspace-max-width);
+}
+.studio-tools .tool-launch-section {
+  margin-top: 30px;
+}
+.studio-tools .tool-launch-heading {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.studio-tools .tool-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.studio-tools .tool-launch-card {
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  padding: 24px;
+  min-width: 0;
+  background: var(--surface);
+  box-shadow: none;
+  gap: 14px;
+  text-align: left;
+}
+.studio-tools .tool-launch-card:last-child {
+  border-right: 0;
+}
+.studio-tools .tool-launch-card:hover {
+  background: var(--surface2);
+  transform: none;
+  box-shadow: none;
+}
+.studio-tools .tool-launch-title {
+  font-family: var(--font-serif);
+  font-size: 27px;
+  line-height: 1.15;
+  font-weight: 400;
+}
+.studio-tools .tool-launch-desc {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.studio-tools .tool-launch-cta {
+  color: var(--chord);
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 12px;
+}
+.studio-tools .tool-card {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 24px;
+  box-shadow: none;
+}
+.studio-tools .tool-card h2 {
+  font-size: 18px;
+}
+.studio-tools .tool-result {
+  border-radius: 6px;
+  border-left: 3px solid var(--chord);
+  background: var(--surface2);
+}
+.studio-tools .tool-output {
+  border-radius: 6px;
+  background: var(--bg);
+}
+.studio-tools .tool-related {
+  margin-top: 28px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+/* Chart identity is outside the music: no chord/lyric geometry changes here. */
+.studio-song .song-view-header {
+  padding: 0 0 20px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-song .song-view-nav {
+  margin-bottom: 28px;
+}
+.studio-song .song-view-identity {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.studio-song .song-view-eyebrow {
+  color: var(--chord);
+  letter-spacing: 0.15em;
+}
+.studio-song .song-view-key {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 18px;
+  background: var(--surface);
+}
+.studio-song .song-reading-controls {
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.studio-song .song-autoscroll {
+  border-radius: 6px;
+  background: var(--surface);
+}
+.studio-song .chart-reading-surface {
+  border-radius: 8px;
+}
+.studio-song .chart-reading-surface > .chord-sheet-wrap {
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+/* Playback surface: warm charcoal frame outside Live Mode. Live Mode keeps
+   its own geometry and is never restyled from here. */
+.studio-play:not(.live-mode) .setlist-play-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.studio-play:not(.live-mode) .setlist-play-indicator {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 400;
+}
+.studio-play:not(.live-mode) .song-queue {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.studio-play:not(.live-mode) .song-queue-item {
+  border-radius: 6px;
+  background: transparent;
+}
+.studio-play:not(.live-mode) .song-queue-item.current {
+  background: var(--studio-accent);
+  border-color: var(--studio-accent);
+  color: #12100a;
+}
+:root[data-theme='light'] .studio-play:not(.live-mode) .song-queue-item.current {
+  color: #fffdf8;
+}
+.studio-play:not(.live-mode) .setlist-live-notes {
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Secondary pages use editorial sections, not nested decorative cards. */
+.studio-settings .settings-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.studio-settings .settings-section {
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 28px;
+}
+.studio-settings .settings-section .auth-card {
+  max-width: none;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: none;
+}
+.studio-settings .settings-section .admin-section-title {
+  margin-top: 0;
+}
+.studio-admin .admin-stats {
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.studio-admin .stat-card {
+  background: var(--surface);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.studio-admin .stat-value {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  color: var(--text);
+}
+.studio-admin .admin-section-title {
+  margin-top: 32px;
+}
+.studio-admin .user-card {
+  border-radius: 6px;
+  box-shadow: none;
+}
+.studio-about .about-section {
+  padding: 24px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.studio-about .about-section h3 {
+  color: var(--text);
+  font-size: 20px;
+}
+.studio-about .about-section p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+.studio-correction .edit-header {
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.studio-correction .edit-header h2 {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 400;
+}
+
+@media (min-width: 1000px) {
+  .studio-settings .settings-section {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+  }
+  .studio-settings .settings-section > h3,
+  .studio-settings .settings-section > .muted-hint {
+    grid-column: 1;
+  }
+  .studio-settings .settings-section > .auth-card {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .studio-page > .view-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .studio-tools .tool-launch-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .studio-tools .tool-launch-card {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 20px;
+  }
+  .studio-tools .tool-launch-card:last-child {
+    border-bottom: 0;
+  }
+  .studio-tools .tool-card {
+    padding: 18px;
+  }
+  .studio-setlists .library-setlist-row {
+    flex-wrap: wrap;
+    padding: 16px 0;
+    gap: 12px;
+  }
+  .studio-setlists .setlist-card-open {
+    flex-basis: 100%;
+  }
+  .studio-setlists .setlist-card-actions {
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .studio-setlist-editor .setlist-section-row {
+    flex-wrap: wrap;
+  }
+  .studio-song .song-view-nav {
+    margin-bottom: 20px;
+  }
+  .studio-song .song-view-key {
+    padding: 8px 12px;
+  }
+}

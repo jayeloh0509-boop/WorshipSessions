@@ -279,7 +279,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   if (!song) return <Loading />;
 
   return (
-    <div lang={song.language || undefined}>
+    <div className="studio-page studio-song" lang={song.language || undefined}>
       <div className="song-view-header">
         <div className="song-view-nav">
           <button

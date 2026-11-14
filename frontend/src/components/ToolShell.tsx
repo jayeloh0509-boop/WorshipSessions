@@ -12,12 +12,15 @@ interface ToolShellProps {
 // Shared frame for every tool page: back link, heading, intro, content card(s).
 export function ToolShell({ navigate, title, subtitle, children }: ToolShellProps) {
   return (
-    <div className="tools-page tool-subpage">
+    <div className="tools-page tool-subpage studio-page studio-tools">
       <button className="btn btn-ghost btn-sm tool-back" onClick={() => navigate('tools')}>
         &#8592; Back to Tools
       </button>
-      <h1 className="tools-title">{title}</h1>
-      <p className="tools-subtitle">{subtitle}</p>
+      <header className="studio-page-heading">
+        <p className="studio-eyebrow">YOUR WORKSPACE</p>
+        <h1 className="tools-title">{title}</h1>
+        <p className="tools-subtitle">{subtitle}</p>
+      </header>
       {children}
     </div>
   );

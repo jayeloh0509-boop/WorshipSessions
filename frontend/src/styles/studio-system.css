@@ -1,0 +1,144 @@
+/* Studio workspace. Imported after the feature styles by App.tsx.
+   Shared semantic tokens remain compatible with reading/editor/live surfaces. */
+:root {
+  --studio-bg: #171818;
+  --studio-sidebar: #111313;
+  --studio-panel: #202222;
+  --studio-line: #363938;
+  --studio-text: #f4efe5;
+  --studio-muted: #b3b6b1;
+  --studio-accent: #d8b979;
+  --studio-tint: #302e27;
+  --studio-sidebar-width: 248px;
+  --bg: var(--studio-bg);
+  --surface: var(--studio-panel);
+  --surface2: #282b29;
+  --surface-opaque: var(--studio-panel);
+  --border: var(--studio-line);
+  --text: var(--studio-text);
+  --text-primary: var(--studio-text);
+  --text-secondary: var(--studio-muted);
+  --text-muted: #a2a6a0;
+  --muted: var(--text-muted);
+  --nav-bg: var(--studio-sidebar);
+  --accent-chord: var(--studio-accent);
+  --radius: 8px;
+  --radius-panel: 10px;
+}
+:root[data-theme='light'] {
+  --studio-bg: #f6f3ec;
+  --studio-sidebar: #eeebe3;
+  --studio-panel: #fffdf8;
+  --studio-line: #d5d1c7;
+  --studio-text: #252923;
+  --studio-muted: #62675d;
+  --studio-accent: #76551c;
+  --studio-tint: #e9e1ce;
+  --surface2: #ece8de;
+  --text-muted: #62675d;
+}
+.studio-skip-link { position: fixed; top: -100px; left: 16px; z-index: 10000; background: var(--studio-accent); color: var(--studio-sidebar); padding: 12px 18px; border-radius: 8px; }
+.studio-skip-link:focus { top: 12px; }
+:where(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--studio-accent); outline-offset: 3px; }
+#nav .nav-brand { border: 0; background: transparent; color: var(--text); font-family: var(--font-sans); cursor: pointer; }
+.nav-drawer { background: var(--studio-sidebar); }
+.nav-drawer-title { font: 600 11px var(--font-sans); text-transform: uppercase; letter-spacing: .15em; color: var(--studio-muted); }
+.nav-drawer-item { min-height: 44px; border-radius: 6px; }
+.nav-drawer-item.active { background: var(--studio-tint); color: var(--text); box-shadow: inset 3px 0 var(--studio-accent); }
+.nav-drawer-section-label { font-size: 10px; letter-spacing: .16em; }
+.studio-page-header, .studio-library .clean-library-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 0 32px; }
+.studio-eyebrow, .studio-library .clean-library-eyebrow { margin: 0 0 10px; font: 600 10px var(--font-sans); letter-spacing: .18em; color: var(--studio-accent); }
+.studio-page-header h1, .studio-library .clean-library-title { margin: 0; font: 400 clamp(38px, 4vw, 58px)/1.1 var(--font-serif); letter-spacing: -.035em; color: var(--text); }
+.studio-subtitle { margin: 12px 0 0; color: var(--studio-muted); font: 400 14px/1.6 var(--font-sans); }
+.studio-library .studio-primary, .studio-library .clean-library-add { background: var(--studio-accent); color: var(--studio-sidebar); border: 1px solid var(--studio-accent); border-radius: 6px; min-height: 44px; box-shadow: none; }
+.studio-search-panel, .studio-library .clean-library-search { padding: 12px; gap: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; margin-bottom: 20px; }
+.studio-search-panel input { background: transparent; border-color: transparent; min-height: 44px; }
+.studio-search-panel .search-input-wrapper { min-width: 0; }
+.studio-list-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 16px 0; }
+.studio-list-heading h2 { font: 600 15px var(--font-sans); margin: 0; }
+.studio-list-heading > span { font-size: 12px; color: var(--studio-muted); }
+.studio-browse .song-grid { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.studio-browse .song-card { margin: 0; padding: 18px 22px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: var(--surface); box-shadow: none; min-height: 96px; }
+.studio-browse .song-card:last-child { border-bottom: 0; }
+.studio-browse .song-card:hover { background: var(--surface2); transform: none; }
+.studio-browse .song-card-title { font: 600 16px/1.4 var(--font-sans); }
+.studio-browse .song-card-meta { color: var(--studio-muted); font-size: 12px; }
+.studio-browse .song-card-key { color: var(--studio-accent); background: var(--studio-tint); border: 1px solid var(--border); border-radius: 6px; min-width: 40px; text-align: center; padding: 8px; }
+.studio-browse .song-card-tags { margin-top: 6px; }
+.studio-library.studio-my-songs, .studio-library.studio-browse { --sl-bg: var(--bg); --sl-header: var(--surface); --sl-surface: var(--surface); --sl-chip: var(--surface2); --sl-divider: var(--border); --sl-ink: var(--text); --sl-muted: var(--studio-muted); --sl-accent: var(--studio-accent); max-width: none; padding: 0; background: transparent; overflow: visible; }
+.studio-library.studio-my-songs::after, .studio-library.studio-browse::after, .studio-library .clean-library-header::before { display: none; }
+.studio-library .clean-library-search-input { min-width: 0; }
+.studio-library .clean-library-tabs { border-radius: 0; background: transparent; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.studio-library .clean-library-tab { min-height: 44px; }
+.studio-library .clean-library-count { font-size: 12px; color: var(--studio-muted); padding: 8px 0 16px; }
+.studio-library .clean-library-rows { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.studio-library .clean-library-row { min-height: 98px; padding: 16px 20px; background: var(--surface); border-radius: 0; box-shadow: none; }
+.studio-library .clean-library-row:hover { background: var(--surface2); transform: none; }
+.studio-library .clean-library-song-title { font-size: 16px; line-height: 1.4; }
+.studio-library .clean-library-song-artist { margin-top: 3px; font-size: 12px; }
+.studio-song-details { display: block; margin-top: 6px; color: var(--studio-muted); font-size: 10px; letter-spacing: .06em; }
+.studio-library .clean-library-key { border-radius: 6px; background: var(--studio-tint); color: var(--studio-accent); }
+/* Shared libraries use the same row grid; absent owner-only actions leave the key at the right edge. */
+.studio-browse .clean-library-edit { grid-column: 3; }
+.studio-browse .clean-library-key { grid-column: 4; }
+.studio-library .clean-library-row--compact { grid-template-columns: minmax(0, 1fr) 40px; }
+.studio-library .clean-library-row--compact .clean-library-key { grid-column: 2; }
+.studio-library .clean-library-edit, .studio-library .clean-library-scan { border-radius: 6px; }
+/* The premium library's dark-only control fills must not leak into the shared light theme. */
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-search-submit,
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-edit {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-search-submit:hover,
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-edit:hover {
+  background: var(--studio-tint);
+}
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-filter-toggle:hover {
+  background: var(--studio-tint);
+  color: var(--text);
+}
+:root[data-theme='light'] .studio-library.song-library-premium-preview .clean-library-search-input input::placeholder {
+  color: var(--studio-muted);
+  opacity: 1;
+}
+.studio-library .clean-library-health { margin-top: 24px; }
+.studio-library .empty-state { padding: 48px 24px; }
+@media (min-width: 960px) {
+  #nav { width: var(--studio-sidebar-width); height: 80px; align-items: center; justify-content: flex-start; padding: 0 20px; border-bottom: 0; background: var(--studio-sidebar); }
+  #nav .nav-brand { display: flex; gap: 9px; font-size: 16px; letter-spacing: -.5px; white-space: nowrap; padding: 0; }
+  #nav .nav-logo { width: 27px; }
+  #nav .nav-desktop-rail { display: none; }
+  .nav-drawer, .nav-drawer.open { top: 80px; bottom: 0; left: 0; width: var(--studio-sidebar-width); height: calc(100dvh - 80px); transform: none; visibility: visible; opacity: 1; pointer-events: auto; box-shadow: none; border-right: 1px solid var(--border); }
+  .nav-drawer-header { min-height: 46px; padding: 10px 28px; border-bottom: 0; }
+  .nav-drawer-items { padding: 12px 16px; }
+  .nav-drawer-section { margin-bottom: 18px; }
+  .nav-drawer-footer { padding: 14px 16px 22px; }
+  #app.app-with-nav { width: calc(100% - var(--studio-sidebar-width)); max-width: 1440px; margin-left: var(--studio-sidebar-width); padding: 48px clamp(28px, 4vw, 64px) 80px; }
+}
+@media (max-width: 959px) {
+  #app.app-with-nav { padding: 28px 20px 64px; }
+  .studio-page-header, .studio-library .clean-library-header { gap: 18px; flex-wrap: wrap; margin-bottom: 24px; }
+  .studio-library .clean-library-actions { margin-left: 0; }
+}
+@media (max-width: 540px) {
+  .studio-page-header, .studio-library .clean-library-header { display: grid; grid-template-columns: 1fr; }
+  .studio-page-header .studio-primary { justify-self: start; }
+  .studio-search-panel { display: grid; grid-template-columns: 1fr 44px; align-items: center; }
+  .studio-search-panel .search-input-wrapper { grid-column: 1 / -1; width: 100%; }
+  .studio-search-panel .btn-ghost { grid-column: 1; grid-row: 2; justify-self: start; min-height: 44px; }
+  .studio-search-panel .song-filter-toggle { grid-column: 2; grid-row: 2; min-width: 44px; min-height: 44px; }
+  .studio-browse .song-card { padding: 16px; }
+  .studio-browse .song-card-performance { flex-wrap: wrap; gap: 8px; }
+  .studio-library .clean-library-row { padding: 14px 12px; }
+  .studio-library .clean-library-song-title { font-size: 14px; }
+  .studio-library .clean-library-actions { width: 100%; justify-content: space-between; gap: 12px; }
+  .studio-library.song-library-premium-preview .clean-library-scan { width: auto; min-width: 44px; flex: 0 1 auto; }
+  .studio-library.song-library-premium-preview .clean-library-scan-label { display: inline; }
+  .studio-page-header .studio-primary { margin-top: 0; }
+  .studio-list-heading > span { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #app.view-enter, .studio-library, .studio-library *, .nav-drawer { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

@@ -24,7 +24,7 @@ export function SettingsPanel({
   chartTone = 'dark', onChartToneChange,
 }: SettingsPanelProps) {
   return (
-    <div className="sl-options-panel">
+    <div className="sl-options-panel studio-settings-panel">
       <div className="sl-options-title">Setlist defaults (all songs)</div>
       {[
         ['Number notation', nashville, onNashvilleChange],

@@ -6,11 +6,12 @@ interface AboutViewProps {
 
 export function AboutView({ navigate }: AboutViewProps) {
   return (
-    <div className="about-page">
+    <div className="about-page studio-page studio-about">
       <button className="btn btn-ghost btn-sm" onClick={() => navigate('browse')} style={{ marginBottom: 20 }}>
         &#8592; Back
       </button>
-      <h1 className="about-title">&#9833; WorshipSessions</h1>
+      <p className="studio-eyebrow">YOUR WORKSPACE</p>
+      <h1 className="about-title">About WorshipSessions</h1>
       <p className="about-subtitle">Songs, setlists, and practical tools for worship teams</p>
 
       <div className="about-section">

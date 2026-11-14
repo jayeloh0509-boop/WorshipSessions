@@ -222,9 +222,13 @@ export function AdminView({ navigate }: AdminViewProps) {
   const pending = invites.filter((i) => !i.used_at);
 
   return (
-    <>
+    <div className="studio-page studio-admin">
       <div className="view-header">
-        <h2 className="view-title">{t('admin.title')}</h2>
+        <div>
+          <p className="studio-eyebrow">YOUR WORKSPACE</p>
+          <h1 className="view-title">{t('admin.title')}</h1>
+          <p className="studio-page-description">Manage the library and the people who keep it growing.</p>
+        </div>
       </div>
       <div className="admin-stats">
         <div className="stat-card">
@@ -616,6 +620,6 @@ export function AdminView({ navigate }: AdminViewProps) {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

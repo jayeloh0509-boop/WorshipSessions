@@ -50,7 +50,7 @@ export function Nav({ view, navigate }: NavProps) {
 
   // Escape closes; Tab is trapped inside the drawer while it is open
   useEffect(() => {
-    if (!open) return;
+    if (!open || desktop) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpen(false);
@@ -149,9 +149,9 @@ export function Nav({ view, navigate }: NavProps) {
 
   return (
     <nav id="nav">
-      <div className="nav-brand" onClick={() => navigate('browse')}>
+      <button type="button" className="nav-brand" onClick={() => navigate('browse')} aria-label="WorshipSessions home">
         <span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} /> WorshipSessions
-      </div>
+      </button>
       <button
         ref={triggerRef}
         className="nav-btn nav-icon nav-drawer-trigger"
@@ -198,13 +198,13 @@ export function Nav({ view, navigate }: NavProps) {
             ref={drawerRef}
             id="nav-drawer"
             className={`nav-drawer${open ? ' open' : ''}`}
-            role="dialog"
-            aria-modal="true"
+            role={desktop ? 'navigation' : 'dialog'}
+            aria-modal={desktop ? undefined : true}
             aria-label="Navigation menu"
-            inert={!open}
+            inert={!desktop && !open}
           >
             <div className="nav-drawer-header">
-              <span className="nav-drawer-title">Menu</span>
+              <span className="nav-drawer-title">Your workspace</span>
               <button
                 ref={closeBtnRef}
                 className="nav-btn nav-icon nav-drawer-close"
@@ -219,7 +219,7 @@ export function Nav({ view, navigate }: NavProps) {
                 <div id="nav-library-label" className="nav-drawer-section-label">
                   Library
                 </div>
-                <button className={`nav-drawer-item${songsActive}`} onClick={() => go('browse')}>
+                <button aria-current={view === 'browse' ? 'page' : undefined} className={`nav-drawer-item${songsActive}`} onClick={() => go('browse')}>
                   Songs
                 </button>
                 <button
@@ -231,6 +231,7 @@ export function Nav({ view, navigate }: NavProps) {
                 {user && (
                   <button
                     className={`nav-drawer-item${view === 'my-songs' ? ' active' : ''}`}
+                    aria-current={view === 'my-songs' ? 'page' : undefined}
                     onClick={() => go('my-songs')}
                   >
                     My Songs
@@ -288,6 +289,7 @@ export function Nav({ view, navigate }: NavProps) {
               </section>
             </div>
             <div className="nav-drawer-footer">
+              <button className={`nav-drawer-item${view === 'about' ? ' active' : ''}`} onClick={() => go('about')}>About WorshipSessions</button>
               <button className="nav-drawer-item nav-drawer-theme" onClick={toggleTheme} title="Toggle theme">
                 <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: themeIconHtml }} /> Toggle theme
               </button>

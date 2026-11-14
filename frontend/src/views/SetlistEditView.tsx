@@ -441,7 +441,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   ).length;
 
   return (
-    <>
+    <div className="studio-page studio-setlist-editor">
       <div className="song-view-header">
         <div className="song-view-nav">
           <button
@@ -468,6 +468,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
             )}
           </div>
         </div>
+        <p className="studio-eyebrow">Setlist</p>
         <div className="setlist-name-row">
           {!isEditable ? (
             <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>
@@ -561,6 +562,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
       {isEditable && (setlist.sections?.length || 0) > 0 && (
         <div className="setlist-sections" aria-label="Service flow sections">
+          <h2 className="studio-section-heading">Service flow</h2>
           {(setlist.sections || []).map((section) => (
             <div key={section.id} className="setlist-section-row">
               <strong>{section.name}</strong>
@@ -583,6 +585,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         <EmptyState icon="&#127926;" text={t('setlist.noSongsYet')} />
       ) : (
         <div className="setlist-entries" id="setlist-entries">
+          <h2 className="studio-section-heading">Running order</h2>
           {reorderedEntries.map((entry, idx) => (
             <Fragment key={entry.entry_id}>
               {entry.section_name && (idx === 0 || reorderedEntries[idx - 1]?.section_id !== entry.section_id) && (
@@ -621,6 +624,6 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       )}
 
       {pickerOpen && <SongPicker onPick={addSong} onClose={() => setPickerOpen(false)} />}
-    </>
+    </div>
   );
 }

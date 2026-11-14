@@ -82,9 +82,12 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   const showSearch = !loaded || setlists.length > 0 || page > 1;
 
   return (
-    <>
+    <div className="studio-page studio-setlists">
       <div className="view-header">
-        <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
+        <div>
+          <h1 className="view-title">{t('setlist.browseSetlists')}</h1>
+          <p className="studio-page-description">Explore arrangements shared by the community.</p>
+        </div>
       </div>
       <div className="setlist-tabs">
         <button className="setlist-tab" onClick={() => navigate('setlists')}>
@@ -166,6 +169,6 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       )}
-    </>
+    </div>
   );
 }

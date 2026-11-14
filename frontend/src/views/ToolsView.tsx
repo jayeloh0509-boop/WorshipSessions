@@ -60,9 +60,12 @@ const TOOL_GROUPS: { heading: string; tools: ToolDef[] }[] = [
 
 export function ToolsView({ navigate }: ToolsViewProps) {
   return (
-    <div className="tools-page">
-      <h1 className="tools-title">Tools</h1>
-      <p className="tools-subtitle">Helpers for rehearsal and worship planning</p>
+    <div className="tools-page studio-page studio-tools">
+      <header className="studio-page-heading">
+        <p className="studio-eyebrow">YOUR WORKSPACE</p>
+        <h1 className="tools-title">Tools</h1>
+        <p className="tools-subtitle">Find your key. Shape your arrangement. Keep the music moving.</p>
+      </header>
       {TOOL_GROUPS.map((group) => (
         <section key={group.heading} className="tool-launch-section">
           <h2 className="tool-launch-heading">{group.heading}</h2>

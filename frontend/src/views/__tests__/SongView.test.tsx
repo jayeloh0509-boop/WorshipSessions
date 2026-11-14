@@ -130,6 +130,14 @@ describe('SongView chord-reading workspace', () => {
     });
     expect(screen.getByTestId('chart-surface')).toHaveAttribute('data-tone', 'dark');
     expect(screen.getByRole('region', { name: 'Chord chart' })).toHaveClass('chart-reading-surface');
+    // Studio root wraps the reading workspace; the chart region itself is untouched.
+    const studioRoot = screen.getByRole('heading', { name: 'Goodness of God', level: 1 }).closest('.studio-page');
+    expect(studioRoot).toHaveClass('studio-song');
+    expect(studioRoot?.querySelector('.chart-reading-surface')).not.toBeNull();
+    // Identity and performance metadata stay outside the chart surface.
+    const chartRegion = screen.getByRole('region', { name: 'Chord chart' });
+    expect(chartRegion.querySelector('.song-view-title')).toBeNull();
+    expect(chartRegion.querySelector('.song-view-key')).toBeNull();
     expect(screen.getByRole('button', { name: 'Start song auto-scroll' })).toBeInTheDocument();
     expect(screen.queryByText('WorshipSessions · Lead Sheet')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Song sections' })).toBeInTheDocument();

@@ -79,6 +79,12 @@ describe('MySongsView premium library layout', () => {
     expect(mockApiCall).toHaveBeenCalledWith('GET', '/api/songs/health');
   });
 
+  it('keeps a single Studio heading hierarchy and exposes collection metadata', async () => {
+    render(<MySongsView navigate={navigate} />);
+    expect(screen.getByRole('heading', { level: 1, name: 'My Songs' })).toBeInTheDocument();
+    expect(screen.getByText('YOUR COLLECTION')).toBeInTheDocument();
+  });
+
   it('keeps the long title scannable and exposes add, edit, chart, and metadata locations', async () => {
     const { container } = render(<MySongsView navigate={navigate} compactPreview />);
     await screen.findByRole('button', { name: 'Open Hungry (Falling on My Knees) chart' });
@@ -190,5 +196,28 @@ describe('MySongsView premium library layout', () => {
     expect(await screen.findByRole('button', { name: 'Open Later Page Favorite chart' })).toBeInTheDocument();
     expect(screen.getByText('1 shown')).toBeInTheDocument();
     expect(container.querySelector('.clean-library-pagination')).toBeNull();
+  });
+
+  it('limits concurrent requests while collecting large Favorites and Recent libraries', async () => {
+    const pending: Array<() => void> = [];
+    const requested: number[] = [];
+    mockApiCall.mockImplementation((_method: string, path: string) => {
+      const requestedPage = Number(/page=(\d+)/.exec(path)?.[1] || 1);
+      requested.push(requestedPage);
+      const response = { songs: [sampleSong], total: 1000, page: requestedPage, limit: 100, totalPages: 10 };
+      if (requestedPage === 1) return Promise.resolve(response);
+      return new Promise((resolve) => pending.push(() => resolve(response)));
+    });
+
+    render(<MySongsView navigate={navigate} compactPreview />);
+    await waitFor(() => expect(pending).toHaveLength(4));
+    expect(requested).toEqual([1, 2, 3, 4, 5]);
+    pending.splice(0).forEach((finish) => finish());
+    await waitFor(() => expect(requested).toContain(6));
+    expect(requested).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    pending.splice(0).forEach((finish) => finish());
+    await waitFor(() => expect(requested).toContain(10));
+    pending.splice(0).forEach((finish) => finish());
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Open Hungry (Falling on My Knees) chart' })).toHaveLength(10));
   });
 });

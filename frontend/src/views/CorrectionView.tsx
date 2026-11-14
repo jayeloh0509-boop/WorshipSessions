@@ -52,7 +52,7 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   };
 
   return (
-    <>
+    <div className="studio-page studio-correction">
       <div className="edit-header">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>
           &#8592; Cancel
@@ -75,6 +75,6 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }

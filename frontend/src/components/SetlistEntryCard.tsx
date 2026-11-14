@@ -84,7 +84,7 @@ export function SetlistEntryCard({
   return (
     <div className="setlist-preparation-entry">
       <div
-        className={`song-card setlist-song-item ${isDragging ? 'dragging' : ''}`}
+        className={`song-card setlist-song-item studio-setlist-entry ${isDragging ? 'dragging' : ''}`}
         onClick={() => onClick(idx)}
         {...dragProps}
       >

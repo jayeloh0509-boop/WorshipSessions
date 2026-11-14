@@ -188,7 +188,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   };
 
   return (
-    <>
+    <div className="studio-page studio-editor">
       <div className="song-view-header">
         <div className="song-view-nav">
           <button className="btn btn-ghost btn-sm" onClick={cancel}>
@@ -203,7 +203,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             {songId && (
               <button
                 className="btn btn-sm"
-                style={{ background: 'var(--accent)', color: 'black', border: 'none' }}
+                style={{ borderColor: 'var(--chord)' }}
                 onClick={saveAsVersion}
               >
                 {isOwner ? 'Save as New Version' : 'Save as My Version'}
@@ -211,10 +211,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             )}
           </div>
         </div>
+        <p className="studio-eyebrow">Chart studio</p>
         <h1 className="song-view-title">
           {songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}
         </h1>
+        <p className="studio-page-description">
+          Details first, then the chart. Nothing is written until you save.
+        </p>
       </div>
+      <section className="studio-editor-details" aria-label="Song details">
+        <h2 className="studio-section-heading">Song details</h2>
       <div className="edit-cols">
         <div className="field">
           <label>{t('songEdit.titleLabel')}</label>
@@ -284,6 +290,9 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           )}
         </label>
       </div>
+      </section>
+      <section className="studio-editor-chart" aria-label="Chart editor">
+        <h2 className="studio-section-heading">Chart</h2>
       <div className="field">
         <div className="chordpro-hint-row">
           <p
@@ -445,9 +454,10 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           onClose={() => setOcrOpen(false)}
         />
       )}
+      </section>
       {searchOpen && (
         <SongSearchModal onImport={(content) => setInitialContent(content)} onClose={() => setSearchOpen(false)} />
       )}
-    </>
+    </div>
   );
 }
