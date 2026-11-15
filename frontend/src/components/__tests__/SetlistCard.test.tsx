@@ -22,7 +22,9 @@ describe('SetlistCard preparation row', () => {
 
     expect(screen.getByRole('button', { name: 'Open Sunday Morning setlist' })).toBeInTheDocument();
     expect(screen.getByText(/5 songs/)).toBeInTheDocument();
-    expect(screen.getByText(/2026/)).toBeInTheDocument();
+    // The date badge renders the month and day for the scheduled service.
+    expect(screen.getByText('AUG')).toBeInTheDocument();
+    expect(screen.getByText('16')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Prepare Sunday Morning' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play Sunday Morning' })).toBeInTheDocument();
   });

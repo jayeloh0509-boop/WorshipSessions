@@ -4115,3 +4115,333 @@
     padding: 8px 12px;
   }
 }
+
+/* -- Setlist list redesign ---------------------------------- */
+
+.setlist-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.setlist-stat-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--surface2) 0%, var(--surface) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.setlist-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(208, 168, 93, 0.10), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(114, 164, 142, 0.06), transparent 60%);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.setlist-stat-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.setlist-stat-card-next {
+  border-color: rgba(208, 168, 93, 0.32);
+}
+
+.setlist-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.setlist-stat-value {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.setlist-stat-value-text {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-family: var(--font-sans);
+}
+
+.setlist-stat-value-muted {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.setlist-stat-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .setlist-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.setlist-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 20px 2px 8px;
+  padding: 0 4px;
+  font-family: var(--font-sans);
+}
+
+.setlist-group-header:first-child {
+  margin-top: 4px;
+}
+
+.setlist-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setlist-group-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+.setlist-group-toggle {
+  background: transparent;
+  border: 0;
+  padding: 12px 4px 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  color: inherit;
+}
+
+.setlist-group-toggle:hover,
+.setlist-group-toggle:focus-visible {
+  background: var(--ghost-bg, rgba(255, 255, 255, 0.035));
+}
+
+.setlist-group-chevron {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+/* -- Setlist date badge (replaces ♫ icon when setlist has event_date) -- */
+
+.setlist-card-dated {
+  align-items: stretch;
+}
+
+.setlist-date-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px solid rgba(208, 168, 93, 0.32);
+  background: linear-gradient(180deg, rgba(208, 168, 93, 0.14) 0%, rgba(208, 168, 93, 0.04) 100%);
+  color: var(--accent-chord);
+  font-family: var(--font-sans);
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.setlist-date-badge-month {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-chord);
+  opacity: 0.85;
+}
+
+.setlist-date-badge-day {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--text);
+}
+
+.setlist-date-badge-countdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-chord);
+  background: rgba(208, 168, 93, 0.18);
+  padding: 2px 0;
+}
+
+.setlist-date-badge-today {
+  border-color: rgba(114, 164, 142, 0.55);
+  background: linear-gradient(180deg, rgba(114, 164, 142, 0.18) 0%, rgba(114, 164, 142, 0.04) 100%);
+}
+
+.setlist-date-badge-today .setlist-date-badge-countdown {
+  color: #4a8a72;
+  background: rgba(114, 164, 142, 0.22);
+}
+
+.setlist-date-badge-today .setlist-date-badge-month {
+  color: #4a8a72;
+}
+
+.setlist-date-badge-soon {
+  border-color: rgba(208, 168, 93, 0.42);
+  background: linear-gradient(180deg, rgba(208, 168, 93, 0.18) 0%, rgba(208, 168, 93, 0.05) 100%);
+}
+
+.setlist-date-badge-past {
+  border-color: var(--border);
+  background: var(--surface2);
+  opacity: 0.72;
+}
+
+.setlist-date-badge-past .setlist-date-badge-day,
+.setlist-date-badge-past .setlist-date-badge-month {
+  color: var(--text-muted);
+}
+
+.setlist-date-badge-past .setlist-date-badge-countdown {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.setlist-card-past .song-card-title,
+.setlist-card-past .song-card-meta {
+  color: var(--text-muted);
+  opacity: 0.78;
+}
+
+.setlist-card-song-count {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.setlist-visibility-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(114, 164, 142, 0.32);
+  background: rgba(114, 164, 142, 0.10);
+  color: #6c9e88;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  vertical-align: 1px;
+}
+
+.setlist-action-primary {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.setlist-action-primary:hover {
+  background: var(--accent2);
+}
+
+.setlist-action-secondary {
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.setlist-action-secondary:hover {
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .setlist-date-badge {
+    width: 56px;
+    height: 56px;
+  }
+  .setlist-date-badge-day {
+    font-size: 19px;
+  }
+  .setlist-date-badge-countdown {
+    font-size: 9px;
+  }
+  .setlist-card-dated .setlist-card-open {
+    gap: 12px;
+  }
+}
+
+:root[data-theme='light'] .setlist-date-badge {
+  border-color: rgba(154, 123, 69, 0.42);
+  background: linear-gradient(180deg, rgba(154, 123, 69, 0.10) 0%, rgba(154, 123, 69, 0.02) 100%);
+}
+
+:root[data-theme='light'] .setlist-date-badge-day {
+  color: #1d1e22;
+}
+
+:root[data-theme='light'] .setlist-date-badge-today {
+  border-color: rgba(46, 125, 84, 0.42);
+  background: linear-gradient(180deg, rgba(46, 125, 84, 0.14) 0%, rgba(46, 125, 84, 0.02) 100%);
+}
+
+:root[data-theme='light'] .setlist-date-badge-today .setlist-date-badge-countdown,
+:root[data-theme='light'] .setlist-date-badge-today .setlist-date-badge-month {
+  color: #2e7d54;
+}
+
+:root[data-theme='light'] .setlist-stat-card {
+  background: linear-gradient(180deg, #ffffff 0%, #faf9f7 100%);
+  border-color: rgba(20, 20, 24, 0.08);
+}
+
+:root[data-theme='light'] .setlist-stat-value {
+  color: #1d1e22;
+}
