@@ -67,7 +67,9 @@ vi.mock('../../components/Toolbar', () => ({
   ),
 }));
 vi.mock('../../components/ChordSheet', () => ({
-  ChordSheet: ({ tone }: { tone?: string }) => <div data-testid="chart-surface" data-tone={tone} />,
+  ChordSheet: ({ tone, html }: { tone?: string; html?: string }) => (
+    <div data-testid="chart-surface" data-tone={tone} dangerouslySetInnerHTML={{ __html: html || '' }} />
+  ),
 }));
 vi.mock('../../components/MusicianTools', () => ({
   MusicianTools: (props: {
@@ -170,5 +172,42 @@ describe('SongView chord-reading workspace', () => {
     expect(roadmap).toHaveTextContent('Vamp');
     expect(roadmap).toHaveTextContent('Alt Verse 1');
     expect(roadmap).toHaveTextContent('REPEAT VERSE 1');
+  });
+
+  it('jumps within the chart surface when that surface owns scrolling', async () => {
+    apiCall.mockImplementation((_method: string, path: string) => {
+      if (path.endsWith('/versions')) return Promise.resolve([]);
+      if (path.endsWith('/corrections')) return Promise.resolve([]);
+      return Promise.resolve({
+        ...song,
+        content: '{key: Ab}\nVERSE 1\n[Ab]I love You Lord',
+      });
+    });
+
+    render(<SongView songId={7} navigate={vi.fn()} />);
+
+    const surface = await screen.findByRole('region', { name: 'Chord chart' });
+    const target = surface.querySelector('.label') as HTMLElement;
+    const scrollTo = vi.fn();
+    Object.defineProperties(surface, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 300 },
+      scrollTop: { configurable: true, writable: true, value: 25 },
+      scrollTo: { configurable: true, value: scrollTo },
+      getBoundingClientRect: {
+        configurable: true,
+        value: () => ({ top: 100, bottom: 400, left: 0, right: 320, width: 320, height: 300 }),
+      },
+    });
+    Object.defineProperty(target, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: 450, bottom: 470, left: 0, right: 100, width: 100, height: 20 }),
+    });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Jump to song section' }), {
+      target: { value: 'VERSE 1' },
+    });
+
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 359, behavior: 'smooth' }));
   });
 });

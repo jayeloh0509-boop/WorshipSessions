@@ -27,7 +27,7 @@ describe('Toolbar chart controls', () => {
 
     expect(screen.getByRole('button', { name: 'Change key, currently F' })).toHaveTextContent('KEY F');
     expect(screen.getByRole('button', { name: 'Switch to two columns' })).toHaveTextContent('2-COL');
-    expect(screen.queryByRole('button', { name: /chart/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) chart/i })).not.toBeInTheDocument();
   });
 
   it('lets Song View override reset availability for non-font preferences', () => {

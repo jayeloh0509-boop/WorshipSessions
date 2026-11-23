@@ -18,7 +18,6 @@ import { MusicianTools } from '../components/MusicianTools';
 import { renderChordPro, songHasKey, autoFit, isSectionLabel } from '../lib/chords';
 import { extractChordNames, simplifyChordPro } from '../lib/musician-tools';
 import { languageName } from '../lib/languages';
-import { getTransposeDelta } from '../lib/keys';
 import type { Song, SongVersion, Correction } from '../types';
 
 function extractRoadmap(content: string): string[] {
@@ -48,6 +47,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [addToSetlistOpen, setAddToSetlistOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [secondaryControlsOpen, setSecondaryControlsOpen] = useState(false);
+  const [selectedSection, setSelectedSection] = useState('');
 
   useEffect(() => {
     setSong(null);
@@ -163,10 +164,18 @@ export function SongView({ songId, navigate }: SongViewProps) {
     const target = Array.from(document.querySelectorAll('.chord-sheet .label, .chord-sheet .section-label')).find(
       (node) => node.textContent?.trim().replace(/:$/, '').toLowerCase() === wanted,
     );
-    if (target) {
-      const top = target.getBoundingClientRect().top + window.scrollY - 72;
-      window.scrollTo({ top, behavior: 'smooth' });
+    if (!target) return;
+
+    const chartSurface = chartScrollRef.current;
+    if (chartSurface && chartSurface.scrollHeight > chartSurface.clientHeight) {
+      const top =
+        chartSurface.scrollTop + target.getBoundingClientRect().top - chartSurface.getBoundingClientRect().top - 16;
+      chartSurface.scrollTo({ top, behavior: 'smooth' });
+      return;
     }
+
+    const top = target.getBoundingClientRect().top + window.scrollY - 72;
+    window.scrollTo({ top, behavior: 'smooth' });
   };
 
   const shortcuts = useMemo(
@@ -361,7 +370,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
         </div>
       </div>
 
-      <div className="song-reading-controls" aria-label="Chart reading controls">
+      <div
+        className={`song-reading-controls${secondaryControlsOpen ? ' secondary-open' : ''}`}
+        aria-label="Chart reading controls"
+      >
         <div className="ug-reader-tabs" aria-label="Chart display modes">
           <button
             type="button"
@@ -409,9 +421,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
             resetReadingPreferences();
           }}
           onPickKey={(key) => {
-            const delta = getTransposeDelta(chord.currentKey, key);
-            chord.pickKey(key);
-            updateReadingPreferences({ transpose: chord.transpose + delta, nashville: false });
+            const transpose = chord.pickKey(key);
+            updateReadingPreferences({ transpose, nashville: false });
           }}
           onAutoFit={handleAutoFit}
           autoFitActive={preferences.autoFit}
@@ -430,23 +441,48 @@ export function SongView({ songId, navigate }: SongViewProps) {
             preferences.chartTone === chartTone.tone &&
             !preferences.autoFit
           }
+          onToggleMore={() => setSecondaryControlsOpen((open) => !open)}
+          moreControlsOpen={secondaryControlsOpen}
         />
       </div>
 
-      <MusicianTools
-        chords={songChords}
-        bpm={song.bpm}
-        simplified={preferences.simplified}
-        onSimplifiedChange={(simplified) => updateReadingPreferences({ simplified })}
-      />
+      <div id="song-secondary-panel" className={`song-secondary-tools${secondaryControlsOpen ? ' open' : ''}`}>
+        <MusicianTools
+          chords={songChords}
+          bpm={song.bpm}
+          simplified={preferences.simplified}
+          onSimplifiedChange={(simplified) => updateReadingPreferences({ simplified })}
+        />
+      </div>
 
       {roadmap.length > 0 && (
         <nav className="song-roadmap" aria-label="Song sections">
-          {roadmap.map((section) => (
-            <button key={section} className="song-roadmap-item" type="button" onClick={() => jumpToSection(section)}>
-              {section}
-            </button>
-          ))}
+          <label htmlFor="song-section-jump">Sections</label>
+          <select
+            id="song-section-jump"
+            className="song-section-select"
+            value={selectedSection}
+            onChange={(event) => {
+              const section = event.target.value;
+              setSelectedSection(section);
+              if (section) jumpToSection(section);
+            }}
+            aria-label="Jump to song section"
+          >
+            <option value="">Jump to…</option>
+            {roadmap.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </select>
+          <div className="song-roadmap-chips">
+            {roadmap.map((section) => (
+              <button key={section} className="song-roadmap-item" type="button" onClick={() => jumpToSection(section)}>
+                {section}
+              </button>
+            ))}
+          </div>
         </nav>
       )}
 

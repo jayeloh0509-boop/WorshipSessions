@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { renderChordPro, getSongKey, songHasKey } from '../lib/chords';
-import { getTransposeDelta } from '../lib/keys';
+import { getTransposeForKeyTarget } from '../lib/keys';
 
 export function useChordRenderer(content: string) {
   const [transpose, setTranspose] = useState(0);
@@ -27,12 +27,11 @@ export function useChordRenderer(content: string) {
 
   const pickKey = useCallback(
     (targetKey: string) => {
-      const delta = getTransposeDelta(currentKey, targetKey);
-      if (delta !== 0) {
-        setTranspose((prev) => prev + delta);
-      }
+      const nextTranspose = getTransposeForKeyTarget(transpose, currentKey, targetKey);
+      setTranspose(nextTranspose);
+      return nextTranspose;
     },
-    [currentKey],
+    [currentKey, transpose],
   );
 
   return {

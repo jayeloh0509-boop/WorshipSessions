@@ -70,12 +70,16 @@
 
 .chord-sheet .chord-output .chord-line {
   min-height: 1.15em;
-  margin-bottom: .12em;
+  margin-bottom: 0.12em;
 }
 
 @media (max-width: 900px) {
-  .chord-sheet-wrap { overflow-x: auto; }
-  .chord-sheet-wrap .chord-output { min-width: max-content; }
+  .chord-sheet-wrap {
+    overflow-x: auto;
+  }
+  .chord-sheet-wrap .chord-output {
+    min-width: max-content;
+  }
   /* Let the custom responsive renderer use the phone canvas; its bar rows
      provide explicit wrap points so measures reflow instead of scrolling. */
   .chord-sheet-wrap .chord-output:has(.chord-sheet) {
@@ -93,10 +97,10 @@
 .chord-sheet-wrap .chord-output .chord-name {
   color: var(--chart-chord-color);
   font-weight: 800;
-  letter-spacing: .01em;
+  letter-spacing: 0.01em;
 }
 .chord-sheet-wrap .chord-output .paragraph {
-  margin-block: .8rem 1.15rem;
+  margin-block: 0.8rem 1.15rem;
 }
 .chord-sheet-wrap .chord-output .lyrics,
 .chord-sheet-wrap .chord-output .lyric {
@@ -189,22 +193,20 @@
   margin-bottom: 3px;
 }
 
-/* A word's column is normally sized by whichever is wider, the word or
-   its chord — necessary for chord-only rows (intros, instrumental bars),
-   where several bare chords in a row each need their own reserved width.
-   But when a chord is attached to an actual word and is the wider of the
-   two, that reserved width was left as dead space trailing the word. Let
-   the chord overflow into the natural gap after its word instead, so the
-   column is sized by the word alone — standard chord-chart behavior.
-   Skip this when the very next column also carries its own chord (e.g.
-   a hyphenated word with a chord change mid-syllable, "Ho-[Ab]ly"): with
-   nothing to overflow into, the overflowing chord would run straight
-   into the next one and the two would render on top of each other. That
-   case keeps the old reserved-width behavior instead. */
-.chart-reading-surface .chord-sheet .column:has(.lyrics:not(:empty)):not(:has(+ .column .chord:not(:empty))) .chord {
+/* Chord labels in an intra-word run do not claim horizontal space. Ordinary
+   word-boundary chord columns keep their intrinsic width, which separates long
+   chord names without introducing gaps inside words such as "faithfulness". */
+.chart-reading-surface .chord-sheet .column-syllable:has(.lyrics:not(:empty)) .chord {
   width: 0;
   padding-right: 0;
   overflow: visible;
+}
+
+.chart-reading-surface .chord-sheet .column-syllable-1 .chord {
+  transform: translateY(-1.3em);
+}
+.chart-reading-surface .chord-sheet .column-syllable-2 .chord {
+  transform: translateY(-2.95em);
 }
 
 .chart-reading-surface .chord-sheet .lyrics {
@@ -737,4 +739,112 @@
 }
 .chord-output {
   line-height: var(--line-spacing, 1.45);
+}
+
+/* Song View's Chords + Lyrics reader: an unframed, responsive music page.
+   Keep these overrides under the existing reading-surface owner so editor,
+   setlist, import-preview and Live Mode renderers retain their current skin. */
+.chart-reading-surface {
+  width: 100%;
+  max-width: 1080px;
+  margin: 14px auto 0;
+}
+
+.chart-reading-surface > .chord-sheet-wrap:not(.chord-sheet-paper),
+.chart-reading-surface > .chord-sheet-wrap.chord-sheet-paper {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(24px, 3vw, 40px) clamp(20px, 4vw, 52px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.chart-reading-surface > .chord-sheet-wrap.chord-sheet-paper {
+  background: var(--paper);
+}
+
+.chart-reading-surface > .chord-sheet-wrap.chord-sheet-paper::before {
+  display: none;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-output {
+  width: 100%;
+  min-width: 0;
+}
+
+.chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .chord,
+.chart-reading-surface .chord-sheet-wrap.chord-sheet-paper .chord-sheet .chord {
+  min-height: 1.32em;
+  margin-bottom: 0.3rem;
+  font-size: calc(0.92em * var(--font-scale, 1));
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  line-height: 1.32;
+}
+
+.chart-reading-surface .chord-sheet-wrap.chord-sheet-dark .chord-sheet .chord {
+  color: var(--accent-chord, #d0a85d) !important;
+}
+
+.chart-reading-surface .chord-sheet-wrap.chord-sheet-paper .chord-sheet .chord {
+  color: #8b6325 !important;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-sheet .lyrics {
+  font-size: calc(1.02em * var(--font-scale, 1));
+  line-height: 1.58;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-sheet .section-row {
+  margin: 0 0 0.8rem;
+  padding-top: 0.2rem;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-sheet .section-row h3.label {
+  padding-bottom: 0.5rem !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-sheet .section-row h3.label::after {
+  width: 32px;
+  margin-top: 0.42rem;
+}
+
+.chart-reading-surface .chord-sheet-wrap .chord-sheet .paragraph {
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 700px) {
+  .chart-reading-surface {
+    width: auto;
+    max-width: none;
+  }
+
+  .chart-reading-surface > .chord-sheet-wrap:not(.chord-sheet-paper),
+  .chart-reading-surface > .chord-sheet-wrap.chord-sheet-paper {
+    padding: 24px clamp(18px, 5vw, 24px) 36px;
+  }
+
+  .chart-reading-surface .chord-sheet-wrap:not(.chord-sheet-paper) .chord-sheet .chord,
+  .chart-reading-surface .chord-sheet-wrap.chord-sheet-paper .chord-sheet .chord {
+    font-size: calc(0.94em * var(--font-scale, 1));
+  }
+}
+
+@media (max-width: 600px) {
+  .chart-reading-surface {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+    margin-right: -12px;
+  }
+
+  .chart-reading-surface > .chord-sheet-wrap:not(.chord-sheet-paper),
+  .chart-reading-surface > .chord-sheet-wrap.chord-sheet-paper {
+    padding-inline: clamp(16px, 4.6vw, 20px);
+  }
 }

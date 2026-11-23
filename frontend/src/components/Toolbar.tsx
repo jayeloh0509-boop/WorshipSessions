@@ -34,6 +34,8 @@ interface ToolbarProps {
   /** Override the built-in font/column default calculation when the caller
    * owns additional preference state (key, Nashville, tone, FIT). */
   resetDisabled?: boolean;
+  onToggleMore?: () => void;
+  moreControlsOpen?: boolean;
 }
 
 export function Toolbar({
@@ -61,6 +63,8 @@ export function Toolbar({
   chartTone,
   onChartToneChange,
   resetDisabled,
+  onToggleMore,
+  moreControlsOpen,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
@@ -72,90 +76,129 @@ export function Toolbar({
 
   return (
     <>
-      <div className="transpose-bar">
-        <button
-          className={`key-current${nashville ? ' disabled' : ''}`}
-          id="key-display"
-          onClick={() => setPickerOpen((v) => !v)}
-          aria-label={`Change key, currently ${currentKey || 'unknown'}`}
-        >
-          {compactKey ? (
-            <>
-              KEY <span aria-hidden="true">&#9662;</span>
-            </>
-          ) : (
-            `KEY ${currentKey || '?'}`
+      <div className="transpose-bar song-control-shelf">
+        <div className="toolbar-group toolbar-group-key" role="group" aria-label="Key and notation">
+          <button
+            className={`key-current${nashville ? ' disabled' : ''}`}
+            id="key-display"
+            onClick={() => setPickerOpen((v) => !v)}
+            aria-label={`Change key, currently ${currentKey || 'unknown'}`}
+          >
+            {compactKey ? (
+              <>
+                KEY <span aria-hidden="true">&#9662;</span>
+              </>
+            ) : (
+              `KEY ${currentKey || '?'}`
+            )}
+          </button>
+          <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
+            <input
+              type="checkbox"
+              checked={nashville}
+              disabled={nashvilleDisabled}
+              onChange={(e) => onNashvilleChange(e.target.checked)}
+            />
+            <span>123</span>
+          </label>
+        </div>
+        <div className="toolbar-group toolbar-group-text" role="group" aria-label="Chart text size">
+          <button
+            className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
+            onClick={() => onFontChange(-1)}
+            aria-label="Decrease chart text size"
+            title="Decrease chart text size"
+          >
+            A&#8722;
+          </button>
+          <button
+            className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
+            onClick={() => onFontChange(1)}
+            aria-label="Increase chart text size"
+            title="Increase chart text size"
+          >
+            A+
+          </button>
+        </div>
+        <div className="toolbar-group toolbar-group-layout" role="group" aria-label="Chart layout and appearance">
+          <button
+            className={`transpose-btn font-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
+            onClick={onTwoColToggle}
+            title={twoCol ? 'Switch to single column' : 'Switch to two columns'}
+            aria-label={twoCol ? 'Switch to single column' : 'Switch to two columns'}
+            aria-pressed={twoCol}
+          >
+            2-COL
+          </button>
+          {onAutoFit && (
+            <button
+              className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
+              onClick={onAutoFit}
+              title="Auto-fit for this screen (one-time)"
+              aria-label="Auto-fit chart to this screen"
+              aria-pressed={Boolean(autoFitActive)}
+            >
+              FIT
+            </button>
           )}
-        </button>
-        <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
-          <input
-            type="checkbox"
-            checked={nashville}
-            disabled={nashvilleDisabled}
-            onChange={(e) => onNashvilleChange(e.target.checked)}
-          />
-          <span>123</span>
-        </label>
-        <span className="toolbar-divider" />
-        <button
-          className={`transpose-btn font-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
-          onClick={onTwoColToggle}
-          title={twoCol ? 'Switch to single column' : 'Switch to two columns'}
-          aria-label={twoCol ? 'Switch to single column' : 'Switch to two columns'}
-          aria-pressed={twoCol}
-        >
-          2-COL
-        </button>
-        <button className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`} onClick={() => onFontChange(-1)}>
-          A&#8722;
-        </button>
-        <button className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`} onClick={() => onFontChange(1)}>
-          A+
-        </button>
-        {onAutoFit && (
+          {onChartToneChange && (
+            <button
+              className={`transpose-btn font-btn tone-toggle${chartTone === 'dark' ? ' active' : ''}`}
+              onClick={onChartToneChange}
+              title={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
+              aria-label={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
+              aria-pressed={chartTone === 'dark'}
+            >
+              {chartTone === 'dark' ? 'DARK' : 'LIGHT'}
+            </button>
+          )}
           <button
-            className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
-            onClick={onAutoFit}
-            title="Auto-fit for this screen (one-time)"
+            className="transpose-btn font-btn font-reset"
+            onClick={onReset}
+            disabled={isDefault}
+            title="Reset reading preferences"
+            aria-label="Reset chart reading controls"
           >
-            FIT
+            &#8634;
           </button>
+        </div>
+        {(onExportPdf || onToggleSettings) && (
+          <div className="toolbar-group toolbar-group-output" role="group" aria-label="Export and settings">
+            {onExportPdf && (
+              <button
+                className="transpose-btn font-btn pdf-btn"
+                onClick={onExportPdf}
+                title="Export as PDF"
+                aria-label="Export song as PDF"
+              >
+                PDF
+              </button>
+            )}
+            {onToggleSettings && (
+              <button
+                className={`transpose-btn font-btn gear-btn${settingsActive ? ' active' : ''}`}
+                onClick={onToggleSettings}
+                title="Settings"
+                aria-label="Song settings"
+              >
+                &#9881;
+              </button>
+            )}
+          </div>
         )}
-        {onChartToneChange && (
+        {onToggleMore && (
           <button
-            className={`transpose-btn font-btn tone-toggle${chartTone === 'dark' ? ' active' : ''}`}
-            onClick={onChartToneChange}
-            title={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
-            aria-label={chartTone === 'dark' ? 'Switch to light chart' : 'Switch to dark chart'}
-            aria-pressed={chartTone === 'dark'}
+            type="button"
+            className="song-secondary-toggle"
+            aria-controls="song-secondary-panel"
+            aria-expanded={Boolean(moreControlsOpen)}
+            aria-label={moreControlsOpen ? 'Show fewer chart controls' : 'Show more chart controls'}
+            title={moreControlsOpen ? 'Show fewer chart controls' : 'Show more chart controls'}
+            onClick={onToggleMore}
           >
-            {chartTone === 'dark' ? 'DARK' : 'LIGHT'}
+            {moreControlsOpen ? 'Less' : 'More'} <span aria-hidden="true">{moreControlsOpen ? '⌃' : '⌄'}</span>
           </button>
         )}
-        <span className="toolbar-spacer" />
-        {(onExportPdf || onToggleSettings) && <span className="toolbar-divider" />}
-        {onExportPdf && (
-          <button className="transpose-btn font-btn pdf-btn" onClick={onExportPdf} title="Export as PDF">
-            PDF
-          </button>
-        )}
-        {onToggleSettings && (
-          <button
-            className={`transpose-btn font-btn gear-btn${settingsActive ? ' active' : ''}`}
-            onClick={onToggleSettings}
-            title="Settings"
-          >
-            &#9881;
-          </button>
-        )}
-        <button
-          className="transpose-btn font-btn font-reset"
-          onClick={onReset}
-          disabled={isDefault}
-          title="Reset reading preferences"
-        >
-          &#8634;
-        </button>
       </div>
       <KeyPicker
         currentKey={currentKey}

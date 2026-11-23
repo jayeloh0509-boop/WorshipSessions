@@ -755,6 +755,54 @@ class ResponsiveHtmlFormatter {
     let content = l.items
       .map((it) => this.renderItem(it as ChordSheetJS.ChordLyricsPair, wrapAtBars, barWrapState))
       .join('');
+    // Mark the complete run of lyric columns when adjacent fragments have no
+    // whitespace between them. Only those intra-word columns stop chord labels
+    // reserving width; ordinary word-boundary chords retain their layout.
+    if (!wrapAtBars) {
+      const columnPattern =
+        /<span class="(column(?: column-punct)?)"( data-bar="true")?><span class="chord">([\s\S]*?)<\/span><span class="lyrics">([\s\S]*?)<\/span><\/span>/g;
+      const columns = Array.from(content.matchAll(columnPattern));
+      const marked = new Map<number, number>();
+      let run: number[] = [];
+      const finishRun = () => {
+        if (run.length > 1) {
+          run.forEach((index, fragment) => {
+            marked.set(index, fragment === 0 ? 0 : ((fragment - 1) % 2) + 1);
+          });
+        }
+        run = [];
+      };
+
+      columns.forEach((column, index) => {
+        run.push(index);
+        const next = columns[index + 1];
+        if (!next) {
+          finishRun();
+          return;
+        }
+        const end = (column.index ?? 0) + column[0].length;
+        const gap = content.slice(end, next.index ?? end);
+        const leftLyrics = column[4];
+        const rightLyrics = next[4];
+        const continuesWord =
+          gap.length === 0 &&
+          leftLyrics.trim().length > 0 &&
+          rightLyrics.trim().length > 0 &&
+          !/\s$/.test(leftLyrics) &&
+          !/^\s/.test(rightLyrics);
+        if (!continuesWord) finishRun();
+      });
+
+      for (const [index, lane] of [...marked.entries()].sort((a, b) => b[0] - a[0])) {
+        const column = columns[index];
+        const start = column.index ?? 0;
+        const replacement = column[0].replace(
+          `class="${column[1]}"`,
+          `class="${column[1]} column-syllable column-syllable-${lane}"`,
+        );
+        content = `${content.slice(0, start)}${replacement}${content.slice(start + column[0].length)}`;
+      }
+    }
     // A wbr adds a safe break, but does not disable ordinary whitespace breaks.
     // Keep the rendered columns of each measure together so a hold slash cannot
     // wrap away from the chord it belongs to. Chord-only rows without barlines

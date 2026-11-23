@@ -3309,6 +3309,136 @@
   }
 }
 
+/* Compact Focus: the chart remains the visual center; deeper tools are opt-in. */
+.song-reading-controls .ug-reader-tabs {
+  display: none;
+}
+
+.song-reading-controls .song-secondary-toggle {
+  min-height: 44px;
+  margin: 6px 0 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (min-width: 701px) {
+  .song-reading-controls .song-secondary-toggle { display: none; }
+  .song-secondary-tools { display: block; }
+}
+
+.song-secondary-tools { display: none; }
+.song-secondary-tools.open { display: block; }
+.song-secondary-tools .ug-quick-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: var(--chart-max-width);
+  margin: 8px auto;
+}
+
+.song-roadmap label,
+.song-section-select { display: none; }
+.song-roadmap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.song-view-title { font-family: var(--font-display, var(--font-sans)); letter-spacing: -0.035em; }
+
+@media (max-width: 700px) {
+  .song-view-header { margin-bottom: 4px; }
+  .song-view-meta { display: none; }
+  .song-view-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .song-view-actions {
+    width: auto;
+    min-width: 0;
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .song-view-actions::-webkit-scrollbar { display: none; }
+  .song-view-actions .btn { flex: 0 0 auto; min-height: 40px; padding-inline: 9px; }
+  .song-view-identity-clean { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .song-view-title { font-size: clamp(26px, 7vw, 34px); line-height: 1.08; }
+  .song-view-artist { margin-top: 3px; font-size: 14px; }
+  .song-view-key { min-width: 60px; padding: 6px 8px; }
+  .song-view-key-value { font-size: 22px; }
+  .song-view-performance-summary { gap: 5px; }
+  .song-view-tempo { min-width: 0; padding-inline: 7px; font-size: 11px; }
+  .song-view-meta { margin-top: 6px; }
+  .song-reading-controls {
+    width: 100%;
+    padding: 6px 12px;
+    overflow: visible;
+  }
+  .song-reading-controls .transpose-bar {
+    position: static;
+    top: auto;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: visible;
+  }
+  .song-reading-controls .transpose-bar > * { min-width: 0; }
+  .song-reading-controls .key-current { grid-column: span 1; }
+  .song-reading-controls .number-toggle { justify-self: stretch; }
+  .song-reading-controls .transpose-btn { min-height: 44px; }
+  .song-reading-controls .song-secondary-toggle {
+    grid-column: auto;
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 3px;
+    font-size: 12px;
+  }
+  .song-roadmap {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin: 7px auto;
+  }
+  .song-roadmap label { display: block; color: var(--text-secondary); font-size: 12px; }
+  .song-section-select {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 10px;
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+  }
+  .song-roadmap-chips { display: none; }
+  .song-autoscroll { justify-content: stretch; margin: 7px 0; }
+  .song-autoscroll-toggle { min-height: 44px; flex: 1; }
+  .song-autoscroll-speed button { width: 44px; height: 44px; }
+  .chart-reading-surface { max-height: none; }
+  .chart-reading-surface .chord-sheet .column-syllable-1 .chord { transform: translateY(-1.3em); }
+  .chart-reading-surface .chord-sheet .column-syllable-2 .chord { transform: translateY(-2.95em); }
+}
+
+@media (max-width: 350px) {
+  .song-view-actions .btn { font-size: 11px; }
+  .song-reading-controls .transpose-bar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .song-view-title { font-size: 25px; }
+  .song-autoscroll-speed { gap: 3px; }
+  .song-autoscroll-speed span { min-width: 40px; }
+}
+
 .library-health-row {
   width: 100%;
   border: 0;
@@ -4444,4 +4574,279 @@
 
 :root[data-theme='light'] .setlist-stat-value {
   color: #1d1e22;
+}
+
+/* Keep the shared SetlistPlay/Live Mode toolbar flat while Song View gets groups. */
+.setlist-play-container .transpose-bar > .toolbar-group,
+.live-mode .transpose-bar > .toolbar-group {
+  display: contents;
+}
+
+.song-reading-controls .song-control-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--nav-bg);
+  backdrop-filter: blur(16px);
+}
+
+.song-reading-controls .song-control-shelf button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.song-reading-controls .song-control-shelf > .toolbar-group {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+}
+
+.song-reading-controls .song-control-shelf .toolbar-group .transpose-btn,
+.song-reading-controls .song-control-shelf .key-current,
+.song-reading-controls .song-control-shelf .number-toggle {
+  min-height: 44px;
+}
+
+.song-reading-controls .song-control-shelf .toolbar-group-key .key-current {
+  min-width: 76px;
+}
+
+.song-reading-controls .song-control-shelf .toolbar-group-key .number-toggle {
+  min-width: 44px;
+}
+
+.song-reading-controls .song-control-shelf .toolbar-group-text .transpose-btn {
+  min-width: 44px;
+}
+
+.song-reading-controls .song-control-shelf .toolbar-group-output {
+  margin-left: 0;
+}
+
+.song-reading-controls .song-control-shelf .song-secondary-toggle {
+  display: none;
+}
+
+@media (min-width: 701px) {
+  .song-reading-controls .song-control-shelf {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    vertical-align: top;
+  }
+
+  .song-secondary-tools {
+    display: block;
+  }
+}
+
+@media (max-width: 700px) {
+  .song-view-header {
+    margin-bottom: 0;
+  }
+
+  .song-view-nav {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+
+  .song-view-nav > .btn,
+  .song-view-actions .btn {
+    min-height: 44px;
+  }
+
+  .song-view-actions {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .song-view-actions .btn {
+    flex: 0 0 auto;
+    padding-inline: 8px;
+  }
+
+  .song-view-identity-clean {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .song-view-title {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(26px, 8vw, 33px);
+    line-height: 1.04;
+  }
+
+  .song-view-artist {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  .song-view-key {
+    min-width: 60px;
+    padding: 6px 7px;
+  }
+
+  .song-view-key-value {
+    font-size: 21px;
+  }
+
+  .song-view-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  .song-view-meta .song-view-stat,
+  .song-view-meta .song-view-by {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+
+  .song-reading-controls {
+    width: 100%;
+    margin-top: 0;
+    padding: 3px 12px;
+    overflow: visible;
+  }
+
+  .song-reading-controls .song-control-shelf {
+    position: static;
+    top: auto;
+    display: grid;
+    grid-template-columns: minmax(106px, 1fr) minmax(90px, 0.85fr) auto;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 10px;
+    overflow: visible;
+  }
+
+  .song-reading-controls .song-control-shelf > .toolbar-group {
+    min-width: 0;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .song-reading-controls .song-control-shelf .toolbar-group-key {
+    justify-content: space-between;
+  }
+
+  .song-reading-controls .song-control-shelf .toolbar-group-key .key-current {
+    min-width: 60px;
+    flex: 1 1 auto;
+    padding-inline: 8px;
+  }
+
+  .song-reading-controls .song-control-shelf .toolbar-group-key .number-toggle {
+    min-width: 44px;
+    flex: 0 0 44px;
+    justify-content: center;
+  }
+
+  .song-reading-controls .song-control-shelf .toolbar-group-text .transpose-btn {
+    min-width: 44px;
+    padding-inline: 3px;
+  }
+
+  .song-reading-controls:not(.secondary-open) .toolbar-group-layout,
+  .song-reading-controls:not(.secondary-open) .toolbar-group-output {
+    display: none;
+  }
+
+  .song-reading-controls .song-control-shelf .song-secondary-toggle {
+    display: flex;
+    min-width: 64px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .song-reading-controls.secondary-open .song-control-shelf {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .song-reading-controls.secondary-open .toolbar-group-layout {
+    grid-column: 1 / -1;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+
+  .song-reading-controls.secondary-open .toolbar-group-output {
+    grid-column: 1;
+    margin-left: 0;
+  }
+
+  .song-reading-controls.secondary-open .song-secondary-toggle {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .song-secondary-tools {
+    display: none;
+  }
+
+  .song-secondary-tools.open {
+    display: block;
+  }
+}
+
+@media (max-width: 350px) {
+  .song-view-title {
+    font-size: 25px;
+  }
+
+  .song-view-actions .btn {
+    font-size: 11px;
+  }
+
+  .song-autoscroll-speed {
+    gap: 3px;
+  }
+
+  .song-autoscroll-speed span {
+    min-width: 40px;
+  }
+}
+
+@media (max-width: 700px) {
+  .song-autoscroll-toggle {
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .song-autoscroll-speed button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .song-secondary-tools .ug-quick-tools button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

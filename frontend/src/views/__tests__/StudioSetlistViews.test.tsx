@@ -46,6 +46,14 @@ describe('Studio setlist collection surfaces', () => {
     expect(page).toHaveClass('studio-setlists');
     expect(screen.getByText('Prepare the flow. Leave room for the moment.')).toBeInTheDocument();
 
+    const pastServices = await screen.findByRole('button', { name: /Past services/ });
+    expect(pastServices).toHaveAttribute('aria-expanded', 'false');
+    const hiddenRow = screen.queryByRole('button', { name: 'Open Sunday Setlist setlist' });
+    expect(hiddenRow).not.toBeInTheDocument();
+
+    await userEvent.click(pastServices);
+    expect(pastServices).toHaveAttribute('aria-expanded', 'true');
+
     const row = await screen.findByRole('button', { name: 'Open Sunday Setlist setlist' });
     expect(row).toBeInTheDocument();
     // Row actions stay siblings of the open control, never nested buttons.

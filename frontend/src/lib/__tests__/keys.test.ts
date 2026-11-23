@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeKey, normalizeChord, preferredAccidental, getTransposeDelta } from '../keys';
+import {
+  normalizeKey,
+  normalizeChord,
+  preferredAccidental,
+  getTransposeDelta,
+  getTransposeForKeyTarget,
+} from '../keys';
 
 describe('keys library', () => {
   describe('normalizeKey', () => {
@@ -142,6 +148,19 @@ describe('keys library', () => {
       expect(preferredAccidental('Bbm')).toBe('b');
       expect(preferredAccidental('G#m')).toBe('#');
       expect(preferredAccidental('Abm')).toBe('#');
+    });
+  });
+
+  describe('getTransposeForKeyTarget', () => {
+    it('round-trips key selection across the octave boundary without clamping', () => {
+      expect(getTransposeForKeyTarget(0, 'C', 'D')).toBe(2);
+      expect(getTransposeForKeyTarget(2, 'D', 'C')).toBe(0);
+      expect(getTransposeForKeyTarget(0, 'C', 'B')).toBe(11);
+      expect(getTransposeForKeyTarget(11, 'B', 'C')).toBe(0);
+    });
+
+    it('keeps a valid negative offset when moving downward within the selected octave', () => {
+      expect(getTransposeForKeyTarget(-5, 'G', 'A')).toBe(-3);
     });
   });
 

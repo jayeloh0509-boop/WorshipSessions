@@ -79,3 +79,9 @@ export function getTransposeDelta(fromKey: string, toKey: string): number {
     return 0;
   }
 }
+
+/** Return a bounded transposition that reaches the requested pitch class. */
+export function getTransposeForKeyTarget(currentTranspose: number, fromKey: string, toKey: string): number {
+  const nextTranspose = currentTranspose + getTransposeDelta(fromKey, toKey);
+  return nextTranspose > 11 ? nextTranspose - 12 : nextTranspose;
+}

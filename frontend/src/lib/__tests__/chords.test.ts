@@ -234,6 +234,94 @@ describe('renderChordPro sections', () => {
     expect(html).toContain('class="row section-row"><h3 class="label">Chorus</h3>');
   });
 
+  it('preserves chord-over-word anchors for slash and extended chords', () => {
+    const source = `{key: D}
+Verse 1
+[A/C#]Mercy [Bm7]keeps [Gadd9]flowing`;
+    const root = document.createElement('div');
+    root.innerHTML = renderChordPro(source);
+
+    const anchoredColumns = [...root.querySelectorAll('.column')].filter((column) =>
+      column.querySelector('.chord')?.textContent?.trim(),
+    );
+    expect(anchoredColumns.map((column) => column.querySelector('.chord')?.textContent?.trim())).toEqual([
+      'A/C#',
+      'Bm7',
+      'Gadd9',
+    ]);
+    expect(anchoredColumns.map((column) => column.querySelector('.lyrics')?.textContent?.trim())).toEqual([
+      'Mercy',
+      'keeps',
+      'flowing',
+    ]);
+  });
+
+  it('keeps intra-word lyric runs continuous and gives collocated chords separate lanes', () => {
+    const html = renderChordPro('Verse 1\n[D]faith[Gadd9]ful[D/F#]ness [A/C#]a[Cmaj7#11/E]gain');
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const columns = [...root.querySelectorAll('.column')];
+
+    expect(columns.slice(0, 3).map((column) => column.querySelector('.lyrics')?.textContent)).toEqual([
+      'faith',
+      'ful',
+      'ness',
+    ]);
+    expect(columns.slice(0, 3).map((column) => column.classList.contains('column-syllable'))).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(columns.slice(0, 3).map((column) => column.classList.contains('column-syllable-0'))).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(columns.slice(0, 3).map((column) => column.classList.contains('column-syllable-1'))).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(columns.slice(0, 3).map((column) => column.classList.contains('column-syllable-2'))).toEqual([
+      false,
+      false,
+      true,
+    ]);
+    expect(
+      columns
+        .slice(0, 3)
+        .map((column) => column.querySelector('.lyrics')?.textContent)
+        .join(''),
+    ).toBe('faithfulness');
+    expect(
+      columns
+        .slice(3)
+        .map((column) => column.querySelector('.lyrics')?.textContent)
+        .join(''),
+    ).toBe('again');
+    expect(columns.slice(3, 5).map((column) => column.classList.contains('column-syllable'))).toEqual([true, true]);
+    expect(columns.map((column) => column.querySelector('.chord')?.textContent?.trim())).toEqual([
+      'D',
+      'Gadd9',
+      'D/F#',
+      'A/C#',
+      'Cmaj7#11/E',
+    ]);
+  });
+
+  it('keeps ordinary word-boundary chords out of the syllable-spacing treatment', () => {
+    const root = document.createElement('div');
+    root.innerHTML = renderChordPro('[Cmaj7#11/E]again [Bm7b5/F]we sing');
+    const columns = [...root.querySelectorAll('.column')];
+
+    expect(columns.map((column) => column.classList.contains('column-syllable'))).toEqual([false, false, false]);
+    expect(columns.map((column) => column.querySelector('.chord')?.textContent?.trim())).toEqual([
+      'Cmaj7#11/E',
+      'Bm7b5/F',
+      '',
+    ]);
+  });
+
   it('promotes paragraph type from first line label', () => {
     const content = 'Chorus\n[G]Amazing grace';
     const html = renderChordPro(content);
