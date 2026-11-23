@@ -57,8 +57,8 @@ async function main() {
       await page.goto(server.base);
       const menu = page.locator('[aria-label="Open navigation menu"]');
       await menu.waitFor({ state: 'attached' });
+      // On phones, open the drawer; on desktop the Studio sidebar is already visible.
       if (await menu.isVisible()) await menu.click();
-      else await page.getByRole('button', { name: 'Account', exact: true }).click();
       await page.getByRole('button', { name: 'Settings', exact: true }).click();
     };
     const widths = [320, 390, 430, 1440];
