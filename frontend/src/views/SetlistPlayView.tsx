@@ -22,6 +22,7 @@ import { Loading } from '../components/Loading';
 import {
   renderChordPro,
   getSongKey,
+  getKeyShortcut,
   clampFontSize,
   songHasKey,
   resolveEffectivePreferences,
@@ -126,6 +127,7 @@ export function SetlistPlayView({
   }, [index]);
 
   const content = entry ? entry.content_override || entry.content : '';
+  const keyShortcut = useMemo(() => getKeyShortcut(content, entry?.content), [content, entry?.content]);
 
   const { user } = useAuth();
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
@@ -561,6 +563,8 @@ export function SetlistPlayView({
             setAutoFitActive(false);
           }}
           onPickKey={pickKey}
+          keyShortcutLabel={keyShortcut?.label}
+          onKeyShortcut={keyShortcut ? () => updateEntry({ transpose: keyShortcut.transpose }) : undefined}
           onAutoFit={doFit}
           autoFitActive={autoFitActive}
           onSaveOnline={isOwner ? () => saveOnline(false) : undefined}

@@ -261,6 +261,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </div>
       </div>
       <div className="field">
+        <label htmlFor="song-original-key">Original key (optional)</label>
+        <input
+          id="song-original-key"
+          type="text"
+          value={state.originalKey}
+          onChange={(e) => handleFieldChange('original_key', e.target.value, editor.setOriginalKey)}
+          placeholder="Recording key, e.g. Bb or F#m"
+        />
+      </div>
+      <div className="field">
         <label>YouTube URL</label>
         <input
           type="url"
@@ -427,7 +437,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         <OcrModal
           onResult={(text, lang, method) => {
             let c = text;
-            const preservedDirectives = ['title', 'artist', 'key', 'tempo', 'x_language', 'x_youtube', 'x_tags'];
+            const preservedDirectives = [
+              'title',
+              'artist',
+              'key',
+              'original_key',
+              'tempo',
+              'x_language',
+              'x_youtube',
+              'x_tags',
+            ];
             for (const directive of preservedDirectives) {
               const existingValue = extractDirective(state.content, directive);
               if (existingValue && !extractDirective(c, directive)) {

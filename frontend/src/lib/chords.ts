@@ -1,6 +1,6 @@
 import * as ChordSheetJS from 'chordsheetjs';
 import { escHtml } from './util';
-import { normalizeKey, normalizeChord, preferredAccidental } from './keys';
+import { normalizeKey, normalizeChord, preferredAccidental, getTransposeDelta } from './keys';
 import { SEPARATOR_TOKEN_RE } from './theory';
 import type { SetlistEntry, SetlistPreferences } from '../types';
 
@@ -12,7 +12,17 @@ const PARSER_NAMES = [
 
 const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
-const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
+const DIRECTIVE_ORDER = [
+  'title',
+  'artist',
+  'key',
+  'original_key',
+  'tempo',
+  'capo',
+  'x_youtube',
+  'x_tags',
+  'x_language',
+];
 
 const SECTION_NAMES =
   'Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre[- ]?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain|Vamp';
@@ -128,6 +138,19 @@ export function extractDirective(content: string, name: string): string | null {
   const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
   const m = content.match(re);
   return m ? m[1].trim() : null;
+}
+
+/** Resolve an absolute transpose from the explicitly declared chart key, not the first chord. */
+export function getKeyShortcut(content: string, metadataContent = content) {
+  const keyPattern = /^[A-G][#b]?m?$/;
+  const chartKey = extractDirective(content, 'key') ?? extractDirective(content, 'k');
+  if (!chartKey || !keyPattern.test(chartKey)) return null;
+
+  const originalKey = extractDirective(content, 'original_key') ?? extractDirective(metadataContent, 'original_key');
+  if (originalKey && keyPattern.test(originalKey) && chartKey.endsWith('m') === originalKey.endsWith('m')) {
+    return { label: `Original key (${originalKey})`, transpose: getTransposeDelta(chartKey, originalKey) };
+  }
+  return { label: `Chart key (${chartKey})`, transpose: 0 };
 }
 
 export function updateDirective(content: string, name: string, value: string | null): string {

@@ -15,7 +15,7 @@ import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
 import { MusicianTools } from '../components/MusicianTools';
-import { renderChordPro, songHasKey, autoFit, isSectionLabel } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, isSectionLabel, getKeyShortcut } from '../lib/chords';
 import { extractChordNames, simplifyChordPro } from '../lib/musician-tools';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
@@ -78,6 +78,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   }, [song, songId, apiCall, user]);
 
   const content = song?.content || '';
+  const keyShortcut = useMemo(() => getKeyShortcut(content), [content]);
   const chord = useChordRenderer(content);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
@@ -425,6 +426,12 @@ export function SongView({ songId, navigate }: SongViewProps) {
             updateReadingPreferences({ transpose, nashville: false });
           }}
           onAutoFit={handleAutoFit}
+          keyShortcutLabel={keyShortcut?.label}
+          onKeyShortcut={
+            keyShortcut
+              ? () => updateReadingPreferences({ transpose: keyShortcut.transpose, nashville: false })
+              : undefined
+          }
           autoFitActive={preferences.autoFit}
           onExportPdf={handleExportPdf}
           renderKey={songId}

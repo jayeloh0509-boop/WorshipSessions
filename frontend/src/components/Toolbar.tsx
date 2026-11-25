@@ -12,6 +12,8 @@ interface ToolbarProps {
   onFontChange: (delta: number) => void;
   onReset: () => void;
   onPickKey: (key: string) => void;
+  keyShortcutLabel?: string;
+  onKeyShortcut?: () => void;
   onAutoFit?: () => void;
   autoFitActive?: boolean;
   onSaveOnline?: () => void;
@@ -49,6 +51,8 @@ export function Toolbar({
   onFontChange,
   onReset,
   onPickKey,
+  keyShortcutLabel,
+  onKeyShortcut,
   onAutoFit,
   autoFitActive,
   onSaveOnline,
@@ -203,6 +207,8 @@ export function Toolbar({
       <KeyPicker
         currentKey={currentKey}
         onPickKey={onPickKey}
+        keyShortcutLabel={keyShortcutLabel}
+        onKeyShortcut={onKeyShortcut}
         visible={pickerOpen}
         isModified={isModified}
         onSaveOnline={

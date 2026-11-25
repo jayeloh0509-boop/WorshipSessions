@@ -75,6 +75,20 @@ describe('SetlistPlayView', () => {
     });
   });
 
+  it('sets the absolute recording-key offset without saving the setlist', () => {
+    const player = (useSetlistPlayer as Mock)();
+    (useSetlistPlayer as Mock).mockReturnValue({
+      ...player,
+      entry: { ...player.entry, content: '{key: D}\n{original_key: G}\n[D]Sing', transpose: 2 },
+    });
+    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
+    fireEvent.click(screen.getByRole('button', { name: /change key/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Original key (G)' }));
+    expect(mockUpdateEntry).toHaveBeenCalledWith({ transpose: 5 });
+    expect(player.saveOnline).not.toHaveBeenCalled();
+    expect(player.saveLocal).not.toHaveBeenCalled();
+  });
+
   it('performs a one-time Auto-fit action', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
 

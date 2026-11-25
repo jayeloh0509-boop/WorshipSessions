@@ -7,6 +7,7 @@ export interface SongEditorState {
   content: string;
   youtubeUrl: string;
   bpm: string;
+  originalKey: string;
   tags: string[];
   language: string;
   formatBadge: { text: string; cls: string } | null;
@@ -18,6 +19,7 @@ export function useSongEditor(initialContent: string = '') {
   const [artist, setArtist] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [bpm, setBpm] = useState('');
+  const [originalKey, setOriginalKey] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
   const [formatBadge, setFormatBadge] = useState<{ text: string; cls: string } | null>(null);
@@ -39,6 +41,7 @@ export function useSongEditor(initialContent: string = '') {
       setArtist(extractDirective(text, 'artist') || '');
       const tempo = extractDirective(text, 'tempo');
       setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
+      setOriginalKey(extractDirective(text, 'original_key') || '');
       setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
       const tagStr = extractDirective(text, 'x_tags');
       setTags(
@@ -107,7 +110,7 @@ export function useSongEditor(initialContent: string = '') {
   }, []);
 
   return {
-    state: { title, artist, content, youtubeUrl, bpm, tags, language, formatBadge },
+    state: { title, artist, content, youtubeUrl, bpm, originalKey, tags, language, formatBadge },
     setInitialContent,
     handleContentChange,
     handleFieldChange,
@@ -118,6 +121,7 @@ export function useSongEditor(initialContent: string = '') {
     setArtist,
     setYoutubeUrl,
     setBpm,
+    setOriginalKey,
     setTags,
     setLanguage,
   };

@@ -5,12 +5,42 @@ import {
   ensureKeyDirective,
   detectFormat,
   getSongKey,
+  getKeyShortcut,
   isSectionLabel,
   canonicalizeSectionLabel,
   normalizeOnSave,
   isCompactBarNotation,
   prepareForPersist,
 } from '../chords';
+
+describe('getKeyShortcut', () => {
+  it('transposes the chart and slash bass without changing lyrics, suffixes, or stored metadata', () => {
+    const content = prepareForPersist('{title: Fixture}\n{key: D}\n{original_key: G}\n[Dadd9/F#]Sing here');
+    expect(extractDirective(content, 'original_key')).toBe('G');
+    const shortcut = getKeyShortcut(content);
+    expect(shortcut).toEqual({ label: 'Original key (G)', transpose: 5 });
+    expect(getSongKey(content, shortcut!.transpose)).toBe('G');
+    expect(getSongKey(content)).toBe('D');
+    const rendered = renderChordPro(content, shortcut!.transpose);
+    const lyrics = (html: string) => [...html.matchAll(/class="lyrics">([^<]*)/g)].map((match) => match[1]);
+    expect(rendered).toContain('Gadd9/B');
+    expect(lyrics(rendered)).toEqual(['Sing', 'here']);
+    expect(lyrics(rendered)).toEqual(lyrics(renderChordPro(content)));
+  });
+
+  it('uses a setlist override’s base key with the song recording key and supports minor keys', () => {
+    const shortcut = getKeyShortcut('{k: Dm}\n[Dm]Test', '{key: Em}\n{original_key: Am}\n[Em]Test');
+    expect(shortcut).toEqual({ label: 'Original key (Am)', transpose: 7 });
+    expect(getSongKey('{k: Dm}\n[Dm]Test', shortcut!.transpose)).toBe('Am');
+  });
+
+  it('never presents a missing, invalid or incompatible key as the recording key', () => {
+    for (const directive of ['', '{original_key: unknown}\n', '{original_key: Am}\n']) {
+      expect(getKeyShortcut(`{key: D}\n${directive}[D]Test`)).toEqual({ label: 'Chart key (D)', transpose: 0 });
+    }
+    expect(getKeyShortcut('{original_key: G}\n[D]Test')).toBeNull();
+  });
+});
 
 // ─── extractDirective ───────────────────────────────────────────────
 

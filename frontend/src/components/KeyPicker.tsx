@@ -3,13 +3,24 @@ import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 interface KeyPickerProps {
   currentKey: string;
   onPickKey: (key: string) => void;
+  keyShortcutLabel?: string;
+  onKeyShortcut?: () => void;
   visible: boolean;
   isModified?: boolean;
   onSaveOnline?: () => void;
   onSaveLocal?: () => void;
 }
 
-export function KeyPicker({ currentKey, onPickKey, visible, isModified, onSaveOnline, onSaveLocal }: KeyPickerProps) {
+export function KeyPicker({
+  currentKey,
+  onPickKey,
+  keyShortcutLabel,
+  onKeyShortcut,
+  visible,
+  isModified,
+  onSaveOnline,
+  onSaveLocal,
+}: KeyPickerProps) {
   if (!visible) return null;
 
   const norm = normalizeKey(currentKey);
@@ -25,6 +36,13 @@ export function KeyPicker({ currentKey, onPickKey, visible, isModified, onSaveOn
           </button>
         ))}
       </div>
+      {keyShortcutLabel && onKeyShortcut && (
+        <div className="key-grid">
+          <button type="button" className="btn btn-sm btn-ghost" onClick={onKeyShortcut}>
+            {keyShortcutLabel}
+          </button>
+        </div>
+      )}
       {isModified && (
         <div className="key-picker-actions">
           <div className="key-picker-save-hint">Save this key?</div>
