@@ -155,6 +155,29 @@ describe('SongView chord-reading workspace', () => {
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('GET', '/api/songs/7/versions'));
   });
 
+  it('explains why auto-scroll is unavailable with Reduce Motion enabled', async () => {
+    const original = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn((query: string) => ({ media: query, matches: query === '(prefers-reduced-motion: reduce)' })),
+    });
+    apiCall.mockImplementation((_method: string, path: string) =>
+      Promise.resolve(path.endsWith('/versions') || path.endsWith('/corrections') ? [] : song),
+    );
+
+    try {
+      render(<SongView songId={7} navigate={vi.fn()} />);
+      const start = await screen.findByRole('button', { name: 'Start song auto-scroll' });
+      expect(start).toBeDisabled();
+      expect(start).toHaveAccessibleDescription('Auto-scroll is off because Reduce Motion is enabled.');
+      expect(screen.getByRole('status')).toHaveTextContent('Auto-scroll is off because Reduce Motion is enabled.');
+      expect(screen.getByRole('button', { name: 'Increase auto-scroll speed' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Decrease auto-scroll speed' })).toBeDisabled();
+    } finally {
+      Object.defineProperty(window, 'matchMedia', { configurable: true, value: original });
+    }
+  });
+
   it('includes extended imported section labels in the roadmap', async () => {
     apiCall.mockImplementation((_method: string, path: string) => {
       if (path.endsWith('/versions')) return Promise.resolve([]);

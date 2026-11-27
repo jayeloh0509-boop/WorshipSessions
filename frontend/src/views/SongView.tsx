@@ -500,6 +500,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
           onClick={autoScroll.toggle}
           aria-label={autoScroll.running ? 'Pause song auto-scroll' : 'Start song auto-scroll'}
           aria-pressed={autoScroll.running}
+          disabled={autoScroll.reducedMotion}
+          aria-describedby={autoScroll.reducedMotion ? 'song-autoscroll-motion-help' : undefined}
         >
           <span aria-hidden="true">{autoScroll.running ? 'Ⅱ' : '▶'}</span>
           {autoScroll.running ? 'Pause' : 'Auto-scroll'}
@@ -508,7 +510,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
           <button
             type="button"
             onClick={() => autoScroll.setSpeed(autoScroll.speed - 0.1)}
-            disabled={autoScroll.speed <= 0.1}
+            disabled={autoScroll.reducedMotion || autoScroll.speed <= 0.1}
             aria-label="Decrease auto-scroll speed"
           >
             −
@@ -517,13 +519,19 @@ export function SongView({ songId, navigate }: SongViewProps) {
           <button
             type="button"
             onClick={() => autoScroll.setSpeed(autoScroll.speed + 0.1)}
-            disabled={autoScroll.speed >= 1.5}
+            disabled={autoScroll.reducedMotion || autoScroll.speed >= 1.5}
             aria-label="Increase auto-scroll speed"
           >
             +
           </button>
         </div>
       </div>
+
+      {autoScroll.reducedMotion && (
+        <p className="song-autoscroll-help" id="song-autoscroll-motion-help" role="status">
+          {t('song.autoScrollReducedMotion', 'Auto-scroll is off because Reduce Motion is enabled.')}
+        </p>
+      )}
 
       <section className="chart-reading-surface" aria-label="Chord chart" ref={chartScrollRef}>
         <ChordSheet

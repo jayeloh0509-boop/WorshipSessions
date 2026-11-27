@@ -3621,9 +3621,16 @@
   cursor: pointer;
 }
 
+.song-autoscroll-toggle:disabled,
 .song-autoscroll-speed button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.song-autoscroll-help {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 0.85rem;
 }
 
 .song-autoscroll-speed span {
